@@ -234,7 +234,11 @@ function reducer(state, action) {
       };
 
     case 'RESET_APP':
-      return createFreshState({ onboardingComplete: true });
+      return createFreshState({ 
+        onboardingComplete: true,
+        session: state.session, // Preserve session
+        profile: state.profile, // Preserve profile structure
+      });
 
     case 'SET_GUEST_MODE':
       return { ...state, guestMode: true };

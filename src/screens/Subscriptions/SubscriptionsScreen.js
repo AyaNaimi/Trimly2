@@ -406,14 +406,14 @@ function makeStyles(Colors) { return StyleSheet.create({
   emptyTxt: { ...Fonts.primary, fontSize: 13, color: Colors.textMuted, textAlign: 'center', marginTop: 0, maxWidth: 260, lineHeight: 18 },
    fab: {
     position: 'absolute',
-    right: Metrics.screenPadding,
-    bottom: Metrics.fabBottom,
+    right: 16,
+    bottom: 108,
     width: 56,
     height: 56,
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.accent,
+    backgroundColor: '#10B981', // Vert émeraude
     ...Shadow.medium,
   },
   fabPlus: {

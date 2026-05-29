@@ -984,14 +984,14 @@ function makeStyles(Colors) { return StyleSheet.create({
   // ── FAB ──────────────────────────────────────────────────
   fab: {
     position: 'absolute',
-    right: Metrics.screenPadding,
-    bottom: Metrics.fabBottom,
+    right: 16,
+    bottom: 108,
     width: 56,
     height: 56,
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.accent,
+    backgroundColor: '#10B981', // Vert émeraude
     ...Shadow.medium,
   },
   fabPlus: {

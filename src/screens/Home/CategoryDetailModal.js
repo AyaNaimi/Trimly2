@@ -9,7 +9,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Fonts, Radius, Shadow, Spacing } from '../../theme';
+import { Fonts, Metrics, Radius, Shadow, Spacing } from '../../theme';
 import { daysLeftInPeriod, formatDateFull, formatMonthYear } from '../../utils/dateUtils';
 import { PremiumHaptics } from '../../utils/haptics';
 import { useTheme } from '../../context/ThemeContext';
@@ -255,12 +255,12 @@ function makeStyles(Colors) { return StyleSheet.create({
   emptyText: { ...Fonts.sans, fontSize: 18, color: Colors.textSecondary },
   fab: {
     position: 'absolute',
-    right: 22,
-    bottom: 26,
-    width: 58,
-    height: 58,
-    borderRadius: 29,
-    backgroundColor: Colors.accent,
+    right: 16,
+    bottom: 108,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: '#10B981', // Vert émeraude
     alignItems: 'center',
     justifyContent: 'center',
     ...Shadow.medium,

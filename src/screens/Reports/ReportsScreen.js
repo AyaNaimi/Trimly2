@@ -3,6 +3,8 @@ import {
   SafeAreaView, ScrollView, StyleSheet, Text, View,
   Pressable, Animated, Modal, TouchableWithoutFeedback,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Svg, { Polyline, Line as SvgLine } from 'react-native-svg';
 import { useApp } from '../../context/AppContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { Fonts, Metrics, Radius, Shadow, Spacing } from '../../theme';
@@ -220,6 +222,7 @@ export default function ReportsScreen() {
   const [showPeriodMenu, setShowPeriodMenu] = useState(false);
   const periodBtnRef = useRef(null);
   const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
+  const [chartWidth, setChartWidth] = useState(0);
 
   const PERIODS = [
     { key: 'week',    label: t('common.week') },
@@ -348,6 +351,51 @@ export default function ReportsScreen() {
 
     return { slots, maxSpend, averageSpend: avgSpend, currentTotal: curr, previousTotal: prev, trendPct };
   }, [transactions, activePeriod, offset, locale, t]);
+
+  // ── Line chart data (cumulative daily spending) ──────────
+  const lineChartData = useMemo(() => {
+    const { start, end } = periodRange(activePeriod, offset);
+    const totalDays = Math.ceil((end - start) / 86400000) + 1;
+    const bcp47 = locale === 'en' ? 'en-US' : locale === 'fr' ? 'fr-FR' : locale;
+
+    const dailySpend = {};
+    let cumulative = 0;
+
+    filtered.forEach(tx => {
+      if (tx.type !== 'expense') return;
+      const d = new Date(tx.date);
+      const dayIndex = Math.floor((d - start) / 86400000);
+      if (dayIndex >= 0 && dayIndex < totalDays) {
+        dailySpend[dayIndex] = (dailySpend[dayIndex] || 0) + (Number(tx.amount) || 0);
+      }
+    });
+
+    const budgetPoints = [];
+    const elapsedPoints = [];
+
+    for (let i = 0; i < totalDays; i++) {
+      cumulative += dailySpend[i] || 0;
+      const bPct = totalBudget > 0 ? Math.min((cumulative / totalBudget) * 100, 120) : 0;
+      const ePct = ((i + 1) / totalDays) * 100;
+      budgetPoints.push(bPct);
+      elapsedPoints.push(ePct);
+    }
+
+    const xLabels = [];
+    const step = Math.max(1, Math.floor(totalDays / 4));
+    for (let i = 0; i < totalDays; i += step) {
+      const d = new Date(start);
+      d.setDate(start.getDate() + i);
+      xLabels.push({ x: i, label: d.toLocaleDateString(bcp47, { day: 'numeric', month: 'short' }).replace('.', '') });
+    }
+    const lastD = new Date(end);
+    const lastLabel = lastD.toLocaleDateString(bcp47, { day: 'numeric', month: 'short' }).replace('.', '');
+    if (!xLabels.length || xLabels[xLabels.length - 1].label !== lastLabel) {
+      xLabels.push({ x: totalDays - 1, label: lastLabel });
+    }
+
+    return { budgetPoints, elapsedPoints, xLabels, totalDays };
+  }, [filtered, activePeriod, offset, totalBudget, locale]);
 
   // ── Derived values ─────────────────────────────────────────
   const totalSpent      = monthlyCategorySummary.totalSpent;
@@ -510,114 +558,149 @@ export default function ReportsScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-        {/* ── Hero card ── */}
+        {/* ── Hero card (Design Journal) ── */}
         <View style={styles.heroCard}>
-          <View style={styles.heroTopRow}>
-            <View style={[styles.heroStatusBadge, { backgroundColor: toneColors.soft }]}>
-              <Text style={[styles.heroStatusText, { color: toneColors.text }]}>{mainInsight.title}</Text>
+          <View style={styles.heroCardRow}>
+            <View style={styles.heroCardLeft}>
+              <Text style={styles.heroCardLabel}>{t('reports.spent')}</Text>
+              <Text style={styles.heroCardAmount}>{formatAmount(totalSpent, currency, locale)}</Text>
+              {totalBudget > 0 && (
+                <Text style={styles.heroCardSub}>sur {formatAmount(totalBudget, currency, locale)}</Text>
+              )}
+            </View>
+            <View style={styles.heroCardRight}>
+              <Text style={[styles.heroCardPercent, { color: toneColors.text }]}>{budgetPct.toFixed(0)}%</Text>
+              <Text style={styles.heroCardPercentLabel}>du budget</Text>
             </View>
           </View>
-
-          {/* Contextual hero message when over budget */}
-          {isOverBudget && totalBudget > 0 ? (
-            <>
-              <Text style={styles.heroContextMsg}>
-                {t('reports.youSpent', { ratio: (totalSpent / totalBudget).toFixed(1) })}
-              </Text>
-              <Text style={styles.heroAmount}>{formatAmount(totalSpent, currency, locale)}</Text>
-            </>
-          ) : (
-            <Text style={styles.heroAmount}>{formatAmount(totalSpent, currency, locale)}</Text>
-          )}
-
-          <Text style={styles.heroSupport}>
-            {totalBudget > 0
-              ? t('reports.ofBudgetUsed', { percent: budgetPct.toFixed(0), elapsed: elapsedPct.toFixed(0) })
-              : t('reports.addBudgetToTrack')}
-          </Text>
-
-          <View style={styles.heroMeterTrack}>
-            <View style={[styles.heroMeterFill, { width: `${clamp(budgetPct, 0, 100)}%`, backgroundColor: toneColors.accent, opacity: 0.5 }]} />
-            <View style={[styles.heroMeterMarker, { left: `${clamp(elapsedPct, 2, 98)}%` }]} />
-          </View>
-          <View style={styles.heroLegendRow}>
-            <Text style={styles.heroLegendText}>{t('reports.budgetUsed')}</Text>
-            <Text style={styles.heroLegendText}>{t('reports.periodElapsed')}</Text>
-          </View>
-
-          <View style={styles.heroDivider} />
-          <Text style={styles.mainInsightText}>{mainInsight.text}</Text>
-
-          {/* État actuel */}
-          <View style={styles.quickStats}>
-            <View style={styles.quickStatItem}>
-              <Text style={styles.quickStatLabel}>{t('reports.spent')}</Text>
-              <Text style={styles.quickStatValue}>{formatAmount(totalSpent, currency, locale)}</Text>
-            </View>
-            <View style={[styles.quickStatItem, styles.quickStatItemBorder]}>
-              <Text style={styles.quickStatLabel}>{t('reports.budget')}</Text>
-              <Text style={styles.quickStatValue}>{totalBudget > 0 ? formatAmount(totalBudget, currency, locale) : '—'}</Text>
-            </View>
-            <View style={[styles.quickStatItem, styles.quickStatItemBorder]}>
-              <Text style={styles.quickStatLabel}>{t('reports.remaining')}</Text>
-              <Text style={[styles.quickStatValue, { color: remaining >= 0 ? Colors.pureWhite : '#FF8A9B' }]}>
-                {totalBudget > 0 ? formatDelta(remaining, currency, locale) : '—'}
-              </Text>
-            </View>
-          </View>
-
-          {/* Projection — visuellement séparée */}
-          {hasTransactions && totalBudget > 0 && (
-            <View style={styles.heroProjectionRow}>
-              <Text style={styles.heroProjectionLabel}>{t('reports.projectionEndPeriod')}</Text>
-              <Text style={[
-                styles.heroProjectionValue,
-                { 
-                  color: projectedSpend > totalBudget ? '#FF8A9B' : Colors.pureWhite, 
-                  opacity: 0.85 
-                },
-              ]}>
-                {formatAmount(projectedSpend, currency, locale)}
-                {projectedSpend > totalBudget ? '  ⚠' : '  ✓'}
-              </Text>
-            </View>
-          )}
         </View>
 
-        {/* ── Résumé rapide (accordion) ── */}
-        <Accordion
-          title={t('reports.quickSummary')}
-          meta={monthlyCategorySummary.largestExpense
-            ? t('reports.largestExpense', { amount: formatAmount(monthlyCategorySummary.largestExpense.amount, currency, locale) })
-            : null}
-          defaultOpen
-          Colors={Colors}
-        >
-          <View style={styles.summaryList}>
-            {scoreCards.map((card, index) => {
-              const cardTone = pickToneColors(card.tone, Colors);
-              return (
-                <View key={card.label} style={[styles.summaryRow, index < scoreCards.length - 1 && styles.summaryRowBorder]}>
-                  <Text style={styles.summaryLabel}>{card.label}</Text>
-                  <View style={styles.summaryValueWrap}>
-                    <Text style={[styles.summaryValue, { color: cardTone.text }]}>{card.value}</Text>
-                    <Text style={[styles.summaryHint, card.tone !== 'neutral' && card.tone !== 'good' && { color: cardTone.text }]}>
-                      {card.hint}
-                    </Text>
-                  </View>
-                </View>
-              );
-            })}
-          </View>
-        </Accordion>
+        {/* ── Chart card (Évolution du mois) ── */}
+        <View style={styles.chartCard}>
+          <Text style={styles.chartCardTitle}>{t('reports.evolution')}</Text>
 
-        {/* ── Catégories (accordion) ── */}
-        <Accordion
-          title={t('reports.categories')}
-          tag={categoryRows.length > 0 ? t('reports.activeCategories', { count: categoryRows.length }) : null}
-          defaultOpen
-          Colors={Colors}
-        >
+          {/* Legend */}
+          <View style={styles.chartLegendRow}>
+            <View style={styles.chartLegendItem}>
+              <View style={[styles.chartLegendDot, { backgroundColor: Colors.income }]} />
+              <Text style={styles.chartLegendText}>{t('reports.budgetUsed')}</Text>
+            </View>
+            <View style={styles.chartLegendItem}>
+              <View style={[styles.chartLegendDot, { backgroundColor: Colors.accent }]} />
+              <Text style={styles.chartLegendText}>{t('reports.periodElapsed')}</Text>
+            </View>
+          </View>
+
+          {/* Line Chart */}
+          <View style={styles.lineChartWrap}>
+            <View style={styles.yAxis}>
+              <Text style={styles.yAxisLabel}>%</Text>
+              <Text style={styles.yAxisLabel}>100</Text>
+              <Text style={styles.yAxisLabel}>75</Text>
+              <Text style={styles.yAxisLabel}>25</Text>
+              <Text style={styles.yAxisLabel}>0</Text>
+            </View>
+            <View style={styles.lineChartArea} onLayout={(e) => setChartWidth(e.nativeEvent.layout.width)}>
+              {chartWidth > 0 && lineChartData.totalDays > 0 && (
+                <Svg height={140} width={chartWidth}>
+                  {[0, 25, 50, 75, 100].map(pct => {
+                    const y = 8 + (1 - pct / 100) * 124;
+                    return <SvgLine key={pct} x1={0} y1={y} x2={chartWidth} y2={y} stroke={Colors.border} strokeWidth={0.5} />;
+                  })}
+                  <Polyline
+                    points={lineChartData.elapsedPoints.map((pct, i) => {
+                      const x = lineChartData.totalDays > 1 ? (i / (lineChartData.totalDays - 1)) * chartWidth : 0;
+                      const y = 8 + (1 - pct / 100) * 124;
+                      return `${x},${y}`;
+                    }).join(' ')}
+                    fill="none"
+                    stroke={Colors.accent}
+                    strokeWidth={1.5}
+                    strokeDasharray="6,4"
+                  />
+                  <Polyline
+                    points={lineChartData.budgetPoints.map((pct, i) => {
+                      const x = lineChartData.totalDays > 1 ? (i / (lineChartData.totalDays - 1)) * chartWidth : 0;
+                      const y = 8 + (1 - Math.min(pct, 100) / 100) * 124;
+                      return `${x},${y}`;
+                    }).join(' ')}
+                    fill="none"
+                    stroke={Colors.income}
+                    strokeWidth={2}
+                  />
+                </Svg>
+              )}
+            </View>
+          </View>
+
+          {/* X axis labels */}
+          <View style={styles.xAxisRow}>
+            {lineChartData.xLabels.map((item, i) => (
+              <Text key={i} style={styles.xAxisLabel}>{item.label}</Text>
+            ))}
+          </View>
+
+          {/* Stats row */}
+          <View style={styles.chartStatsRow}>
+            <View style={styles.chartStatItem}>
+              <Text style={styles.chartStatLabel}>{t('reports.budget')}</Text>
+              <Text style={styles.chartStatValue}>{formatAmount(totalBudget, currency, locale)}</Text>
+            </View>
+            <View style={styles.chartStatItem}>
+              <Text style={styles.chartStatLabel}>{t('reports.remaining')}</Text>
+              <Text style={styles.chartStatValue}>{totalBudget > 0 ? formatDelta(remaining, currency, locale) : '—'}</Text>
+            </View>
+            <View style={styles.chartStatItem}>
+              <Text style={styles.chartStatLabel} numberOfLines={1}>{t('reports.projectionEndPeriod')}</Text>
+              <Text style={styles.chartStatValue}>{hasTransactions ? formatAmount(projectedSpend, currency, locale) : '—'}</Text>
+              {hasTransactions && totalBudget > 0 && (
+                <Text style={[styles.chartStatHint, { color: projectedGap <= 0 ? Colors.income : Colors.expense }]}>
+                  {projectedGap <= 0 ? t('reports.underBudget', { amount: formatAmount(Math.abs(projectedGap), currency, locale) }) : t('reports.aboveBudget', { amount: formatAmount(projectedGap, currency, locale) })}
+                </Text>
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* ── Info cards ── */}
+        <View style={styles.infoCard}>
+          <View style={styles.infoCardLeft}>
+            <Ionicons name="trending-down-outline" size={22} color={paceDelta <= 0 ? Colors.income : Colors.expense} />
+            <Text style={styles.infoCardLabel}>{t('reports.spendingPace')}</Text>
+          </View>
+          <View style={styles.infoCardRight}>
+            <Text style={[styles.infoCardValue, { color: paceDelta <= 0 ? Colors.income : Colors.expense }]}>
+              {paceDelta >= 0 ? '+' : ''}{paceDelta.toFixed(0)}%
+            </Text>
+            <Text style={[styles.infoCardHint, { color: paceDelta <= 10 ? Colors.income : Colors.expense }]}>
+              {paceDelta > 10 ? t('reports.spendingFaster') : t('reports.onTrack')}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.infoCard}>
+          <View style={styles.infoCardLeft}>
+            <Ionicons name="wallet-outline" size={22} color={Colors.accent} />
+            <Text style={styles.infoCardLabel}>{t('reports.activeSubscriptions')}</Text>
+          </View>
+          <View style={styles.infoCardRight}>
+            <Text style={styles.infoCardValue}>{formatAmount(totalSubscriptions, currency, locale)}</Text>
+            <Text style={styles.infoCardHint}>
+              {totalBudget > 0
+                ? `${subscriptionsShare.toFixed(0)}% ${t('reports.ofTotalBudget', { percent: '' }).trim()}`
+                : t('reports.fixedMonthlyCost')}
+            </Text>
+          </View>
+        </View>
+
+        {/* ── Catégories (card) ── */}
+        <View style={styles.categoriesCard}>
+          <View style={styles.categoriesHeader}>
+            <Text style={styles.categoriesTitle}>{t('reports.categories')}</Text>
+            {categoryRows.length > 0 && (
+              <Text style={styles.categoriesTag}>{t('reports.activeCategories', { count: categoryRows.length })}</Text>
+            )}
+          </View>
           {categoryRows.length === 0 ? (
             <Text style={styles.emptyStateText}>{t('reports.noExpenseOrBudget')}</Text>
           ) : (
@@ -632,7 +715,6 @@ export default function ReportsScreen() {
               return (
                 <View key={category.id} style={[styles.categoryRow, index < categoryRows.length - 1 && styles.categoryRowBorder]}>
                   <View style={styles.categoryTopRow}>
-                    {/* Icon + name */}
                     <View style={styles.categoryNameRow}>
                       <View style={[styles.catIconBubble, { backgroundColor: category.color || Colors.accent }]}>
                         <Text style={styles.catIconEmoji}>{category.icon || '📦'}</Text>
@@ -662,70 +744,7 @@ export default function ReportsScreen() {
               );
             })
           )}
-        </Accordion>
-
-        {/* ── Évolution (accordion) ── */}
-        <Accordion
-          title={t('reports.evolution')}
-          tag={label}
-          defaultOpen
-          Colors={Colors}
-        >
-          <Text style={styles.panelSubtitle}>{trendNarrative}</Text>
-          <View style={styles.panelDivider} />
-
-          <View style={styles.chart}>
-            {trendData.slots.map((slot, index) => {
-              const isLast = index === trendData.slots.length - 1;
-              const isAboveAvg = trendData.averageSpend > 0 && slot.total > trendData.averageSpend;
-              const color = isLast ? Colors.accent : isAboveAvg ? Colors.expense : Colors.income;
-              const heightPct = (slot.total / trendData.maxSpend) * 100;
-
-              return (
-                <View key={slot.key} style={styles.chartColumn}>
-                  {/* Value label on tallest bar */}
-                  {slot.total > 0 && heightPct >= 85 && (
-                    <Text style={styles.chartBarVal}>
-                      {Math.round(slot.total / 1000) > 0 ? `${(slot.total/1000).toFixed(0)}k` : fmtK(slot.total)}
-                    </Text>
-                  )}
-                  <View style={styles.chartTrack}>
-                    <View style={[
-                      styles.chartBar,
-                      {
-                        height: `${heightPct}%`,
-                        backgroundColor: slot.total > 0 ? color : Colors.borderStrong,
-                        opacity: isLast ? 1 : 0.65,
-                      },
-                    ]} />
-                  </View>
-                  <Text style={[styles.chartLabel, isLast && styles.chartLabelActive]}>{slot.label}</Text>
-                </View>
-              );
-            })}
-          </View>
-
-          {/* Average line legend */}
-          {trendData.averageSpend > 0 && (
-            <View style={styles.avgLegend}>
-              <View style={styles.avgLegendDash} />
-              <Text style={styles.avgLegendTxt}>{t('reports.average', { amount: formatAmount(trendData.averageSpend, currency, locale) })}</Text>
-            </View>
-          )}
-
-          <View style={styles.trendFooter}>
-            <View style={styles.trendStat}>
-              <Text style={styles.trendStatLabel}>{t('reports.currentPeriod')}</Text>
-              <Text style={styles.trendStatValue}>{formatAmount(trendData.currentTotal, currency, locale)}</Text>
-            </View>
-            {trendData.previousTotal > 0 && (
-              <View style={[styles.trendStat, { alignItems: 'flex-end' }]}>
-                <Text style={styles.trendStatLabel}>{t('reports.previousPeriod')}</Text>
-                <Text style={styles.trendStatValue}>{formatAmount(trendData.previousTotal, currency, locale)}</Text>
-              </View>
-            )}
-          </View>
-        </Accordion>
+        </View>
 
       </ScrollView>
     </SafeAreaView>
@@ -915,143 +934,199 @@ function makeStyles(Colors) { return StyleSheet.create({
     gap: Spacing.smd,
   },
 
-  // ── Hero card ─────────────────────────────────────────────
+  // ── Hero card (Journal Design) ──────────────────────────
   heroCard: {
-    backgroundColor: Colors.accentDeep,
+    backgroundColor: Colors.white,
     borderRadius: Radius.xl,
     padding: Spacing.md,
-    gap: Spacing.smd,
-    ...Shadow.premium,
+    borderWidth: 1,
+    borderColor: Colors.borderStrong,
+    ...Shadow.soft,
   },
-  heroTopRow: {
+  heroCardRow: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 6,
+    alignItems: 'flex-start',
   },
-  heroMonthBadgeText: {
+  heroCardLeft: {
+    flex: 1,
+    gap: 1,
+  },
+  heroCardLabel: {
     ...Fonts.primary,
     ...Fonts.semiBold,
-    fontSize: 10,
-    color: Colors.pureWhite,
-    opacity: 0.45,
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-  },
-  heroStatusBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: Radius.pill,
-  },
-  heroStatusText: {
-    ...Fonts.primary,
-    ...Fonts.bold,
-    fontSize: 11,
-  },
-  heroAmount: {
-    ...Fonts.primary,
-    ...Fonts.black,
-    fontSize: 34,
-    color: Colors.pureWhite,
-    letterSpacing: -1,
-  },
-  heroLabel: {
-    ...Fonts.primary,
-    ...Fonts.bold,
     fontSize: 12,
-    color: Colors.pureWhite,
-    opacity: 0.6,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    color: Colors.textSecondary,
   },
-  heroSupport: {
+  heroCardAmount: {
+    ...Fonts.primary,
+    ...Fonts.bold,
+    fontSize: 22,
+    color: Colors.text,
+    letterSpacing: -0.5,
+    marginTop: 2,
+  },
+  heroCardSub: {
     ...Fonts.primary,
     fontSize: 11,
-    color: Colors.pureWhite,
-    opacity: 0.7,
-    lineHeight: 16,
+    color: Colors.textMuted,
+    marginTop: 1,
   },
-  heroMeterTrack: {
+  heroCardRight: {
+    alignItems: 'flex-end',
+    paddingTop: 2,
+  },
+  heroCardPercent: {
+    ...Fonts.primary,
+    ...Fonts.bold,
+    fontSize: 22,
+    letterSpacing: -0.5,
+  },
+  heroCardPercentLabel: {
+    ...Fonts.primary,
+    fontSize: 11,
+    color: Colors.textMuted,
+    marginTop: 1,
+  },
+
+  // ── Chart card ──────────────────────────────────────────
+  chartCard: {
+    backgroundColor: Colors.white,
+    borderRadius: Radius.xl,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.borderStrong,
+    ...Shadow.soft,
+    gap: Spacing.smd,
+  },
+  chartCardTitle: {
+    ...Fonts.primary,
+    ...Fonts.bold,
+    fontSize: 14,
+    color: Colors.text,
+    letterSpacing: -0.2,
+  },
+  chartLegendRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+  },
+  chartLegendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  chartLegendDot: {
+    width: 8,
     height: 8,
-    borderRadius: Radius.pill,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    overflow: 'hidden',
-    position: 'relative',
+    borderRadius: 4,
   },
-  heroMeterFill: { height: '100%', borderRadius: Radius.pill },
-  heroMeterMarker: {
-    position: 'absolute',
-    top: -2, bottom: -2,
-    width: 3, marginLeft: -1.5,
-    backgroundColor: '#FFFFFF',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.3,
-    shadowRadius: 2,
-    zIndex: 10,
+  chartLegendText: {
+    ...Fonts.primary,
+    fontSize: 11,
+    color: Colors.textSecondary,
   },
-  heroLegendRow: {
+  lineChartWrap: {
+    flexDirection: 'row',
+    height: 140,
+  },
+  yAxis: {
+    width: 24,
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    paddingBottom: 12,
+  },
+  yAxisLabel: {
+    ...Fonts.primary,
+    fontSize: 10,
+    color: Colors.textMuted,
+  },
+  lineChartArea: {
+    flex: 1,
+  },
+  xAxisRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: -4,
+    paddingLeft: 24,
   },
-  heroLegendText: {
+  xAxisLabel: {
     ...Fonts.primary,
-    fontSize: 9,
-    color: Colors.pureWhite,
-    opacity: 0.7,
+    fontSize: 10,
+    color: Colors.textMuted,
   },
-  heroDivider: {
-    height: 1,
-    backgroundColor: Colors.pureWhite,
-    opacity: 0.10,
-  },
-  mainInsightText: {
-    ...Fonts.primary,
-    fontSize: 12,
-    lineHeight: 17,
-    color: Colors.pureWhite,
-    opacity: 0.85,
-  },
-  quickStats: {
+  chartStatsRow: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255,255,255,0.07)',
-    borderRadius: Radius.md,
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.06)',
+    borderTopWidth: 1,
+    borderTopColor: Colors.border,
+    paddingTop: Spacing.sm,
+    gap: Spacing.sm,
   },
-  quickStatItem: {
+  chartStatItem: {
     flex: 1,
-    paddingVertical: Spacing.smd,
-    paddingHorizontal: Spacing.smd,
+    gap: 2,
   },
-  quickStatItemBorder: {
-    borderLeftWidth: 1,
-    borderLeftColor: 'rgba(255,255,255,0.08)',
-  },
-  quickStatLabel: {
+  chartStatLabel: {
     ...Fonts.primary,
-    fontSize: 9,
-    color: Colors.pureWhite,
-    opacity: 0.7,
+    fontSize: 10,
+    color: Colors.textMuted,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 3,
+    letterSpacing: 0.3,
   },
-  quickStatValue: {
+  chartStatValue: {
     ...Fonts.primary,
     ...Fonts.bold,
     fontSize: 13,
-    color: Colors.pureWhite,
+    color: Colors.text,
     letterSpacing: -0.3,
+  },
+  chartStatHint: {
+    ...Fonts.primary,
+    fontSize: 10,
+    marginTop: 1,
+  },
+
+  // ── Info cards ──────────────────────────────────────────
+  infoCard: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: Colors.white,
+    borderRadius: Radius.xl,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.borderStrong,
+    ...Shadow.soft,
+  },
+  infoCardLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    flex: 1,
+  },
+  infoCardLabel: {
+    ...Fonts.primary,
+    ...Fonts.semiBold,
+    fontSize: 12,
+    color: Colors.text,
+  },
+  infoCardRight: {
+    alignItems: 'flex-end',
+  },
+  infoCardValue: {
+    ...Fonts.primary,
+    ...Fonts.bold,
+    fontSize: 15,
+    letterSpacing: -0.3,
+  },
+  infoCardHint: {
+    ...Fonts.primary,
+    fontSize: 10,
+    marginTop: 1,
   },
 
   // ── Accordion panel ───────────────────────────────────────
   softPanel: {
     backgroundColor: Colors.white,
-    borderRadius: Radius.lg,
+    borderRadius: Radius.xl,
     borderWidth: 1,
     borderColor: Colors.borderStrong,
     overflow: 'hidden',
@@ -1115,6 +1190,41 @@ function makeStyles(Colors) { return StyleSheet.create({
     lineHeight: 17,
     color: Colors.textSecondary,
     paddingVertical: Spacing.xs,
+  },
+
+  // ── Categories card ──────────────────────────────────────
+  categoriesCard: {
+    backgroundColor: Colors.white,
+    borderRadius: Radius.xl,
+    padding: Spacing.md,
+    borderWidth: 1,
+    borderColor: Colors.borderStrong,
+    ...Shadow.soft,
+    gap: 0,
+  },
+  categoriesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: Spacing.sm,
+  },
+  categoriesTitle: {
+    ...Fonts.primary,
+    ...Fonts.bold,
+    fontSize: 14,
+    color: Colors.text,
+    letterSpacing: -0.2,
+  },
+  categoriesTag: {
+    ...Fonts.primary,
+    ...Fonts.semiBold,
+    fontSize: 10,
+    color: Colors.textSecondary,
+    backgroundColor: Colors.surfaceAlt,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: Radius.pill,
+    overflow: 'hidden',
   },
 
   // ── Summary rows ──────────────────────────────────────────
@@ -1219,129 +1329,4 @@ function makeStyles(Colors) { return StyleSheet.create({
     ...Fonts.semiBold,
   },
 
-  // ── Evolution chart ───────────────────────────────────────
-  panelSubtitle: {
-    ...Fonts.primary,
-    fontSize: 12,
-    color: Colors.textSecondary,
-    lineHeight: 17,
-  },
-  panelDivider: {
-    height: 1,
-    backgroundColor: Colors.border,
-  },
-  chart: {
-    height: 100,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: 5,
-  },
-  chartColumn: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: 4,
-  },
-  chartBarVal: {
-    ...Fonts.primary,
-    ...Fonts.bold,
-    fontSize: 8,
-    color: Colors.accent,
-  },
-  chartTrack: {
-    flex: 1,
-    width: '100%',
-    justifyContent: 'flex-end',
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.xs,
-    overflow: 'hidden',
-    minWidth: 6,
-  },
-  chartBar: {
-    width: '100%',
-    borderRadius: Radius.xs,
-  },
-  chartLabel: {
-    ...Fonts.primary,
-    fontSize: 9,
-    color: Colors.textMuted,
-  },
-  chartLabelActive: {
-    ...Fonts.bold,
-    color: Colors.text,
-  },
-
-  avgLegend: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  avgLegendDash: {
-    flex: 1,
-    height: 1,
-    borderStyle: 'dashed',
-    borderWidth: 1,
-    borderColor: Colors.borderStrong,
-  },
-  avgLegendTxt: {
-    ...Fonts.primary,
-    ...Fonts.semiBold,
-    fontSize: 10,
-    color: Colors.textSecondary,
-  },
-
-  trendFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: Spacing.md,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    paddingHorizontal: Spacing.smd,
-    paddingVertical: Spacing.sm,
-  },
-  trendStat: { gap: 2 },
-  trendStatLabel: {
-    ...Fonts.primary,
-    fontSize: 10,
-    color: Colors.textMuted,
-  },
-  trendStatValue: {
-    ...Fonts.primary,
-    ...Fonts.bold,
-    fontSize: 13,
-    color: Colors.text,
-    letterSpacing: -0.3,
-  },
-
-  // ── Hero extras ───────────────────────────────────────────
-  heroContextMsg: {
-    ...Fonts.primary,
-    ...Fonts.bold,
-    fontSize: 12,
-    color: '#FECACA',
-    letterSpacing: 0.1,
-  },
-  heroProjectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderRadius: Radius.sm,
-    paddingHorizontal: Spacing.smd,
-    paddingVertical: Spacing.xs,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.1)',
-  },
-  heroProjectionLabel: {
-    ...Fonts.primary,
-    fontSize: 10,
-    color: Colors.pureWhite,
-    opacity: 0.7,
-  },
-  heroProjectionValue: {
-    ...Fonts.primary,
-    ...Fonts.bold,
-    fontSize: 12,
-    letterSpacing: -0.2,
-  },
 }); }

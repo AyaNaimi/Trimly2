@@ -27,21 +27,28 @@ const Stack = createNativeStackNavigator();
 import { PremiumHaptics } from '../utils/haptics';
 
 // Custom tab bar - Premium Floating Glass
+import { BlurView } from 'expo-blur';
+
 function LunaTabBar({ state, navigation }) {
   const insets = useSafeAreaInsets();
   const { Colors, isDark } = useTheme();
   const { t } = useLanguage();
 
-  const tabBarBg = isDark ? Colors.surface : '#1E293B';
-  const activeCapBg = isDark ? Colors.surfaceAlt : Colors.white;
-  const activeTextColor = isDark ? Colors.text : '#0F172A';
-  const inactiveIconColor = isDark ? Colors.textSecondary : Colors.white;
+  const activeCapBg = isDark ? Colors.surfaceAlt : '#1E293B'; // Sombre en dark, slate en light
+  const activeTextColor = Colors.pureWhite;
+  const inactiveIconColor = isDark ? Colors.textSecondary : '#64748B'; // Gris adapté
+
+  const tabBarBg = isDark ? 'rgba(5, 11, 24, 0.92)' : 'rgba(252, 251, 248, 0.95)'; // Bleu nuit en dark, blanc cassé en light
+  const tabBarBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)';
 
   return (
-    <View style={[
-      styles.tabBar,
-      { bottom: Math.max(insets.bottom, 16), backgroundColor: tabBarBg },
-    ]}>
+    <BlurView intensity={isDark ? 40 : 60} tint={isDark ? 'dark' : 'light'} style={[styles.tabBar, {
+      bottom: Math.max(insets.bottom, 16),
+      backgroundColor: tabBarBg,
+      borderWidth: 1,
+      borderColor: tabBarBorder,
+    }]}
+    >
       {state.routes.map((route, index) => {
         const focused = state.index === index;
         const handlePress = () => {
@@ -65,7 +72,8 @@ function LunaTabBar({ state, navigation }) {
             style={[styles.tabBtn, focused && styles.tabBtnActive]}
           >
             {focused && (
-              <View style={[styles.activeCapsule, { backgroundColor: activeCapBg }]}>
+              <View style={[styles.activeCapsule, { backgroundColor: activeCapBg }]}
+              >
                 <TabIcon name={route.name} focused={focused} color={iconColor} />
                 <Text style={[styles.tabLabelActive, { color: activeTextColor }]}>{labels[index]}</Text>
               </View>
@@ -74,7 +82,7 @@ function LunaTabBar({ state, navigation }) {
           </Pressable>
         );
       })}
-    </View>
+    </BlurView>
   );
 }
 
@@ -213,6 +221,7 @@ const styles = StyleSheet.create({
     right: 20,
     bottom: Platform.select({ ios: 34, android: 24 }),
     borderRadius: 32,
+    overflow: 'hidden',
     ...Shadow.premium,
     // backgroundColor set dynamically in LunaTabBar
     height: 68,

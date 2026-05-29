@@ -1,0 +1,15 @@
+Add your app screenshots here:
+
+1. app-screenshot.png - Main hero section screenshot
+2. feature-1.png - Feature screenshots (optional)
+3. og-image.jpg - Open Graph image for social media sharing (1200x630px)
+
+Recommended sizes:
+- app-screenshot.png: 300x600px (phone mockup)
+- og-image.jpg: 1200x630px (social media)
+
+You can use screenshots from your Expo app or create mockups using tools like:
+- Figma
+- Sketch
+- Adobe XD
+- Online mockup generators (Mockuphone, Smartmockups, etc.)

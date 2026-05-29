@@ -229,13 +229,23 @@ export default function SettingsScreen() {
         style: 'destructive', 
         onPress: async () => { 
           try {
+            const currentSession = state.session; // Save session before reset
+            
             // Delete from cloud if logged in
-            if (state.session) {
+            if (currentSession) {
               const { DatabaseService } = require('../../services/databaseService');
-              await DatabaseService.resetAllData(state.session.user.id);
+              await DatabaseService.resetAllData(currentSession.user.id);
             }
-            // Reset local state
+            
+            // Reset local state after cloud update
             dispatch({ type: 'RESET_APP' }); 
+            
+            // Force income to 0 in both state and profile
+            dispatch({ type: 'SET_INCOME', payload: 0 });
+            if (state.profile) {
+              dispatch({ type: 'UPDATE_PROFILE', payload: { income: 0 } });
+            }
+            
             PremiumHaptics.impact();
           } catch (error) {
             console.error('Error resetting app:', error);

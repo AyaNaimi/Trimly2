@@ -457,5 +457,12 @@ export const DatabaseService = {
     // Optionally delete detected subscriptions and scan history
     await supabase.from('detected_subscriptions').delete().eq('user_id', userId);
     await supabase.from('scan_history').delete().eq('user_id', userId);
+
+    // Reset income in profile
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ income: 0 })
+      .eq('id', userId);
+    if (profileError) throw profileError;
   }
 };
