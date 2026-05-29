@@ -1,1564 +1,484 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Trimly - Minimal Excellence Budget & Subscription Tracker</title>
-  <meta name="description" content="Trimly is a premium, minimal mobile budgeting and subscription monitoring application. Manage your finances, get smart alerts, and securely scan receipts.">
-  
-  <!-- Google Fonts: Outfit & Inter -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  
-  <!-- FAVICON & BRANDING ICONS -->
-  <link rel="icon" href="/logo.png" type="image/png">
-  
-  <!-- GOOGLE SEARCH CONSOLE VERIFICATION PLACEHOLDER -->
-  <!-- TO VERIFY OWNERSHIP, PASTE YOUR GOOGLE META TAG HERE: -->
-  <!-- <meta name="google-site-verification" content="YOUR_VERIFICATION_CODE" /> -->
-
-  <style>
-    /* RESET & CORE VARIABLES */
-    :root {
-      --bg-color: #0A0E27;
-      --accent-color: #5B3BF5;
-      --accent-gradient: linear-gradient(135deg, #5B3BF5 0%, #7A60F9 100%);
-      --accent-glow: rgba(91, 59, 245, 0.45);
-      --card-bg: rgba(255, 255, 255, 0.03);
-      --card-border: rgba(255, 255, 255, 0.08);
-      --text-primary: #FFFFFF;
-      --text-secondary: #94A3B8;
-      --text-muted: #64748B;
-      --font-display: 'Outfit', 'Inter', sans-serif;
-      --font-body: 'Inter', sans-serif;
-      --transition-smooth: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html {
-      scroll-behavior: smooth;
-      background-color: var(--bg-color);
-      color: var(--text-primary);
-      font-family: var(--font-body);
-      overflow-x: hidden;
-    }
-
-    body {
-      min-height: 100vh;
-      overflow-x: hidden;
-      line-height: 1.6;
-    }
-
-    /* GLOBAL CONTAINER & UTILITIES */
-    .container {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 0 2rem;
-    }
-
-    .gradient-text {
-      background: var(--accent-gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    /* SPLASH-HERO SCREEN (100VH) */
-    .hero-fold {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background-color: var(--bg-color);
-      overflow: hidden;
-      z-index: 10;
-    }
-
-    /* Animated background glow nodes */
-    .bg-glow-1 {
-      position: absolute;
-      top: 15%;
-      left: 10%;
-      width: 450px;
-      height: 450px;
-      background: radial-gradient(circle, var(--accent-glow) 0%, rgba(91, 59, 245, 0) 70%);
-      filter: blur(80px);
-      opacity: 0.5;
-      animation: float-slow 12s infinite alternate;
-      pointer-events: none;
-    }
-
-    .bg-glow-2 {
-      position: absolute;
-      bottom: 10%;
-      right: 10%;
-      width: 500px;
-      height: 500px;
-      background: radial-gradient(circle, rgba(122, 96, 249, 0.3) 0%, rgba(122, 96, 249, 0) 70%);
-      filter: blur(100px);
-      opacity: 0.4;
-      animation: float-slow-reverse 15s infinite alternate;
-      pointer-events: none;
-    }
-
-    .splash-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-      animation: fade-scale-in 1.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-      z-index: 2;
-    }
-
-    .splash-logo {
-      width: 120px;
-      height: 120px;
-      margin-bottom: 2rem;
-      border-radius: 28px;
-      box-shadow: 0 15px 40px rgba(91, 59, 245, 0.25);
-      animation: pulse-logo 3s infinite ease-in-out;
-    }
-
-    .splash-title {
-      font-family: var(--font-display);
-      font-size: 3.5rem;
-      font-weight: 900;
-      letter-spacing: 0.35em;
-      color: var(--text-primary);
-      text-transform: uppercase;
-      margin-bottom: 0.5rem;
-      text-indent: 0.35em; /* Perfectly centers despite letter spacing */
-    }
-
-    .splash-tagline {
-      font-family: var(--font-display);
-      font-size: 1.1rem;
-      font-weight: 300;
-      color: var(--text-secondary);
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      opacity: 0.85;
-      margin-bottom: 3rem;
-      text-indent: 0.2em;
-    }
-
-    /* SCROLL INDICATOR */
-    .scroll-indicator {
-      position: absolute;
-      bottom: 2.5rem;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-decoration: none;
-      color: var(--text-secondary);
-      font-size: 0.85rem;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      opacity: 0.7;
-      transition: var(--transition-smooth);
-      cursor: pointer;
-      z-index: 5;
-    }
-
-    .scroll-indicator:hover {
-      opacity: 1;
-      color: var(--text-primary);
-      transform: translateY(3px);
-    }
-
-    .scroll-arrow {
-      width: 24px;
-      height: 24px;
-      margin-top: 8px;
-      fill: none;
-      stroke: currentColor;
-      stroke-width: 2;
-      stroke-linecap: round;
-      stroke-linejoin: round;
-      animation: bounce-arrow 1.8s infinite ease-in-out;
-    }
-
-    /* NAVIGATION HEADER */
-    .header-nav {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 80px;
-      display: flex;
-      align-items: center;
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      background-color: rgba(10, 14, 39, 0.75);
-      border-bottom: 1px solid var(--card-border);
-      z-index: 100;
-      opacity: 0;
-      transform: translateY(-20px);
-      animation: slide-down 0.8s 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-
-    .nav-container {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      width: 100%;
-    }
-
-    .brand-logo-container {
-      display: flex;
-      align-items: center;
-      text-decoration: none;
-      color: var(--text-primary);
-      font-family: var(--font-display);
-      font-weight: 800;
-      font-size: 1.5rem;
-      letter-spacing: 1px;
-    }
-
-    .brand-mini-logo {
-      width: 36px;
-      height: 36px;
-      border-radius: 9px;
-      margin-right: 0.75rem;
-    }
-
-    .nav-menu {
-      display: flex;
-      list-style: none;
-      gap: 2.5rem;
-      align-items: center;
-    }
-
-    .nav-link {
-      text-decoration: none;
-      color: var(--text-secondary);
-      font-size: 0.95rem;
-      font-weight: 500;
-      transition: var(--transition-smooth);
-    }
-
-    .nav-link:hover {
-      color: var(--text-primary);
-    }
-
-    .btn-header {
-      background: var(--accent-gradient);
-      color: var(--text-primary);
-      padding: 0.65rem 1.4rem;
-      border-radius: 50px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      border: none;
-      cursor: pointer;
-      text-decoration: none;
-      box-shadow: 0 4px 15px var(--accent-glow);
-      transition: var(--transition-smooth);
-    }
-
-    .btn-header:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(91, 59, 245, 0.6);
-    }
-
-    /* SECTIONS LAYOUT */
-    section {
-      padding: 7.5rem 0;
-      position: relative;
-    }
-
-    .section-title-wrap {
-      text-align: center;
-      max-width: 700px;
-      margin: 0 auto 4.5rem auto;
-    }
-
-    .section-subtitle {
-      font-family: var(--font-display);
-      font-size: 0.85rem;
-      font-weight: 700;
-      color: var(--accent-color);
-      text-transform: uppercase;
-      letter-spacing: 0.25em;
-      margin-bottom: 0.75rem;
-    }
-
-    .section-title {
-      font-family: var(--font-display);
-      font-size: 2.5rem;
-      font-weight: 800;
-      line-height: 1.25;
-      color: var(--text-primary);
-      margin-bottom: 1.25rem;
-    }
-
-    .section-desc {
-      font-size: 1.1rem;
-      color: var(--text-secondary);
-    }
-
-    /* SPECIFIC SECTIONS */
-    
-    /* 1. APP OVERVIEW (THE PURPOSE) */
-    .overview-content {
-      display: grid;
-      grid-template-columns: 1.1fr 0.9fr;
-      gap: 4rem;
-      align-items: center;
-    }
-
-    .overview-text h3 {
-      font-family: var(--font-display);
-      font-size: 1.8rem;
-      font-weight: 700;
-      margin-bottom: 1.5rem;
-    }
-
-    .overview-text p {
-      font-size: 1.1rem;
-      color: var(--text-secondary);
-      margin-bottom: 1.5rem;
-    }
-
-    .disclosure-box {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 20px;
-      padding: 1.75rem;
-      margin-top: 2rem;
-      backdrop-filter: blur(10px);
-    }
-
-    .disclosure-box h4 {
-      font-family: var(--font-display);
-      font-size: 1.1rem;
-      color: var(--text-primary);
-      margin-bottom: 0.75rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .disclosure-box p {
-      font-size: 0.95rem;
-      color: var(--text-secondary);
-      line-height: 1.5;
-      margin-bottom: 0;
-    }
-
-    /* High quality interactive mockups inside page */
-    .mockup-container {
-      position: relative;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
-    .phone-frame {
-      width: 290px;
-      height: 590px;
-      background: #0f132e;
-      border: 10px solid #1e244d;
-      border-radius: 40px;
-      box-shadow: 0 25px 70px rgba(0, 0, 0, 0.6), 0 0 50px rgba(91, 59, 245, 0.15);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .phone-notch {
-      width: 140px;
-      height: 25px;
-      background: #1e244d;
-      position: absolute;
-      top: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      border-bottom-left-radius: 18px;
-      border-bottom-right-radius: 18px;
-      z-index: 100;
-    }
-
-    /* MOCKUP INTERNALS */
-    .phone-screen {
-      width: 100%;
-      height: 100%;
-      padding: 40px 20px 20px 20px;
-      display: flex;
-      flex-direction: column;
-      background-color: var(--bg-color);
-      font-size: 0.85rem;
-    }
-
-    .mock-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-    }
-
-    .mock-profile {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .mock-avatar {
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: var(--accent-gradient);
-    }
-
-    .mock-balance-card {
-      background: var(--accent-gradient);
-      border-radius: 20px;
-      padding: 1.25rem;
-      color: #fff;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 10px 25px rgba(91, 59, 245, 0.3);
-    }
-
-    .mock-label {
-      font-size: 0.65rem;
-      opacity: 0.8;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-    }
-
-    .mock-val {
-      font-family: var(--font-display);
-      font-size: 1.6rem;
-      font-weight: 800;
-      margin: 4px 0;
-    }
-
-    .mock-sub-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 0.7rem;
-      opacity: 0.9;
-      margin-top: 8px;
-      border-top: 1px solid rgba(255, 255, 255, 0.15);
-      padding-top: 8px;
-    }
-
-    .mock-section-title {
-      font-family: var(--font-display);
-      font-size: 0.9rem;
-      font-weight: 700;
-      margin-bottom: 0.75rem;
-    }
-
-    .mock-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .mock-item {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 14px;
-      padding: 10px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .mock-item-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .mock-icon {
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
-      background: rgba(255,255,255,0.06);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 0.7rem;
-    }
-
-    .mock-item-title {
-      font-weight: 600;
-      font-size: 0.75rem;
-    }
-
-    .mock-item-subtitle {
-      font-size: 0.6rem;
-      color: var(--text-secondary);
-    }
-
-    .mock-item-right {
-      text-align: right;
-    }
-
-    .mock-price {
-      font-weight: 700;
-      font-size: 0.75rem;
-    }
-
-    /* 2. FEATURES GRID */
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 2.5rem;
-    }
-
-    .feature-card {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 24px;
-      padding: 2.75rem 2.25rem;
-      transition: var(--transition-smooth);
-      position: relative;
-      overflow: hidden;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-
-    .feature-card:hover {
-      transform: translateY(-8px);
-      border-color: rgba(91, 59, 245, 0.4);
-      box-shadow: 0 15px 40px rgba(91, 59, 245, 0.08);
-    }
-
-    .feature-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 4px;
-      background: var(--accent-gradient);
-      transform: scaleX(0);
-      transform-origin: left;
-      transition: var(--transition-smooth);
-    }
-
-    .feature-card:hover::before {
-      transform: scaleX(1);
-    }
-
-    .feat-icon-wrap {
-      width: 64px;
-      height: 64px;
-      border-radius: 18px;
-      background: rgba(91, 59, 245, 0.1);
-      border: 1px solid rgba(91, 59, 245, 0.2);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 2rem;
-      color: #7A60F9;
-      transition: var(--transition-smooth);
-    }
-
-    .feature-card:hover .feat-icon-wrap {
-      background: var(--accent-gradient);
-      color: #fff;
-      box-shadow: 0 8px 20px var(--accent-glow);
-    }
-
-    .feat-icon-wrap svg {
-      width: 28px;
-      height: 28px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 2;
-    }
-
-    .feat-title {
-      font-family: var(--font-display);
-      font-size: 1.4rem;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      color: var(--text-primary);
-    }
-
-    .feat-desc {
-      font-size: 0.95rem;
-      color: var(--text-secondary);
-      line-height: 1.6;
-    }
-
-    /* 3. EMAIL SCANNER FOCUS (THE CORE OAUTH SCOPE FOCUS) */
-    .scanner-section {
-      background: linear-gradient(180deg, var(--bg-color) 0%, #0d1234 50%, var(--bg-color) 100%);
-    }
-
-    .scanner-wrap {
-      display: grid;
-      grid-template-columns: 0.95fr 1.05fr;
-      gap: 5rem;
-      align-items: center;
-    }
-
-    .scanner-graphic {
-      position: relative;
-      display: flex;
-      justify-content: center;
-    }
-
-    .scanner-card {
-      width: 100%;
-      max-width: 440px;
-      background: rgba(15, 19, 46, 0.7);
-      border: 1px solid var(--card-border);
-      border-radius: 28px;
-      padding: 2.25rem;
-      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.4);
-      position: relative;
-      overflow: hidden;
-      backdrop-filter: blur(20px);
-    }
-
-    .scanner-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      border-bottom: 1px solid var(--card-border);
-      padding-bottom: 1.25rem;
-      margin-bottom: 1.5rem;
-    }
-
-    .scanner-title-text {
-      font-family: var(--font-display);
-      font-size: 1.1rem;
-      font-weight: 700;
-    }
-
-    .scan-status {
-      font-size: 0.75rem;
-      color: #10B981;
-      background: rgba(16, 185, 129, 0.1);
-      border: 1px solid rgba(16, 185, 129, 0.2);
-      padding: 0.25rem 0.75rem;
-      border-radius: 50px;
-      font-weight: 600;
-      animation: pulse-light 2s infinite;
-    }
-
-    .email-node {
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid var(--card-border);
-      border-radius: 16px;
-      padding: 1.25rem;
-      margin-bottom: 1rem;
-      display: flex;
-      gap: 1.25rem;
-      align-items: center;
-      position: relative;
-      transition: var(--transition-smooth);
-    }
-
-    .email-node.scanning {
-      border-color: rgba(91, 59, 245, 0.5);
-      background: rgba(91, 59, 245, 0.05);
-    }
-
-    .email-node.scanning::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgba(91, 59, 245, 0.1) 50%, rgba(255, 255, 255, 0) 100%);
-      animation: scan-line 2.5s infinite linear;
-      border-radius: 16px;
-      pointer-events: none;
-    }
-
-    .email-avatar {
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.05);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.2rem;
-    }
-
-    .email-info {
-      flex: 1;
-    }
-
-    .email-subject {
-      font-weight: 600;
-      font-size: 0.9rem;
-      margin-bottom: 3px;
-    }
-
-    .email-snippet {
-      font-size: 0.75rem;
-      color: var(--text-secondary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 250px;
-    }
-
-    .email-tag {
-      font-size: 0.7rem;
-      font-weight: 700;
-      padding: 0.2rem 0.5rem;
-      border-radius: 6px;
-      text-transform: uppercase;
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    .email-tag.detected {
-      background: rgba(91, 59, 245, 0.2);
-      color: #A78BFA;
-      border: 1px solid rgba(91, 59, 245, 0.3);
-    }
-
-    /* OAUTH DISCLOSURE BULLETS */
-    .scanner-text h3 {
-      font-family: var(--font-display);
-      font-size: 2.2rem;
-      font-weight: 800;
-      margin-bottom: 1.5rem;
-      line-height: 1.25;
-    }
-
-    .scanner-text p {
-      font-size: 1.05rem;
-      color: var(--text-secondary);
-      margin-bottom: 2rem;
-    }
-
-    .disclosure-list {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 1.25rem;
-    }
-
-    .disclosure-item {
-      display: flex;
-      gap: 1rem;
-      align-items: flex-start;
-    }
-
-    .disclosure-icon {
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      background: rgba(16, 185, 129, 0.15);
-      color: #10B981;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      margin-top: 3px;
-    }
-
-    .disclosure-icon svg {
-      width: 14px;
-      height: 14px;
-      stroke: currentColor;
-      fill: none;
-      stroke-width: 3;
-    }
-
-    .disclosure-desc strong {
-      color: var(--text-primary);
-      display: block;
-      font-size: 1.05rem;
-      margin-bottom: 4px;
-    }
-
-    .disclosure-desc span {
-      font-size: 0.95rem;
-      color: var(--text-secondary);
-    }
-
-    /* 4. SECURITY FAQ SECTION */
-    .faq-section {
-      background: var(--bg-color);
-    }
-
-    .faq-list {
-      max-width: 800px;
-      margin: 0 auto;
-      display: flex;
-      flex-direction: column;
-      gap: 1.5rem;
-    }
-
-    .faq-item {
-      background: var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 20px;
-      padding: 2rem;
-      transition: var(--transition-smooth);
-    }
-
-    .faq-item:hover {
-      border-color: rgba(255, 255, 255, 0.15);
-    }
-
-    .faq-question {
-      font-family: var(--font-display);
-      font-size: 1.2rem;
-      font-weight: 700;
-      margin-bottom: 0.75rem;
-      color: var(--text-primary);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .faq-answer {
-      font-size: 0.95rem;
-      color: var(--text-secondary);
-      line-height: 1.6;
-    }
-
-    /* 5. DOWNLOAD CTA SECTION */
-    .cta-section {
-      text-align: center;
-      position: relative;
-    }
-
-    .cta-card {
-      background: radial-gradient(circle at top right, rgba(91, 59, 245, 0.15) 0%, rgba(10, 14, 39, 0) 60%), var(--card-bg);
-      border: 1px solid var(--card-border);
-      border-radius: 36px;
-      padding: 5rem 2rem;
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      max-width: 1000px;
-      margin: 0 auto;
-      box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
-    }
-
-    .cta-title {
-      font-family: var(--font-display);
-      font-size: 3rem;
-      font-weight: 800;
-      margin-bottom: 1.5rem;
-    }
-
-    .cta-desc {
-      font-size: 1.2rem;
-      color: var(--text-secondary);
-      max-width: 600px;
-      margin: 0 auto 3rem auto;
-    }
-
-    .download-buttons {
-      display: flex;
-      justify-content: center;
-      gap: 1.5rem;
-      flex-wrap: wrap;
-    }
-
-    .btn-download {
-      background: var(--text-primary);
-      color: var(--bg-color);
-      text-decoration: none;
-      padding: 1rem 2rem;
-      border-radius: 50px;
-      font-weight: 700;
-      font-size: 1.05rem;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      box-shadow: 0 10px 25px rgba(255, 255, 255, 0.1);
-      transition: var(--transition-smooth);
-    }
-
-    .btn-download:hover {
-      transform: translateY(-3px);
-      background: var(--accent-color);
-      color: #fff;
-      box-shadow: 0 15px 30px var(--accent-glow);
-    }
-
-    .btn-download svg {
-      width: 24px;
-      height: 24px;
-      fill: currentColor;
-    }
-
-    /* FOOTER */
-    footer {
-      background-color: #050716;
-      border-top: 1px solid var(--card-border);
-      padding: 4.5rem 0 3rem 0;
-      color: var(--text-secondary);
-      font-size: 0.95rem;
-    }
-
-    .footer-wrap {
-      display: grid;
-      grid-template-columns: 1.5fr 1fr 1fr;
-      gap: 4rem;
-      margin-bottom: 4rem;
-    }
-
-    .footer-brand h4 {
-      font-family: var(--font-display);
-      color: var(--text-primary);
-      font-size: 1.4rem;
-      font-weight: 800;
-      margin-bottom: 1.25rem;
-      letter-spacing: 1px;
-    }
-
-    .footer-brand p {
-      line-height: 1.6;
-      margin-bottom: 1.5rem;
-    }
-
-    .footer-links-col h5 {
-      font-family: var(--font-display);
-      color: var(--text-primary);
-      font-size: 0.95rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      margin-bottom: 1.5rem;
-    }
-
-    .footer-links {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 1rem;
-    }
-
-    .footer-links a {
-      color: var(--text-secondary);
-      text-decoration: none;
-      transition: var(--transition-smooth);
-    }
-
-    .footer-links a:hover {
-      color: var(--text-primary);
-      padding-left: 4px;
-    }
-
-    .footer-bottom {
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
-      padding-top: 2.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 1.5rem;
-    }
-
-    .footer-bottom p {
-      font-size: 0.85rem;
-    }
-
-    .lang-switcher {
-      display: flex;
-      gap: 10px;
-    }
-
-    .lang-btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid var(--card-border);
-      color: var(--text-secondary);
-      padding: 0.35rem 0.85rem;
-      font-size: 0.8rem;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: var(--transition-smooth);
-    }
-
-    .lang-btn.active, .lang-btn:hover {
-      background: var(--accent-gradient);
-      color: #fff;
-      border-color: transparent;
-    }
-
-    /* MULTILINGUAL TOGGLE HELPERS */
-    [lang="fr"] {
-      display: none; /* Hide French elements by default, English is default */
-    }
-
-    /* KEYFRAMES & ANIMATIONS */
-    @keyframes fade-scale-in {
-      0% {
-        opacity: 0;
-        transform: scale(0.92);
-      }
-      100% {
-        opacity: 1;
-        transform: scale(1);
-      }
-    }
-
-    @keyframes slide-down {
-      0% {
-        opacity: 0;
-        transform: translateY(-20px);
-      }
-      100% {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    @keyframes pulse-logo {
-      0%, 100% {
-        transform: scale(1);
-        box-shadow: 0 15px 40px rgba(91, 59, 245, 0.25);
-      }
-      50% {
-        transform: scale(1.03);
-        box-shadow: 0 20px 50px rgba(91, 59, 245, 0.45);
-      }
-    }
-
-    @keyframes bounce-arrow {
-      0%, 20%, 50%, 80%, 100% {
-        transform: translateY(0);
-      }
-      40% {
-        transform: translateY(-8px);
-      }
-      60% {
-        transform: translateY(-4px);
-      }
-    }
-
-    @keyframes float-slow {
-      0% {
-        transform: translate(0, 0) scale(1);
-      }
-      100% {
-        transform: translate(30px, -45px) scale(1.1);
-      }
-    }
-
-    @keyframes float-slow-reverse {
-      0% {
-        transform: translate(0, 0) scale(1.1);
-      }
-      100% {
-        transform: translate(-40px, 30px) scale(0.95);
-      }
-    }
-
-    @keyframes pulse-light {
-      0%, 100% { opacity: 0.9; }
-      50% { opacity: 0.5; }
-    }
-
-    @keyframes scan-line {
-      0% { transform: translateY(-100%); }
-      100% { transform: translateY(100%); }
-    }
-
-    /* RESPONSIVE MEDIA QUERIES */
-    @media (max-width: 968px) {
-      .overview-content, .scanner-wrap {
-        grid-template-columns: 1fr;
-        gap: 3.5rem;
-      }
-      
-      .mockup-container, .scanner-graphic {
-        order: 2; /* Put visual assets on bottom on mobile */
-      }
-
-      .splash-title {
-        font-size: 2.75rem;
-      }
-
-      .section-title {
-        font-size: 2.1rem;
-      }
-      
-      .footer-wrap {
-        grid-template-columns: 1fr;
-        gap: 2.5rem;
-      }
-    }
-
-    @media (max-width: 576px) {
-      .container {
-        padding: 0 1.25rem;
-      }
-
-      .splash-title {
-        font-size: 2.2rem;
-        letter-spacing: 0.25em;
-      }
-
-      .splash-logo {
-        width: 100px;
-        height: 100px;
-      }
-
-      .nav-menu {
-        display: none; /* Hide full nav menu on small mobile */
-      }
-
-      .section-title {
-        font-size: 1.85rem;
-      }
-
-      .feature-card {
-        padding: 2.25rem 1.75rem;
-      }
-
-      .faq-item {
-        padding: 1.5rem;
-      }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trimly - Smart Expense Tracker</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
-
-  <!-- FLOATING DECORATIVE BACKGROUND GLOWS -->
-  <div class="bg-glow-1"></div>
-  <div class="bg-glow-2"></div>
-
-  <!-- FIXED FLOATING BILINGUAL NAVIGATION HEADER -->
-  <header class="header-nav">
-    <div class="container nav-container">
-      <a href="#home" class="brand-logo-container">
-        <img src="/logo.png" alt="Trimly Logo" class="brand-mini-logo">
-        <span>TRIMLY</span>
-      </a>
-      <ul class="nav-menu">
-        <li><a href="#about" class="nav-link" data-en="About" data-fr="À Propos">About</a></li>
-        <li><a href="#features" class="nav-link" data-en="Features" data-fr="Fonctions">Features</a></li>
-        <li><a href="#security" class="nav-link" data-en="OAuth & Safety" data-fr="Sécurité & OAuth">OAuth & Safety</a></li>
-        <li><a href="#faq" class="nav-link" data-en="FAQ" data-fr="FAQ">FAQ</a></li>
-      </ul>
-      <a href="#download" class="btn-header" data-en="Get Trimly" data-fr="Télécharger">Get Trimly</a>
-    </div>
-  </header>
-
-  <!-- SPLASH SCREEN MODE (HERO FOLD) -->
-  <section class="hero-fold" id="home">
-    <div class="splash-container">
-      <img src="/logo.png" alt="Trimly App Logo" class="splash-logo">
-      <h1 class="splash-title">TRIMLY</h1>
-      <p class="splash-tagline" data-en="Minimal Excellence" data-fr="Excellence Minimale">Minimal Excellence</p>
-    </div>
-    <a href="#about" class="scroll-indicator">
-      <span data-en="Explore Trimly" data-fr="Découvrir Trimly">Explore Trimly</span>
-      <svg class="scroll-arrow" viewBox="0 0 24 24">
-        <path d="M12 5v14M19 12l-7 7-7-7"/>
-      </svg>
-    </a>
-  </section>
-
-  <!-- 1. MAIN APP OVERVIEW (THE PURPOSE) -->
-  <section id="about">
-    <div class="container">
-      <div class="overview-content">
-        <div class="overview-text">
-          <div class="section-subtitle" data-en="Introducing Trimly" data-fr="Découvrez Trimly">Introducing Trimly</div>
-          <h2 class="section-title" data-en="Take Control of Your Financial Life" data-fr="Reprenez le Contrôle de vos Finances">Take Control of Your Financial Life</h2>
-          
-          <div class="lang-block-en">
-            <p><strong>Trimly</strong> is a sleek, premium personal finance assistant built specifically to tackle modern spending challenges. Our app specializes in subscription tracking, budget categories, and automated payment alerts, putting absolute control right back in your hands.</p>
-            <p>Whether you're looking to stick to a weekly budget, track trial subscriptions before they charge you, or automatically detect new subscription invoices inside your mailbox, Trimly provides an intuitive, high-performance experience without clutter.</p>
-          </div>
-
-          <div class="lang-block-fr">
-            <p><strong>Trimly</strong> est un assistant financier élégant et premium conçu pour relever les défis budgétaires modernes. Notre application se spécialise dans le suivi des abonnements, la gestion par catégories budgétaires et les rappels automatiques, vous redonnant ainsi un contrôle absolu.</p>
-            <p>Que vous souhaitiez respecter un budget hebdomadaire, surveiller les périodes d'essai de vos abonnements avant d'être débité, ou détecter automatiquement les nouvelles factures dans votre boîte mail, Trimly offre une expérience intuitive et performante.</p>
-          </div>
-
-          <!-- OAuth Scope Explicit Clarification & Link to Privacy/Terms -->
-          <div class="disclosure-box">
-            <h4 data-en="🔐 Google OAuth & User Consent" data-fr="🔐 Google OAuth & Consentement">
-              <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="color: #7A60F9; vertical-align: middle;">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-              </svg>
-              <span data-en="Google User Data & OAuth Consent" data-fr="Données Google & Consentement OAuth">Google User Data & OAuth Consent</span>
-            </h4>
-            <p class="lang-block-en">Trimly integrates with Google Sign-In and requests <strong>read-only access to your Gmail messages</strong>. We only use this permission to scan invoices and receipts from digital subscriptions to calculate your budget. <strong>All analysis is performed privately and securely. Your emails are never stored, sold, or shared.</strong> Read our French <a href="/privacy.html" style="color: #A78BFA; text-decoration: underline;">Privacy Policy</a> or <a href="/terms.html" style="color: #A78BFA; text-decoration: underline;">Terms of Service</a> for complete details.</p>
-            <p class="lang-block-fr">Trimly intègre Google Sign-In et demande un <strong>accès en lecture seule à vos messages Gmail</strong>. Nous utilisons cette permission uniquement pour identifier les factures d'abonnements numériques. <strong>Toutes les analyses sont effectuées de manière privée et sécurisée. Vos emails ne sont jamais stockés, vendus ou partagés.</strong> Consultez notre <a href="/privacy.html" style="color: #A78BFA; text-decoration: underline;">Politique de Confidentialité</a> ou nos <a href="/terms.html" style="color: #A78BFA; text-decoration: underline;">Conditions d'Utilisation</a> pour plus de détails.</p>
-          </div>
-        </div>
-
-        <div class="mockup-container">
-          <!-- PREMIUM MOBILE APP SIMULATION -->
-          <div class="phone-frame">
-            <div class="phone-notch"></div>
-            <div class="phone-screen">
-              <div class="mock-header">
-                <div class="mock-profile">
-                  <div class="mock-avatar"></div>
-                  <div>
-                    <div style="font-weight: 700; font-size: 0.75rem;">Aya Naimi</div>
-                    <div style="font-size: 0.55rem; opacity: 0.6;">Premium Member</div>
-                  </div>
-                </div>
-                <div style="background: rgba(255,255,255,0.06); padding: 4px 8px; border-radius: 20px; font-size: 0.6rem; font-weight: 600;">USD ($)</div>
-              </div>
-
-              <div class="mock-balance-card">
-                <div class="mock-label" data-en="Weekly Budget Left" data-fr="Budget Hebdo. Restant">Weekly Budget Left</div>
-                <div class="mock-val">$184.20</div>
-                <div style="font-size: 0.65rem; opacity: 0.9;" data-en="Total Monthly Spent: $425.80" data-fr="Dépenses Mensuelles: $425.80">Total Monthly Spent: $425.80</div>
-                <div class="mock-sub-row">
-                  <span>Incomes: $1,250.00</span>
-                  <span>Savings: 25%</span>
-                </div>
-              </div>
-
-              <div class="mock-section-title" data-en="Active Subscriptions" data-fr="Abonnements Actifs">Active Subscriptions</div>
-              <div class="mock-list">
-                <div class="mock-item">
-                  <div class="mock-item-left">
-                    <div class="mock-icon" style="color: #E50914;">N</div>
-                    <div>
-                      <div class="mock-item-title">Netflix Premium</div>
-                      <div class="mock-item-subtitle" data-en="Renews in 3 days" data-fr="Renouvellement dans 3j">Renews in 3 days</div>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container">
+            <div class="logo">
+                <i class="fas fa-wallet"></i>
+                <span data-i18n="appName">Trimly</span>
+            </div>
+            
+            <div class="nav-links">
+                <a href="#features" data-i18n="nav.features">Features</a>
+                <a href="#how-it-works" data-i18n="nav.howItWorks">How It Works</a>
+                <a href="#pricing" data-i18n="nav.pricing">Pricing</a>
+                <a href="#why-choose" data-i18n="nav.whyChoose">Why Choose Us</a>
+            </div>
+            
+            <div class="nav-actions">
+                <button class="theme-toggle" id="themeToggle" aria-label="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                
+                <div class="language-selector">
+                    <button class="lang-btn" id="langBtn">
+                        <i class="fas fa-globe"></i>
+                        <span id="currentLang">EN</span>
+                    </button>
+                    <div class="lang-dropdown" id="langDropdown">
+                        <button data-lang="en">English</button>
+                        <button data-lang="fr">Français</button>
+                        <button data-lang="es">Español</button>
+                        <button data-lang="ar">العربية</button>
                     </div>
-                  </div>
-                  <div class="mock-item-right">
-                    <div class="mock-price">$22.99</div>
-                    <div class="mock-item-subtitle" data-en="Monthly" data-fr="Mensuel">Monthly</div>
-                  </div>
                 </div>
+                
+                <button class="cta-btn" data-i18n="nav.download">Download App</button>
+                
+                <button class="mobile-menu-toggle" id="mobileMenuToggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
 
-                <div class="mock-item">
-                  <div class="mock-item-left">
-                    <div class="mock-icon" style="color: #1DB954;">S</div>
-                    <div>
-                      <div class="mock-item-title">Spotify Duo</div>
-                      <div class="mock-item-subtitle" data-en="Renews in 8 days" data-fr="Renouvellement dans 8j">Renews in 8 days</div>
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+        <div class="hero-background">
+            <div class="gradient-orb orb-1"></div>
+            <div class="gradient-orb orb-2"></div>
+            <div class="gradient-orb orb-3"></div>
+        </div>
+        
+        <div class="container hero-container">
+            <div class="hero-content">
+                <div class="hero-badge" data-reveal>
+                    <i class="fas fa-rocket"></i>
+                    <span data-i18n="hero.badge">New Launch - Try Free for 15 Days!</span>
+                </div>
+                
+                <h1 class="hero-title" data-reveal data-reveal-delay="100">
+                    <span data-i18n="hero.title1">Track Your Expenses</span><br>
+                    <span class="gradient-text" data-i18n="hero.title2">Effortlessly</span>
+                </h1>
+                
+                <p class="hero-description" data-reveal data-reveal-delay="200" data-i18n="hero.description">
+                    Take control of your finances with smart budgeting, real-time tracking, and insightful reports. Your financial freedom starts here.
+                </p>
+                
+                <div class="hero-cta" data-reveal data-reveal-delay="300">
+                    <button class="btn btn-primary">
+                        <i class="fab fa-apple"></i>
+                        <span>
+                            <small data-i18n="hero.downloadOn">Download on the</small>
+                            <strong data-i18n="hero.appStore">App Store</strong>
+                        </span>
+                    </button>
+                    
+                    <button class="btn btn-secondary">
+                        <i class="fab fa-google-play"></i>
+                        <span>
+                            <small data-i18n="hero.getItOn">Get it on</small>
+                            <strong data-i18n="hero.googlePlay">Google Play</strong>
+                        </span>
+                    </button>
+                </div>
+                
+                <div class="hero-features-list" data-reveal data-reveal-delay="400">
+                    <div class="feature-check">
+                        <i class="fas fa-check-circle"></i>
+                        <span data-i18n="hero.feature1">15-day free trial</span>
                     </div>
-                  </div>
-                  <div class="mock-item-right">
-                    <div class="mock-price">$14.99</div>
-                    <div class="mock-item-subtitle" data-en="Monthly" data-fr="Mensuel">Monthly</div>
-                  </div>
-                </div>
-
-                <div class="mock-item">
-                  <div class="mock-item-left">
-                    <div class="mock-icon" style="color: #FF9900;">A</div>
-                    <div>
-                      <div class="mock-item-title">Amazon Prime</div>
-                      <div class="mock-item-subtitle" data-en="Trial (Reminds tomorrow)" data-fr="Essai (Rappel demain)">Trial (Reminds tomorrow)</div>
+                    <div class="feature-check">
+                        <i class="fas fa-check-circle"></i>
+                        <span data-i18n="hero.feature2">No credit card required</span>
                     </div>
-                  </div>
-                  <div class="mock-item-right">
-                    <div class="mock-price" style="color: #10B981;">Free</div>
-                    <div class="mock-item-subtitle" data-en="Trial" data-fr="Période d'Essai">Trial</div>
-                  </div>
+                    <div class="feature-check">
+                        <i class="fas fa-check-circle"></i>
+                        <span data-i18n="hero.feature3">Cancel anytime</span>
+                    </div>
                 </div>
-              </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 2. FEATURES GRID -->
-  <section id="features" style="background: rgba(255,255,255,0.01); border-top: 1px solid var(--card-border); border-bottom: 1px solid var(--card-border);">
-    <div class="container">
-      <div class="section-title-wrap">
-        <div class="section-subtitle" data-en="Core Capabilities" data-fr="Fonctionnalités Clés">Core Capabilities</div>
-        <h2 class="section-title" data-en="Designed for Financial Clarity" data-fr="Conçu pour la Clarté Financière">Designed for Financial Clarity</h2>
-        <p class="section-desc" data-en="Trimly brings together four vital tools in one premium package, cutting out complexity." data-fr="Trimly regroupe quatre outils essentiels dans une interface épurée de qualité supérieure."></p>
-      </div>
-
-      <div class="features-grid">
-        <!-- Feature 1 -->
-        <div class="feature-card">
-          <div class="feat-icon-wrap">
-            <svg viewBox="0 0 24 24"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          </div>
-          <h3 class="feat-title" data-en="Smart Budgeting" data-fr="Budget Intelligent">Smart Budgeting</h3>
-          <p class="feat-desc" data-en="Define custom weekly or monthly spending budgets by categories. Real-time updates prevent overspending before it even happens." data-fr="Définissez des budgets hebdomadaires ou mensuels par catégories. Les mises à jour en temps réel vous empêchent de dépasser vos limites."></p>
-        </div>
-
-        <!-- Feature 2 -->
-        <div class="feature-card">
-          <div class="feat-icon-wrap">
-            <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-          </div>
-          <h3 class="feat-title" data-en="Subscription Tracker" data-fr="Suivi des Abonnements">Subscription Tracker</h3>
-          <p class="feat-desc" data-en="Keep a master list of all digital services. Monitor exact billing cycles, trial end-dates, and cancel actions effortlessly." data-fr="Gérez l'ensemble de vos abonnements numériques. Surveillez les cycles de facturation précis, les fins d'essais et les actions d'annulation."></p>
-        </div>
-
-        <!-- Feature 3 -->
-        <div class="feature-card">
-          <div class="feat-icon-wrap">
-            <svg viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          </div>
-          <h3 class="feat-title" data-en="Automated Payment Alerts" data-fr="Rappels de Paiement">Automated Payment Alerts</h3>
-          <p class="feat-desc" data-en="Receive local push alerts 2 days before, 1 day before, and on the date of charge. Say goodbye to forgotten subscription renewals." data-fr="Recevez des notifications 2 jours avant, la veille et le jour même d'un prélèvement. Oubliez enfin les renouvellements surprise."></p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 3. EMAIL SCANNER FOCUS (THE CORE OAUTH SCOPE FOCUS) -->
-  <section id="security" class="scanner-section">
-    <div class="container">
-      <div class="scanner-wrap">
-        <div class="scanner-graphic">
-          <!-- SCANNER ANIMATION BOARD -->
-          <div class="scanner-card">
-            <div class="scanner-header">
-              <div class="scanner-title-text" data-en="Intelligent Invoice Detection" data-fr="Détection de Factures">Intelligent Invoice Detection</div>
-              <div class="scan-status" data-en="Secure Link" data-fr="Liaison Sécurisée">Secure Link</div>
+            
+            <div class="hero-visual" data-reveal data-reveal-delay="200">
+                <div class="phone-mockup">
+                    <div class="phone-frame">
+                        <div class="phone-notch"></div>
+                        <div class="phone-screen">
+                            <img src="assets/app-screenshot.png" alt="App Screenshot" class="app-screenshot">
+                        </div>
+                    </div>
+                    <div class="floating-card card-1">
+                        <i class="fas fa-chart-line"></i>
+                        <span data-i18n="hero.card1">+25% Savings</span>
+                    </div>
+                    <div class="floating-card card-2">
+                        <i class="fas fa-bell"></i>
+                        <span data-i18n="hero.card2">Smart Alerts</span>
+                    </div>
+                    <div class="floating-card card-3">
+                        <i class="fas fa-shield-alt"></i>
+                        <span data-i18n="hero.card3">Secure</span>
+                    </div>
+                </div>
+                
+                <!-- Lottie Animation -->
+                <div class="lottie-container" id="catAnimation"></div>
             </div>
-
-            <div class="email-node scanning">
-              <div class="email-avatar">📧</div>
-              <div class="email-info">
-                <div class="email-subject">Netflix Billing Invoice</div>
-                <div class="email-snippet" data-en="Your Netflix receipt for $22.99 is ready..." data-fr="Votre reçu Netflix de $22.99 est disponible...">Your Netflix receipt for $22.99 is ready...</div>
-              </div>
-              <span class="email-tag detected" data-en="Captured" data-fr="Capturé">Captured</span>
+        </div>
+        
+        <div class="scroll-indicator" data-reveal data-reveal-delay="500">
+            <div class="mouse">
+                <div class="wheel"></div>
             </div>
+            <span data-i18n="hero.scroll">Scroll to explore</span>
+        </div>
+    </section>
 
-            <div class="email-node" style="opacity: 0.65;">
-              <div class="email-avatar">📧</div>
-              <div class="email-info">
-                <div class="email-subject" data-en="Chat with John Doe" data-fr="Discussion avec John Doe">Chat with John Doe</div>
-                <div class="email-snippet" data-en="Hey, let's meet up this Saturday for..." data-fr="Salut, on se voit ce samedi pour...">Hey, let's meet up this Saturday for...</div>
-              </div>
-              <span class="email-tag" data-en="Skipped" data-fr="Ignoré">Skipped</span>
+    <!-- Features Section -->
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-header" data-reveal>
+                <span class="section-badge" data-i18n="features.badge">Features</span>
+                <h2 class="section-title" data-i18n="features.title">Everything You Need to Manage Your Money</h2>
+                <p class="section-description" data-i18n="features.description">
+                    Powerful features designed to make expense tracking simple and effective
+                </p>
             </div>
-
-            <div class="email-node scanning" style="animation-delay: 1.2s;">
-              <div class="email-avatar">📧</div>
-              <div class="email-info">
-                <div class="email-subject">Spotify Premium Invoice</div>
-                <div class="email-snippet" data-en="Thank you for your payment of $14.99..." data-fr="Merci pour votre paiement de $14.99...">Thank you for your payment of $14.99...</div>
-              </div>
-              <span class="email-tag detected" data-en="Captured" data-fr="Capturé">Captured</span>
+            
+            <div class="features-grid">
+                <div class="feature-card" data-reveal data-reveal-delay="100">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <h3 data-i18n="features.feature1.title">Smart Analytics</h3>
+                    <p data-i18n="features.feature1.description">
+                        Visualize your spending patterns with beautiful charts and detailed reports
+                    </p>
+                </div>
+                
+                <div class="feature-card" data-reveal data-reveal-delay="200">
+                    <div class="feature-icon">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <h3 data-i18n="features.feature2.title">Budget Planning</h3>
+                    <p data-i18n="features.feature2.description">
+                        Set budgets for different categories and track your progress in real-time
+                    </p>
+                </div>
+                
+                <div class="feature-card" data-reveal data-reveal-delay="300">
+                    <div class="feature-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h3 data-i18n="features.feature3.title">Smart Notifications</h3>
+                    <p data-i18n="features.feature3.description">
+                        Get alerts when you're close to your budget limits or unusual spending detected
+                    </p>
+                </div>
+                
+                <div class="feature-card" data-reveal data-reveal-delay="100">
+                    <div class="feature-icon">
+                        <i class="fas fa-sync"></i>
+                    </div>
+                    <h3 data-i18n="features.feature4.title">Cloud Sync</h3>
+                    <p data-i18n="features.feature4.description">
+                        Access your data from any device with automatic cloud synchronization
+                    </p>
+                </div>
+                
+                <div class="feature-card" data-reveal data-reveal-delay="200">
+                    <div class="feature-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <h3 data-i18n="features.feature5.title">Bank-Level Security</h3>
+                    <p data-i18n="features.feature5.description">
+                        Your financial data is protected with 256-bit encryption and biometric authentication
+                    </p>
+                </div>
+                
+                <div class="feature-card" data-reveal data-reveal-delay="300">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h3 data-i18n="features.feature6.title">Multi-Device Access</h3>
+                    <p data-i18n="features.feature6.description">
+                        Access your financial data seamlessly across all your devices
+                    </p>
+                </div>
             </div>
-          </div>
         </div>
+    </section>
 
-        <div class="scanner-text">
-          <div class="section-subtitle" data-en="Google API Compliance" data-fr="Conformité Google API">Google API Compliance</div>
-          <h2 class="section-title" data-en="Gmail Integration & Strict Data Protection" data-fr="Intégration Gmail & Protection Strict">Gmail Integration & Strict Data Protection</h2>
-          
-          <div class="lang-block-en">
-            <p>Trimly utilizes the Google Gmail API to scan your email inbox for receipts and payment invoices from online services. This powerful feature eliminates manual tracking, automatically populating your dashboard with exact renewal dates, costs, and billing cycles.</p>
-          </div>
-          
-          <div class="lang-block-fr">
-            <p>Trimly utilise l'API Google Gmail pour analyser les factures et reçus d'abonnements numériques reçus par courriel. Cette fonctionnalité avancée évite toute saisie manuelle et remplit automatiquement votre tableau de bord avec les dates, prix et cycles exacts.</p>
-          </div>
-
-          <ul class="disclosure-list">
-            <li class="disclosure-item">
-              <div class="disclosure-icon">
-                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-              <div class="disclosure-desc">
-                <strong data-en="Restricted Read-Only Scope" data-fr="Accès Restreint en Lecture Seule">Restricted Read-Only Scope</strong>
-                <span data-en="We only ask for read-only Gmail access ('gmail.readonly') to analyze headers and transactional invoice lines. Your personal letters, images, and conversations are never read." data-fr="Nous demandons uniquement l'accès en lecture seule ('gmail.readonly') pour analyser les reçus de paiement. Vos courriers personnels et conversations privées sont totalement ignorés."></span>
-              </div>
-            </li>
-
-            <li class="disclosure-item">
-              <div class="disclosure-icon">
-                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-              <div class="disclosure-desc">
-                <strong data-en="Client-Side Privacy" data-fr="Confidentialité Client-Side">Client-Side Privacy</strong>
-                <span data-en="Your emails are analyzed locally on your device (or in ephemeral secure execution contexts). The body of your emails is NEVER uploaded, stored, or indexed on our backend servers." data-fr="Vos emails sont analysés localement sur votre téléphone. Le contenu brut de vos emails n'est JAMAIS envoyé, hébergé ou indexé sur nos serveurs distants."></span>
-              </div>
-            </li>
-
-            <li class="disclosure-item">
-              <div class="disclosure-icon">
-                <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
-              </div>
-              <div class="disclosure-desc">
-                <strong data-en="Google User Data Policy Compliance" data-fr="Respect de la charte Google">Google User Data Policy Compliance</strong>
-                <span data-en="Trimly's use of information received from Google APIs adheres to the Google API Services User Data Policy, including the Limited Use requirements. We do not sell or share data with advertisers." data-fr="L'utilisation des informations Google par Trimly est conforme aux Règles de Données Utilisateur des Services API Google. Nous ne partageons aucune donnée avec des annonceurs ou des tiers."></span>
-              </div>
-            </li>
-          </ul>
+    <!-- How It Works Section -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <div class="section-header" data-reveal>
+                <span class="section-badge" data-i18n="howItWorks.badge">How It Works</span>
+                <h2 class="section-title" data-i18n="howItWorks.title">Get Started in 3 Simple Steps</h2>
+            </div>
+            
+            <div class="steps-container">
+                <div class="step" data-reveal data-reveal-delay="100">
+                    <div class="step-number">01</div>
+                    <div class="step-content">
+                        <div class="step-icon">
+                            <i class="fas fa-download"></i>
+                        </div>
+                        <h3 data-i18n="howItWorks.step1.title">Download & Sign Up</h3>
+                        <p data-i18n="howItWorks.step1.description">
+                            Download the app and create your account in less than a minute
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="step-connector" data-reveal data-reveal-delay="200"></div>
+                
+                <div class="step" data-reveal data-reveal-delay="300">
+                    <div class="step-number">02</div>
+                    <div class="step-content">
+                        <div class="step-icon">
+                            <i class="fas fa-cog"></i>
+                        </div>
+                        <h3 data-i18n="howItWorks.step2.title">Set Your Budget</h3>
+                        <p data-i18n="howItWorks.step2.description">
+                            Define your spending categories and set monthly budget limits
+                        </p>
+                    </div>
+                </div>
+                
+                <div class="step-connector" data-reveal data-reveal-delay="400"></div>
+                
+                <div class="step" data-reveal data-reveal-delay="500">
+                    <div class="step-number">03</div>
+                    <div class="step-content">
+                        <div class="step-icon">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <h3 data-i18n="howItWorks.step3.title">Track & Save</h3>
+                        <p data-i18n="howItWorks.step3.description">
+                            Add expenses and watch your savings grow with smart insights
+                        </p>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- 4. SECURITY FAQ SECTION -->
-  <section id="faq" class="faq-section">
-    <div class="container">
-      <div class="section-title-wrap">
-        <div class="section-subtitle" data-en="Frequently Asked Questions" data-fr="Questions Fréquentes">Frequently Asked Questions</div>
-        <h2 class="section-title" data-en="Everything You Need to Know" data-fr="Tout ce que vous devez savoir">Everything You Need to Know</h2>
-        <p class="section-desc" data-en="We believe in transparency. Here are quick answers to our users' most common questions." data-fr="Nous croyons en la transparence totale. Voici les réponses aux questions les plus fréquentes."></p>
-      </div>
-
-      <div class="faq-list">
-        <!-- FAQ 1 -->
-        <div class="faq-item">
-          <div class="faq-question">
-            <span data-en="Does Trimly store my Gmail password?" data-fr="Trimly stocke-t-il mon mot de passe Gmail ?">Does Trimly store my Gmail password?</span>
-          </div>
-          <div class="faq-answer">
-            <p class="lang-block-en">No. Trimly uses secure Google OAuth 2.0 protocol for authentication. You sign in directly through Google's official interface. We receive an access token and never see or store your Google password.</p>
-            <p class="lang-block-fr">Non. Trimly utilise le protocole officiel Google OAuth 2.0 pour l'authentification. Vous vous connectez directement sur les serveurs de Google. Nous recevons un jeton temporaire et ne voyons jamais votre mot de passe.</p>
-          </div>
+    <!-- Pricing Section -->
+    <section class="pricing" id="pricing">
+        <div class="container">
+            <div class="section-header" data-reveal>
+                <span class="section-badge" data-i18n="pricing.badge">Pricing</span>
+                <h2 class="section-title" data-i18n="pricing.title">Simple, Transparent Pricing</h2>
+                <p class="section-description" data-i18n="pricing.description">
+                    Start with a 15-day free trial. No credit card required.
+                </p>
+            </div>
+            
+            <div class="pricing-grid-single">
+                <div class="pricing-card featured" data-reveal data-reveal-delay="100">
+                    <div class="popular-badge" data-i18n="pricing.pro.badge">15-Day Free Trial</div>
+                    <div class="pricing-header">
+                        <h3 data-i18n="pricing.pro.title">Premium</h3>
+                        <div class="price">
+                            <span class="currency">$</span>
+                            <span class="amount">4.99</span>
+                            <span class="period" data-i18n="pricing.pro.period">/month</span>
+                        </div>
+                        <p class="price-note" data-i18n="pricing.pro.note">Billed monthly after trial</p>
+                    </div>
+                    <ul class="pricing-features">
+                        <li><i class="fas fa-check"></i><span data-i18n="pricing.pro.feature1">Unlimited transactions</span></li>
+                        <li><i class="fas fa-check"></i><span data-i18n="pricing.pro.feature2">Advanced analytics & charts</span></li>
+                        <li><i class="fas fa-check"></i><span data-i18n="pricing.pro.feature3">Unlimited budget categories</span></li>
+                        <li><i class="fas fa-check"></i><span data-i18n="pricing.pro.feature4">Cloud sync across devices</span></li>
+                        <li><i class="fas fa-check"></i><span data-i18n="pricing.pro.feature5">Smart notifications</span></li>
+                        <li><i class="fas fa-check"></i><span data-i18n="pricing.pro.feature6">Bank-level security</span></li>
+                        <li><i class="fas fa-check"></i><span data-i18n="pricing.pro.feature7">Priority support</span></li>
+                        <li><i class="fas fa-check"></i><span data-i18n="pricing.pro.feature8">Cancel anytime</span></li>
+                    </ul>
+                    <button class="pricing-btn" data-i18n="pricing.pro.cta">Start Free Trial</button>
+                    <p class="pricing-footer" data-i18n="pricing.pro.footer">No credit card required • Cancel anytime</p>
+                </div>
+            </div>
+            
+            <div class="pricing-faq" data-reveal data-reveal-delay="200">
+                <h3 data-i18n="pricing.faq.title">Frequently Asked Questions</h3>
+                <div class="faq-grid">
+                    <div class="faq-item">
+                        <h4 data-i18n="pricing.faq.q1">What happens after the free trial?</h4>
+                        <p data-i18n="pricing.faq.a1">After 15 days, you'll be asked to subscribe. Your data is safe and you can continue using the app.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h4 data-i18n="pricing.faq.q2">Can I cancel anytime?</h4>
+                        <p data-i18n="pricing.faq.a2">Yes! Cancel your subscription anytime from the app settings. No questions asked.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h4 data-i18n="pricing.faq.q3">Do I need a credit card for the trial?</h4>
+                        <p data-i18n="pricing.faq.a3">No credit card required for the 15-day free trial. Start using all features immediately.</p>
+                    </div>
+                    <div class="faq-item">
+                        <h4 data-i18n="pricing.faq.q4">What payment methods do you accept?</h4>
+                        <p data-i18n="pricing.faq.a4">We accept all major credit cards, PayPal, and mobile payments through App Store and Google Play.</p>
+                    </div>
+                </div>
+            </div>
         </div>
+    </section>
 
-        <!-- FAQ 2 -->
-        <div class="faq-item">
-          <div class="faq-question">
-            <span data-en="Can I use the app without connecting Gmail?" data-fr="Puis-je utiliser l'application sans connecter Gmail ?">Can I use the app without connecting Gmail?</span>
-          </div>
-          <div class="faq-answer">
-            <p class="lang-block-en">Absolutely! Connecting Gmail is a completely optional feature. You can easily track all your budgets and manually add subscriptions in seconds without ever linking an email account.</p>
-            <p class="lang-block-fr">Absolument ! La connexion à Gmail est une option facultative. Vous pouvez gérer manuellement l'intégralité de vos budgets et abonnements en quelques secondes sans lier d'adresse e-mail.</p>
-          </div>
+    <!-- Why Choose Us Section -->
+    <section class="testimonials" id="why-choose">
+        <div class="container">
+            <div class="section-header" data-reveal>
+                <span class="section-badge" data-i18n="whyChoose.badge">Why Choose Trimly</span>
+                <h2 class="section-title" data-i18n="whyChoose.title">Built for Your Financial Success</h2>
+                <p class="section-description" data-i18n="whyChoose.description">
+                    We've designed every feature with your needs in mind
+                </p>
+            </div>
+            
+            <div class="testimonials-slider">
+                <div class="testimonial-card" data-reveal>
+                    <div class="benefit-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 data-i18n="whyChoose.benefit1.title">Privacy First</h3>
+                    <p data-i18n="whyChoose.benefit1.text">
+                        Your financial data stays on your device. We use bank-level encryption and never sell your information.
+                    </p>
+                </div>
+                
+                <div class="testimonial-card" data-reveal data-reveal-delay="100">
+                    <div class="benefit-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3 data-i18n="whyChoose.benefit2.title">Lightning Fast</h3>
+                    <p data-i18n="whyChoose.benefit2.text">
+                        Add transactions in seconds. Our intuitive interface makes expense tracking effortless and quick.
+                    </p>
+                </div>
+                
+                <div class="testimonial-card" data-reveal data-reveal-delay="200">
+                    <div class="benefit-icon">
+                        <i class="fas fa-heart"></i>
+                    </div>
+                    <h3 data-i18n="whyChoose.benefit3.title">Made with Care</h3>
+                    <p data-i18n="whyChoose.benefit3.text">
+                        Every pixel, every interaction is crafted to give you the best expense tracking experience.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="trust-badges" data-reveal data-reveal-delay="300">
+                <div class="trust-badge">
+                    <i class="fas fa-lock"></i>
+                    <span data-i18n="whyChoose.trust1">256-bit Encryption</span>
+                </div>
+                <div class="trust-badge">
+                    <i class="fas fa-mobile-alt"></i>
+                    <span data-i18n="whyChoose.trust2">iOS & Android</span>
+                </div>
+                <div class="trust-badge">
+                    <i class="fas fa-sync"></i>
+                    <span data-i18n="whyChoose.trust3">Auto Sync</span>
+                </div>
+                <div class="trust-badge">
+                    <i class="fas fa-headset"></i>
+                    <span data-i18n="whyChoose.trust4">24/7 Support</span>
+                </div>
+            </div>
         </div>
+    </section>
 
-        <!-- FAQ 3 -->
-        <div class="faq-item">
-          <div class="faq-question">
-            <span data-en="How do I revoke Trimly's access to my Google account?" data-fr="Comment puis-je révoquer l'accès de Trimly à mon compte Google ?">How do I revoke Trimly's access to my Google account?</span>
-          </div>
-          <div class="faq-answer">
-            <p class="lang-block-en">You can instantly revoke access at any time directly through your Google Account Security Settings page (under "Third-party apps with account access"), or by clicking the disconnect button in Trimly's App Settings.</p>
-            <p class="lang-block-fr">Vous pouvez révoquer instantanément cet accès à tout moment depuis les paramètres de sécurité de votre compte Google (rubrique "Applications tierces ayant accès à votre compte") ou en cliquant sur "Déconnecter" dans l'application.</p>
-          </div>
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content" data-reveal>
+                <h2 data-i18n="cta.title">Ready to Take Control of Your Finances?</h2>
+                <p data-i18n="cta.description">Join thousands of users who are already saving more and spending smarter</p>
+                <div class="cta-buttons">
+                    <button class="btn btn-primary">
+                        <i class="fab fa-apple"></i>
+                        <span data-i18n="cta.appStore">Download on App Store</span>
+                    </button>
+                    <button class="btn btn-secondary">
+                        <i class="fab fa-google-play"></i>
+                        <span data-i18n="cta.googlePlay">Get it on Google Play</span>
+                    </button>
+                </div>
+            </div>
         </div>
-      </div>
-    </div>
-  </section>
+    </section>
 
-  <!-- 5. DOWNLOAD CTA SECTION -->
-  <section id="download" class="cta-section">
-    <div class="container">
-      <div class="cta-card">
-        <h2 class="cta-title" data-en="Ready to Master Your Budget?" data-fr="Prêt à maîtriser votre budget ?">Ready to Master Your Budget?</h2>
-        <p class="cta-desc" data-en="Experience minimal excellence on your iOS or Android device. Download Trimly and take back charge today." data-fr="Découvrez l'excellence minimale sur votre appareil iOS ou Android. Téléchargez Trimly dès aujourd'hui."></p>
-        
-        <div class="download-buttons">
-          <a href="#" class="btn-download">
-            <!-- SVG App Store Icon -->
-            <svg viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 4.17c.66-.81 1.11-1.93.99-3.06-1 .04-2.21.67-2.93 1.49-.62.69-1.16 1.84-1.01 2.96 1.12.09 2.27-.57 2.95-1.39z"/></svg>
-            <span>App Store</span>
-          </a>
-
-          <a href="#" class="btn-download">
-            <!-- SVG Google Play Icon -->
-            <svg viewBox="0 0 24 24"><path d="M3 5.277c0-.986.726-1.517 1.44-1.042l14.34 9.537c.725.474.725 1.256 0 1.73l-14.34 9.537c-.714.475-1.44-.056-1.44-1.042V5.277z"/></svg>
-            <span>Google Play</span>
-          </a>
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <i class="fas fa-wallet"></i>
+                        <span>Trimly</span>
+                    </div>
+                    <p data-i18n="footer.description">Your smart companion for better financial management</p>
+                    <div class="social-links">
+                        <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                        <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                        <a href="#" aria-label="LinkedIn"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+                
+                <div class="footer-section">
+                    <h4 data-i18n="footer.product">Product</h4>
+                    <ul>
+                        <li><a href="#features" data-i18n="footer.features">Features</a></li>
+                        <li><a href="#pricing" data-i18n="footer.pricing">Pricing</a></li>
+                        <li><a href="#" data-i18n="footer.security">Security</a></li>
+                        <li><a href="#" data-i18n="footer.updates">Updates</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4 data-i18n="footer.company">Company</h4>
+                    <ul>
+                        <li><a href="#" data-i18n="footer.about">About Us</a></li>
+                        <li><a href="#" data-i18n="footer.careers">Careers</a></li>
+                        <li><a href="#" data-i18n="footer.blog">Blog</a></li>
+                        <li><a href="#" data-i18n="footer.press">Press</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4 data-i18n="footer.support">Support</h4>
+                    <ul>
+                        <li><a href="#" data-i18n="footer.help">Help Center</a></li>
+                        <li><a href="#" data-i18n="footer.contact">Contact Us</a></li>
+                        <li><a href="privacy.html" data-i18n="footer.privacy">Privacy Policy</a></li>
+                        <li><a href="terms.html" data-i18n="footer.terms">Terms of Service</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2024 Trimly. <span data-i18n="footer.rights">All rights reserved.</span></p>
+            </div>
         </div>
-      </div>
-    </div>
-  </section>
+    </footer>
 
-  <!-- FOOTER -->
-  <footer>
-    <div class="container">
-      <div class="footer-wrap">
-        <div class="footer-brand">
-          <h4>TRIMLY</h4>
-          <p data-en="Sleek, secure, and minimal subscription and budgeting assistant. Built for private financial empowerment." data-fr="Assistant budgétaire et de suivi d'abonnements moderne et minimaliste. Conçu pour le respect de votre vie privée."></p>
-        </div>
-
-        <div class="footer-links-col">
-          <h5 data-en="Legal" data-fr="Légal">Legal</h5>
-          <ul class="footer-links">
-            <li><a href="/privacy.html" target="_blank" data-en="Privacy Policy" data-fr="Politique de Confidentialité">Privacy Policy</a></li>
-            <li><a href="/terms.html" target="_blank" data-en="Terms of Service" data-fr="Conditions d'Utilisation">Terms of Service</a></li>
-          </ul>
-        </div>
-
-        <div class="footer-links-col">
-          <h5 data-en="Contact" data-fr="Contact">Contact</h5>
-          <ul class="footer-links">
-            <li><span data-en="Email: support@trimly.app" data-fr="Email : support@trimly.app">Email: support@trimly.app</span></li>
-            <li><span data-en="Web: ayanaimi.github.io/trimly2" data-fr="Web : ayanaimi.github.io/trimly2">Web: ayanaimi.github.io/trimly2</span></li>
-          </ul>
-        </div>
-      </div>
-
-      <div class="footer-bottom">
-        <p>&copy; 2026 Trimly. <span data-en="All rights reserved." data-fr="Tous droits réservés.">All rights reserved.</span></p>
-        
-        <div class="lang-switcher">
-          <button class="lang-btn active" id="btn-en">EN</button>
-          <button class="lang-btn" id="btn-fr">FR</button>
-        </div>
-      </div>
-    </div>
-  </footer>
-
-  <!-- MULTILINGUAL SELECTOR JAVASCRIPT -->
-  <script>
-    const btnEn = document.getElementById('btn-en');
-    const btnFr = document.getElementById('btn-fr');
-
-    function setLanguage(lang) {
-      if (lang === 'fr') {
-        btnFr.classList.add('active');
-        btnEn.classList.remove('active');
-        
-        // Show French elements
-        document.querySelectorAll('[data-fr]').forEach(el => {
-          if (el.tagName === 'A' || el.tagName === 'SPAN' || el.tagName === 'H1' || el.tagName === 'H2' || el.tagName === 'H3' || el.tagName === 'H4' || el.tagName === 'H5' || el.tagName === 'P') {
-            el.innerText = el.getAttribute('data-fr');
-          }
-        });
-        
-        // Block display toggles
-        document.querySelectorAll('.lang-block-en').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.lang-block-fr').forEach(el => el.style.display = 'block');
-      } else {
-        btnEn.classList.add('active');
-        btnFr.classList.remove('active');
-        
-        // Show English elements
-        document.querySelectorAll('[data-en]').forEach(el => {
-          if (el.tagName === 'A' || el.tagName === 'SPAN' || el.tagName === 'H1' || el.tagName === 'H2' || el.tagName === 'H3' || el.tagName === 'H4' || el.tagName === 'H5' || el.tagName === 'P') {
-            el.innerText = el.getAttribute('data-en');
-          }
-        });
-        
-        // Block display toggles
-        document.querySelectorAll('.lang-block-fr').forEach(el => el.style.display = 'none');
-        document.querySelectorAll('.lang-block-en').forEach(el => el.style.display = 'block');
-      }
-    }
-
-    btnEn.addEventListener('click', () => setLanguage('en'));
-    btnFr.addEventListener('click', () => setLanguage('fr'));
-
-    // Detect browser language default
-    const browserLang = navigator.language || navigator.userLanguage;
-    if (browserLang.startsWith('fr')) {
-      setLanguage('fr');
-    } else {
-      setLanguage('en');
-    }
-  </script>
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
+    <script src="translations.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
