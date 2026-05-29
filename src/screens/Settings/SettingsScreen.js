@@ -25,7 +25,9 @@ export default function SettingsScreen() {
     setCurrency,
     setNotifLevel,
     updateFeatures,
-    setSubscriptionPlan,
+    startStripeCheckout,
+    openStripePortal,
+    refreshBillingStatus,
   } = useApp();
   const { Colors, isDark, setTheme, userPreference } = useTheme();
   const { getCurrentLanguage, languages, t } = useLanguage();
@@ -33,6 +35,9 @@ export default function SettingsScreen() {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showIncomeModal, setShowIncomeModal] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [showPINModal, setShowPINModal] = useState(false);
+  const [enableFaceIdAfterPin, setEnableFaceIdAfterPin] = useState(false);
+  const [billingLoading, setBillingLoading] = useState(false);
   const [draftIncome, setDraftIncome] = useState(state.income.toString());
   const lottieRef = useRef(null);
 
@@ -111,13 +116,43 @@ export default function SettingsScreen() {
   }
 
   async function subscribe(plan) {
-    PremiumHaptics.success();
-    const ok = await setSubscriptionPlan(plan);
-    if (ok) {
-      setShowPaywall(false);
-      Alert.alert('Trimly Pro', t('settings.welcomePro'));
-    } else {
-      Alert.alert(t('common.error'), t('settings.subscriptionError'));
+    if (!state.session) {
+      Alert.alert(t('settings.subscription'), t('settings.loginRequired'));
+      return;
+    }
+
+    setBillingLoading(true);
+    try {
+      const billing = await startStripeCheckout(plan);
+      if (billing?.cancelled) return;
+      await refreshBillingStatus();
+      if (billing?.plan) {
+        PremiumHaptics.success();
+        setShowPaywall(false);
+        Alert.alert('Trimly Pro', t('settings.welcomePro'));
+      } else {
+        Alert.alert('Trimly Pro', t('settings.paymentPending'));
+      }
+    } catch (error) {
+      Alert.alert(t('common.error'), error?.message || t('settings.subscriptionError'));
+    } finally {
+      setBillingLoading(false);
+    }
+  }
+
+  async function manageBilling() {
+    if (!state.subscription) {
+      setShowPaywall(true);
+      return;
+    }
+
+    setBillingLoading(true);
+    try {
+      await openStripePortal();
+    } catch (error) {
+      Alert.alert(t('common.error'), error?.message || t('settings.subscriptionError'));
+    } finally {
+      setBillingLoading(false);
     }
   }
 
@@ -145,20 +180,35 @@ export default function SettingsScreen() {
 
   function manageSecurity() {
     const passcodeEnabled = !!state.features?.passcode;
-    Alert.alert(
-      t('settings.security'),
-      passcodeEnabled ? t('settings.passcodeActive') : t('settings.passcodeInactive'),
-      [
-        {
-          text: passcodeEnabled ? t('settings.disablePasscode') : t('settings.enablePasscode'),
-          onPress: async () => { 
-            const ok = await updateFeatures({ passcode: !passcodeEnabled });
-            if (ok) PremiumHaptics.selection(); 
-          },
-        },
-        { text: t('common.cancel'), style: 'cancel' },
-      ],
-    );
+    if (!passcodeEnabled) {
+      // Activer -> Demander de configurer le PIN
+      setShowPINModal(true);
+    } else {
+      // Désactiver
+      Alert.alert(
+        t('settings.security'),
+        t('settings.disablePasscodeConfirm'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('settings.disable'),
+            style: 'destructive',
+            onPress: async () => {
+              const ok = await updateFeatures({ passcode: false });
+              if (ok) PremiumHaptics.impact();
+            }
+          }
+        ]
+      );
+    }
+  }
+
+  async function handleSavePIN(newPin) {
+    const ok = await updateFeatures({ passcode: true, pin: newPin });
+    if (ok) {
+      PremiumHaptics.success();
+      setShowPINModal(false);
+    }
   }
 
   async function contactSupport() {
@@ -269,7 +319,7 @@ export default function SettingsScreen() {
         </View>
 
         <Text style={s.sectionLbl}>{t('settings.subscription')}</Text>
-        <Pressable onPress={() => setShowPaywall(true)} style={s.subPillRow}>
+        <Pressable onPress={manageBilling} style={s.subPillRow} disabled={billingLoading}>
           <View style={s.subIcon}>
             <Image
               source={require('../../../assets/icon.png')}
@@ -369,7 +419,13 @@ export default function SettingsScreen() {
         <Text style={s.legalTxt}>{t('settings.appVersion')}</Text>
       </ScrollView>
 
-      <PaywallModal visible={showPaywall} onClose={() => setShowPaywall(false)} onSubscribe={subscribe} Colors={Colors} />
+      <PaywallModal
+        visible={showPaywall}
+        onClose={() => setShowPaywall(false)}
+        onSubscribe={subscribe}
+        billingLoading={billingLoading}
+        Colors={Colors}
+      />
       <ProfileModal
         visible={showProfileModal}
         onClose={() => setShowProfileModal(false)}
@@ -392,6 +448,12 @@ export default function SettingsScreen() {
       <LanguageModal
         visible={showLanguageModal}
         onClose={() => setShowLanguageModal(false)}
+        Colors={Colors}
+      />
+      <PINModal
+        visible={showPINModal}
+        onClose={() => setShowPINModal(false)}
+        onSave={handleSavePIN}
         Colors={Colors}
       />
     </SafeAreaView>
@@ -443,6 +505,47 @@ function LanguageModal({ visible, onClose, Colors }) {
           </View>
         </View>
       </View>
+    </Modal>
+  );
+}
+
+function PINModal({ visible, onClose, onSave, Colors }) {
+  const { t } = useLanguage();
+  const [pin, setPin] = useState('');
+  const s = makeStyles(Colors);
+
+  const handleSave = () => {
+    if (pin.length < 4) {
+      Alert.alert(t('common.error'), t('settings.pinTooShort'));
+      return;
+    }
+    onSave(pin);
+  };
+
+  return (
+    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+      <KeyboardAvoidingView style={s.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <View style={s.profileCard}>
+          <View style={s.modalHeader}>
+            <Text style={s.modalTitle}>{t('settings.setupPin') || 'Configurer le PIN'}</Text>
+            <SecondaryButton onPress={onClose} label="×" style={s.modalCloseBtn} />
+          </View>
+          <View style={s.fieldBlock}>
+            <Text style={s.fieldLabel}>{t('settings.enterNewPin') || 'Entrez un nouveau code'}</Text>
+            <TextInput
+              value={pin}
+              onChangeText={v => setPin(v.replace(/[^0-9]/g, '').slice(0, 4))}
+              style={[s.input, { letterSpacing: 10, textAlign: 'center', fontSize: 24 }]}
+              placeholder="••••"
+              keyboardType="numeric"
+              secureTextEntry
+              placeholderTextColor={Colors.textMuted}
+              autoFocus
+            />
+          </View>
+          <PrimaryButton onPress={handleSave} label={t('common.save')} style={{ marginTop: 24 }} />
+        </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
@@ -518,7 +621,7 @@ function ProfileModal({ visible, onClose, draftName, setDraftName, draftEmail, s
   );
 }
 
-function PaywallModal({ visible, onClose, onSubscribe, Colors }) {
+function PaywallModal({ visible, onClose, onSubscribe, billingLoading, Colors }) {
   const { t } = useLanguage();
   const s = makeStyles(Colors);
   
@@ -554,13 +657,15 @@ function PaywallModal({ visible, onClose, onSubscribe, Colors }) {
             ))}
           </View>
           <View style={{ gap: 12, marginTop: 40 }}>
-            <Pressable style={s.planBtn} onPress={() => onSubscribe('annual')}>
+            <Pressable style={[s.planBtn, billingLoading && s.planBtnDisabled]} onPress={() => onSubscribe('annual')} disabled={billingLoading}>
               <Text style={s.planTitle}>{t('settings.paywall.annualPlan')}</Text>
-              <Text style={s.planPrice}>{t('settings.paywall.annualPrice')}</Text>
+              <Text style={s.planPrice}>{billingLoading ? t('settings.redirectingToStripe') : t('settings.paywall.annualPrice')}</Text>
             </Pressable>
-            <Pressable style={[s.planBtn, s.planBtnSec]} onPress={() => onSubscribe('monthly')}>
+            <Pressable style={[s.planBtn, s.planBtnSec, billingLoading && s.planBtnDisabled]} onPress={() => onSubscribe('monthly')} disabled={billingLoading}>
               <Text style={[s.planTitle, { color: Colors.text }]}>{t('settings.paywall.monthlyPlan')}</Text>
-              <Text style={[s.planPrice, { color: Colors.textSecondary }]}>{t('settings.paywall.monthlyPrice')}</Text>
+              <Text style={[s.planPrice, { color: Colors.textSecondary }]}>
+                {billingLoading ? t('settings.redirectingToStripe') : t('settings.paywall.monthlyPrice')}
+              </Text>
             </Pressable>
           </View>
           <Pressable onPress={onClose} style={s.paywallClose}>
@@ -654,6 +759,7 @@ function makeStyles(Colors) {
       padding: Spacing.mdLg, alignItems: 'center', minHeight: 72, justifyContent: 'center',
     },
     planBtnSec: { backgroundColor: Colors.surface, borderWidth: 1.5, borderColor: Colors.border },
+    planBtnDisabled: { opacity: 0.65 },
     planTitle: { color: Colors.pureWhite, ...Fonts.primary, ...Fonts.bold, fontSize: 16 },
     planPrice: { color: Colors.textSecondary, ...Fonts.primary, fontSize: 13, marginTop: 4 },
 

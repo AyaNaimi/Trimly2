@@ -41,6 +41,8 @@ const SUBSCRIPTION_PATTERNS = [
 const AMOUNT_PATTERNS = [
   /(\d+[.,]\d{2})\s*€?\s*(?:par\s*mois|month|mois|\/m|\/mois)/i,
   /(\d+[.,]\d{2})\s*€?\s*(?:par\s*an|per\s*year|year|annuel|\/an|\/year)/i,
+  /(\d+(?:[.,]\d{1,2})?)\s*(?:€|eur|euros|usd|\$|mad|dhs|dh)/i,
+  /(?:€|eur|euros|usd|\$|mad|dhs|dh)\s*(\d+(?:[.,]\d{1,2})?)/i,
   /montant[:\s]*(\d+[.,]\d{2})/i,
   /amount[:\s]*(\d+[.,]\d{2})/i,
   /total[:\s]*(\d+[.,]\d{2})/i,
@@ -48,6 +50,86 @@ const AMOUNT_PATTERNS = [
   /(\d+[.,]\d{2})\s*€(?!\s*\d)/i,
   /€\s*(\d+[.,]\d{2})/i,
 ];
+
+const RECURRING_PATTERNS = [
+  /subscription/i,
+  /abonnement/i,
+  /membership/i,
+  /premium/i,
+  /renew/i,
+  /renouvellement/i,
+  /monthly/i,
+  /annual/i,
+  /yearly/i,
+  /mensuel/i,
+  /annuel/i,
+  /par mois/i,
+  /par an/i,
+  /per month/i,
+  /per year/i,
+  /next charge/i,
+  /next billing/i,
+  /free trial/i,
+  /essai gratuit/i,
+];
+
+const IGNORE_PATTERNS = [
+  /login/i,
+  /log in/i,
+  /logged in/i,
+  /sign in/i,
+  /signed in/i,
+  /new sign-?in/i,
+  /sign-?in attempt/i,
+  /connexion/i,
+  /nouvelle connexion/i,
+  /tentative de connexion/i,
+  /verify/i,
+  /verification/i,
+  /vérification/i,
+  /code de verification/i,
+  /code de vérification/i,
+  /confirmation code/i,
+  /one[- ]time code/i,
+  /\botp\b/i,
+  /authentification/i,
+  /authentication/i,
+  /password/i,
+  /mot de passe/i,
+  /security alert/i,
+  /account security/i,
+  /alerte de securite/i,
+  /alerte de sécurité/i,
+  /magic link/i,
+  /passkey/i,
+  /device/i,
+  /appareil/i,
+  /new device/i,
+  /nouvel appareil/i,
+  /accessed from/i,
+  /acc[eè]s au compte/i,
+  /newsletter/i,
+  /digest/i,
+  /activity/i,
+  /welcome/i,
+  /bienvenue/i,
+  /workspace invite/i,
+  /invitation/i,
+  /someone used your password/i,
+  /unusual activity/i,
+  /activite inhabituelle/i,
+  /activité inhabituelle/i,
+  /order confirmation/i,
+  /commande/i,
+];
+
+function formatImapDate(date) {
+  return date.toLocaleDateString('en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  });
+}
 
 function extractAmount(text) {
   for (const pattern of AMOUNT_PATTERNS) {
@@ -60,6 +142,12 @@ function extractAmount(text) {
     }
   }
   return null;
+}
+
+function hasSubscriptionEvidence(text) {
+  return !IGNORE_PATTERNS.some(pattern => pattern.test(text)) &&
+    RECURRING_PATTERNS.some(pattern => pattern.test(text)) &&
+    !!extractAmount(text);
 }
 
 app.post('/scan', async (req, res) => {
@@ -88,23 +176,14 @@ app.post('/scan', async (req, res) => {
     // Open INBOX
     await connection.openBox('INBOX');
 
-    // Search for subscription-related emails
-    const searchCriteria = [
-      'UNSEEN',
-      ['OR', 
-        ['SUBJECT', 'subscription'],
-        ['SUBJECT', 'receipt'],
-        ['SUBJECT', 'invoice'],
-        ['SUBJECT', 'paiement'],
-        ['SUBJECT', 'facturation'],
-        ['SUBJECT', 'confirmation'],
-        ['SUBJECT', 'renewal'],
-        ['SUBJECT', 'renouvellement'],
-      ]
-    ];
+    const sinceDate = new Date();
+    sinceDate.setMonth(sinceDate.getMonth() - 6);
+
+    // Scan recent mail first so a manually sent test email is not skipped.
+    const searchCriteria = [['SINCE', formatImapDate(sinceDate)]];
 
     const fetchOptions = {
-      bodies: ['text', 'html'],
+      bodies: ['HEADER', 'TEXT', ''],
       markSeen: false,
     };
 
@@ -128,21 +207,22 @@ app.post('/scan', async (req, res) => {
     const subscriptions = [];
     const seen = new Set();
 
-    // Process up to 50 emails
-    const emailsToProcess = messages.slice(0, 50);
+    // Process newest recent emails first.
+    const emailsToProcess = messages.slice(-100).reverse();
 
     for (const message of emailsToProcess) {
       try {
         const allText = message.parts
-          .filter(part => part.which === 'text')
-          .map(part => part.body)
+          .map(part => (typeof part.body === 'string' ? part.body : JSON.stringify(part.body || '')))
           .join(' ');
 
         if (!allText) continue;
+        if (!hasSubscriptionEvidence(allText)) continue;
 
         for (const pattern of SUBSCRIPTION_PATTERNS) {
           if (pattern.search.test(allText) && !seen.has(pattern.name)) {
-            const extractedAmount = extractAmount(allText) || pattern.amount;
+            const extractedAmount = extractAmount(allText);
+            if (!extractedAmount) continue;
             
             subscriptions.push({
               serviceName: pattern.name,

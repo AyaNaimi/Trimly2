@@ -24,6 +24,7 @@
         "CFBundleURLTypes": [
           {
             "CFBundleURLSchemes": [
+              "trimly",
               "com.googleusercontent.apps.572874464830-be4rip5fsce1ku3nrep481uhvmuja0to"
             ]
           }

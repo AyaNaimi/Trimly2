@@ -16,16 +16,6 @@ import { useTheme } from '../../context/ThemeContext';
 import AddCategoryModal from './AddCategoryModal';
 import AddTransactionModal from './AddTransactionModal';
 
-const addAlpha = (hex, opacity) => {
-  if (!hex) return 'transparent';
-  let normalized = hex.replace('#', '');
-  if (normalized.length === 3) {
-    normalized = normalized.split('').map(c => c + c).join('');
-  }
-  const op = Math.round(opacity * 255).toString(16).padStart(2, '0');
-  return `#${normalized}${op}`;
-};
-
 function formatMoney(amount, currency) {
   return `${Number(amount || 0).toFixed(2)} ${currency || '€'}`;
 }
@@ -36,6 +26,7 @@ export default function CategoryDetailModal({
   transactions,
   categories,
   currency,
+  periodRange,
   onClose,
   onUpdateCategory,
   onDeleteCategory,
@@ -46,11 +37,15 @@ export default function CategoryDetailModal({
   const [showAddTransaction, setShowAddTransaction] = useState(false);
 
   const categoryTransactions = useMemo(() => {
-    if (!category) return [];
+    if (!category || !periodRange) return [];
     return transactions
-      .filter(tx => tx.category_id === category.id)
+      .filter(tx => 
+        String(tx.categoryId || tx.category_id) === String(category.id) &&
+        new Date(tx.date) >= periodRange.start &&
+        new Date(tx.date) <= periodRange.end
+      )
       .sort((a, b) => new Date(b.date) - new Date(a.date));
-  }, [transactions, category]);
+  }, [transactions, category, periodRange]);
 
   if (!category) return null;
 
@@ -64,7 +59,7 @@ export default function CategoryDetailModal({
         <View style={styles.headerCard}>
           <View style={styles.headerTopRow}>
             <View style={styles.titleRow}>
-              <View style={[styles.iconBadge, { backgroundColor: addAlpha(category.color || Colors.accent, 0.15) }]}>
+              <View style={[styles.iconBadge, { backgroundColor: category.color || Colors.accent }]}>
                 <Text style={styles.iconBadgeText}>{category.icon || '•'}</Text>
               </View>
               <Text style={styles.title}>{category.name}</Text>

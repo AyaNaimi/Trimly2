@@ -128,7 +128,8 @@ export const DatabaseService = {
     return (data || []).map(s => ({
       ...s,
       startDate: s.start_date,
-      trialDays: s.trial_days
+      trialDays: s.trial_days,
+      cancelledAt: s.cancelled_at,
     }));
   },
 
@@ -157,7 +158,8 @@ export const DatabaseService = {
     return {
       ...data,
       startDate: data.start_date,
-      trialDays: data.trial_days
+      trialDays: data.trial_days,
+      cancelledAt: data.cancelled_at,
     };
   },
 
@@ -175,6 +177,10 @@ export const DatabaseService = {
       sanitizeUpdates.leap_day_start = updates.leapDayStart;
       delete sanitizeUpdates.leapDayStart;
     }
+    if (updates.cancelledAt !== undefined) {
+      sanitizeUpdates.cancelled_at = updates.cancelledAt;
+      delete sanitizeUpdates.cancelledAt;
+    }
 
     const { data, error } = await supabase
       .from('subscriptions')
@@ -188,7 +194,8 @@ export const DatabaseService = {
       ...data,
       startDate: data.start_date,
       trialDays: data.trial_days,
-      leapDayStart: data.leap_day_start
+      leapDayStart: data.leap_day_start,
+      cancelledAt: data.cancelled_at,
     };
   },
 
@@ -298,6 +305,14 @@ export const DatabaseService = {
       startDate: item.start_date,
       trialDays: item.raw_payload?.trialDays || 0,
       trialEndsAt: item.raw_payload?.trialEndsAt || null,
+      displayAmount: item.raw_payload?.displayAmount ?? item.amount,
+      nextChargeDate: item.raw_payload?.nextChargeDate || null,
+      nextChargeAmount: item.raw_payload?.nextChargeAmount || null,
+      statusLabel: item.raw_payload?.statusLabel || null,
+      isTrialActive: item.raw_payload?.isTrialActive || false,
+      alternatives: item.raw_payload?.alternatives || [],
+      alternativesSource: item.raw_payload?.alternativesSource || null,
+      sourceSubject: item.raw_payload?.sourceSubject || null,
       rawPayload: item.raw_payload,
       importedSubscriptionId: item.imported_subscription_id,
       sourceEmail: item.source_email,
@@ -310,7 +325,7 @@ export const DatabaseService = {
         .from('detected_subscriptions')
         .delete()
         .eq('user_id', userId)
-        .eq('status', 'pending');
+        .in('status', ['pending', 'active', 'trial']);
 
       if (meta.provider) query = query.eq('provider', meta.provider);
       if (meta.sourceEmail) query = query.eq('source_email', meta.sourceEmail);
@@ -336,7 +351,7 @@ export const DatabaseService = {
       start_date: item.startDate || new Date().toISOString(),
       confidence: item.confidence ?? null,
       raw_payload: item.rawPayload || item,
-      status: item.status || 'pending',
+      status: 'pending',
     }));
 
     const { data, error } = await supabase
@@ -350,6 +365,14 @@ export const DatabaseService = {
       startDate: item.start_date,
       trialDays: item.raw_payload?.trialDays || 0,
       trialEndsAt: item.raw_payload?.trialEndsAt || null,
+      displayAmount: item.raw_payload?.displayAmount ?? item.amount,
+      nextChargeDate: item.raw_payload?.nextChargeDate || null,
+      nextChargeAmount: item.raw_payload?.nextChargeAmount || null,
+      statusLabel: item.raw_payload?.statusLabel || null,
+      isTrialActive: item.raw_payload?.isTrialActive || false,
+      alternatives: item.raw_payload?.alternatives || [],
+      alternativesSource: item.raw_payload?.alternativesSource || null,
+      sourceSubject: item.raw_payload?.sourceSubject || null,
       rawPayload: item.raw_payload,
       importedSubscriptionId: item.imported_subscription_id,
       sourceEmail: item.source_email,
@@ -376,6 +399,14 @@ export const DatabaseService = {
       startDate: data.start_date,
       trialDays: data.raw_payload?.trialDays || 0,
       trialEndsAt: data.raw_payload?.trialEndsAt || null,
+      displayAmount: data.raw_payload?.displayAmount ?? data.amount,
+      nextChargeDate: data.raw_payload?.nextChargeDate || null,
+      nextChargeAmount: data.raw_payload?.nextChargeAmount || null,
+      statusLabel: data.raw_payload?.statusLabel || null,
+      isTrialActive: data.raw_payload?.isTrialActive || false,
+      alternatives: data.raw_payload?.alternatives || [],
+      alternativesSource: data.raw_payload?.alternativesSource || null,
+      sourceSubject: data.raw_payload?.sourceSubject || null,
       rawPayload: data.raw_payload,
       importedSubscriptionId: data.imported_subscription_id,
       sourceEmail: data.source_email,

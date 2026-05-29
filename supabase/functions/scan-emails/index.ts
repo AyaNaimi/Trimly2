@@ -1,211 +1,199 @@
 const CORS_HEADERS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization, apikey",
-  "Content-Type": "application/json",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, apikey',
+  'Content-Type': 'application/json',
 };
 
-const GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_MODEL = "llama3-70b-8192";
-const GOOGLE_GMAIL_SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
-const GMAIL_SEARCH_QUERIES = [
-  'newer_than:5y (subscription OR abonnement OR receipt OR invoice OR billing OR payment OR facturation OR renewal OR renouvellement OR "free trial" OR essai)',
-  'newer_than:5y (category:purchases OR label:^smartlabel_receipt)',
-  "newer_than:5y category:promotions",
-  "in:anywhere newer_than:5y -in:chats",
+const GMAIL_SCOPE = 'https://www.googleapis.com/auth/gmail.readonly';
+const GROQ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+const GROQ_MODEL = 'llama3-70b-8192';
+const GLOBAL_TIMEOUT_MS = 45_000;
+const GROQ_RETRY_DELAY_MS = 2_000;
+const MAX_MESSAGES = 600;
+const MAX_MESSAGES_PER_QUERY = 180;
+const DETAIL_BATCH_SIZE = 20;
+const MAX_AI_EMAILS = 120;
+const AI_CHUNK_SIZE = 6;
+
+const GMAIL_QUERIES = [
+  'in:anywhere newer_than:14d -in:chats',
+  'in:anywhere newer_than:90d -in:chats',
+  'newer_than:3y (invoice OR receipt OR billing OR subscription OR abonnement OR facturation OR renouvellement OR renewal OR "free trial" OR essai)',
+  'newer_than:3y (category:purchases OR label:^smartlabel_receipt)',
+  'newer_than:3y from:(noreply@netflix.com OR noreply@spotify.com OR no-reply@amazon.com OR billing@openai.com OR noreply@apple.com OR noreply@google.com OR billing@adobe.com OR notify@paypal.com)',
+  'newer_than:3y (amount OR montant OR charged OR preleve OR prélevé) (€ OR EUR OR $ OR MAD)',
 ];
-const LIST_PAGE_SIZE = 100;
-const MAX_MESSAGES_TO_SCAN = 600;
-const DETAIL_BATCH_SIZE = 15;
-const MAX_AI_EMAILS = 48;
-const AI_CHUNK_SIZE = 8;
-const MIN_RELEVANT_MESSAGES_BEFORE_FALLBACK = 25;
+
+const EXCLUDED_EMAIL_PATTERN =
+  /sign.?in|login|connexion|password|mot.de.passe|security.alert|verify|verification|otp|code.de.verification|welcome|bienvenue|newsletter|digest|unsubscribe|se.desabonner|account.access|workspace.invite|new.device|nouvel.appareil/i;
+
+const KNOWN_SERVICE_PATTERN =
+  /netflix|spotify|disney|amazon|prime|openai|chatgpt|apple|icloud|google|youtube|adobe|microsoft|office|dropbox|notion|nordvpn|canal|deezer|slack|zoom|paypal|playstation|xbox|nintendo/i;
+
+const SUBJECT_SIGNAL_PATTERN =
+  /invoice|receipt|billing|subscription|facture|abonnement|renouvellement|renewal|prelevement|prélèvement|charged|payment/i;
+
+const AMOUNT_PATTERN = /(?:[€$£]\s*\d{1,4}(?:[.,]\d{1,2})?|\b\d{1,4}[.,]\d{2}\s*(?:€|\$|£|eur|usd|gbp|mad|dhs|dh)\b)/i;
+const CYCLE_PATTERN = /monthly|annual|mensuel|annuel|weekly|quarterly|par mois|par an|per month|per year/i;
+const RECURRING_PATTERN = /subscription|abonnement|renewal|renouvellement|renews|next billing|next charge|prochain paiement|prochain prélèvement|facturation|billing cycle|free trial|essai/i;
+
+const SYSTEM_PROMPT = `Tu es un analyseur d'emails de facturation. Extrait UNIQUEMENT les abonnements avec preuve réelle de paiement, facturation, essai en cours ou renouvellement.
+
+IGNORE absolument : emails de connexion, sécurité, vérification, bienvenue,
+newsletters, notifications sans montant.
+
+Pour chaque abonnement trouvé, retourne CE FORMAT JSON EXACT sans aucun texte autour :
+{
+  "subscriptions": [
+    {
+      "serviceName": "Netflix",
+      "amount": 15.99,
+      "regularAmount": 15.99,
+      "billingFrequency": "monthly",
+      "category": "Streaming",
+      "startDate": "2024-01-15",
+      "trialDays": 0,
+      "trialEndsAt": null,
+      "nextChargeDate": "2025-02-15",
+      "nextChargeAmount": 15.99,
+      "status": "active",
+      "confidence": 0.95,
+      "sourceSubject": "Votre facture Netflix - Janvier 2025",
+      "sourceFrom": "noreply@netflix.com",
+      "reviewStatus": "confirmed",
+      "confidenceLabel": "Confirmé"
+    }
+  ]
+}
+
+reviewStatus doit être : confirmed (preuve facture/receipt), probable (indice fort), uncertain (possible)
+confidence entre 0.0 et 1.0
+billingFrequency : weekly | monthly | quarterly | annual
+status : active | trial | inactive
+
+Si aucun abonnement trouvé : {"subscriptions": []}`;
 
 interface AuthUser {
   id: string;
   email?: string;
 }
 
+interface ScanRequest {
+  accessToken?: string | null;
+  refreshToken?: string | null;
+  providerAccessToken?: string | null;
+  providerRefreshToken?: string | null;
+}
+
 interface GmailProfile {
-  emailAddress: string;
+  emailAddress?: string;
   messagesTotal?: number;
   threadsTotal?: number;
   historyId?: string;
 }
 
-interface ScanRequest {
-  email?: string;
-  provider?: string;
-  accessToken?: string | null;
-  refreshToken?: string | null;
-  providerAccessToken?: string | null;
-  providerRefreshToken?: string | null;
-  sessionAccessToken?: string | null;
-}
-
-interface EmailMessage {
+interface EmailForAnalysis {
   id: string;
   from: string;
   subject: string;
-  body: string;
-  snippet: string;
   date: string;
+  snippet: string;
+  body: string;
+  score: number;
 }
 
-interface Subscription {
+interface DetectedSubscription {
   serviceName: string;
-  amount: number;
-  billingFrequency: "weekly" | "monthly" | "quarterly" | "annual";
-  category: string;
-  startDate?: string;
+  amount?: number;
+  regularAmount?: number;
+  billingFrequency?: 'weekly' | 'monthly' | 'quarterly' | 'annual';
+  category?: string;
+  startDate?: string | null;
   trialDays?: number;
   trialEndsAt?: string | null;
-  confidence?: number;
-  regularAmount?: number;
   nextChargeDate?: string | null;
   nextChargeAmount?: number;
-  status?: "trial" | "active" | "inactive";
-  alternatives?: string[];
+  status?: 'active' | 'trial' | 'inactive';
+  confidence?: number;
+  sourceSubject?: string;
+  sourceFrom?: string;
+  reviewStatus?: 'confirmed' | 'probable' | 'uncertain';
+  confidenceLabel?: string;
 }
 
-type ServiceHint = {
-  name: string;
-  category: string;
-  patterns: RegExp[];
-};
-
-const SERVICE_HINTS: ServiceHint[] = [
-  { name: "Netflix", category: "Streaming", patterns: [/netflix/i, /@netflix/i] },
-  { name: "Spotify", category: "Musique", patterns: [/spotify/i] },
-  { name: "Disney+", category: "Streaming", patterns: [/disney\+/i, /disneyplus/i] },
-  { name: "Amazon Prime", category: "Shopping", patterns: [/amazon\s*prime/i] },
-  { name: "YouTube Premium", category: "Streaming", patterns: [/youtube\s*premium/i] },
-  { name: "Google One", category: "Cloud", patterns: [/google\s*one/i] },
-  { name: "ChatGPT", category: "IA", patterns: [/chatgpt/i, /openai/i] },
-  { name: "Adobe", category: "Productivite", patterns: [/adobe/i, /creative\s*cloud/i] },
-  { name: "Microsoft 365", category: "Productivite", patterns: [/microsoft\s*365/i, /office\s*365/i] },
-  { name: "Apple iCloud+", category: "Cloud", patterns: [/icloud/i, /apple\s*services/i] },
-  { name: "Canal+", category: "Streaming", patterns: [/canal\+/i] },
-  { name: "Deezer", category: "Musique", patterns: [/deezer/i] },
-  { name: "Dropbox", category: "Cloud", patterns: [/dropbox/i] },
-  { name: "Notion", category: "Productivite", patterns: [/notion/i] },
-  { name: "NordVPN", category: "Securite", patterns: [/nordvpn/i] },
-  { name: "Slack", category: "Communication", patterns: [/slack/i] },
-  { name: "Zoom", category: "Communication", patterns: [/zoom/i] },
-];
-
-const SERVICE_ALTERNATIVES: Record<string, string[]> = {
-  Netflix: ["Disney+", "Prime Video", "Canal+"],
-  Spotify: ["Deezer", "YouTube Music", "Apple Music"],
-  "Disney+": ["Netflix", "Prime Video", "Canal+"],
-  "Amazon Prime": ["Netflix", "Canal+", "Disney+"],
-  "YouTube Premium": ["Spotify", "Deezer", "Apple Music"],
-  ChatGPT: ["Claude Pro", "Gemini Advanced", "Perplexity Pro"],
-  Adobe: ["Canva Pro", "Affinity", "Figma Pro"],
-  "Microsoft 365": ["Google Workspace", "Notion", "LibreOffice"],
-  "Google One": ["iCloud+", "Dropbox", "OneDrive"],
-  "Apple iCloud+": ["Google One", "Dropbox", "OneDrive"],
-  Notion: ["Obsidian Sync", "ClickUp", "Evernote"],
-  Dropbox: ["Google Drive", "OneDrive", "iCloud+"],
-  Slack: ["Discord", "Microsoft Teams", "Google Chat"],
-  Zoom: ["Google Meet", "Microsoft Teams", "Whereby"],
-};
-
-const NON_SUBSCRIPTION_PATTERNS = [
-  /login/i,
-  /log in/i,
-  /sign in/i,
-  /new sign-?in/i,
-  /connexion/i,
-  /connectez-vous/i,
-  /security alert/i,
-  /account security/i,
-  /verify/i,
-  /verification/i,
-  /code de verification/i,
-  /one[- ]time code/i,
-  /\botp\b/i,
-  /mot de passe/i,
-  /password/i,
-  /magic link/i,
-  /device/i,
-  /appareil/i,
-  /welcome/i,
-  /bienvenue/i,
-  /newsletter/i,
-  /digest/i,
-  /activity/i,
-  /account access/i,
-  /workspace invite/i,
-];
-
-const STRONG_SUBSCRIPTION_PATTERNS = [
-  /subscription active/i,
-  /abonnement actif/i,
-  /invoice/i,
-  /receipt/i,
-  /billing/i,
-  /payment/i,
-  /facturation/i,
-  /facture/i,
-  /charged/i,
-  /prelevement/i,
-  /renewal/i,
-  /renouvellement/i,
-  /renews/i,
-  /next charge/i,
-  /next billing/i,
-  /free trial/i,
-  /essai gratuit/i,
-  /trial ends/i,
-  /end of trial/i,
-];
-
 Deno.serve(async (req) => {
-  if (req.method === "OPTIONS") {
+  if (req.method === 'OPTIONS') {
     return new Response(null, { headers: CORS_HEADERS });
   }
 
-  try {
-    const {
-      email,
-      provider = "gmail",
-      accessToken,
-      refreshToken,
-      providerAccessToken,
-      providerRefreshToken,
-      sessionAccessToken,
-    } = (await req.json()) as ScanRequest;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), GLOBAL_TIMEOUT_MS);
 
-    if (provider !== "gmail") {
-      return jsonResponse({ error: "Seul Gmail est supporte pour le moment." }, 400);
+  try {
+    if (req.method !== 'POST') {
+      return jsonResponse({ error: 'Method not allowed' }, 405);
     }
 
-    const user = await getAuthenticatedUser(sessionAccessToken);
-    const googleSession = await ensureGoogleAccess({
-      accessToken: providerAccessToken || accessToken || null,
-      refreshToken: providerRefreshToken || refreshToken || null,
+    const authHeader = req.headers.get('Authorization') || '';
+    const user = await validateSupabaseSession(authHeader, controller.signal);
+    const body = (await req.json()) as ScanRequest;
+    const inputAccessToken = body.accessToken || body.providerAccessToken || null;
+    const inputRefreshToken = body.refreshToken || body.providerRefreshToken || null;
+
+    if (!inputAccessToken && !inputRefreshToken) {
+      return jsonResponse({ error: 'Google accessToken ou refreshToken requis.' }, 400);
+    }
+
+    const googleAccess = await ensureGoogleAccess({
+      accessToken: inputAccessToken,
+      refreshToken: inputRefreshToken,
+      signal: controller.signal,
     });
 
-    const mailbox = await fetchGmailEmails(googleSession.accessToken);
-    const subscriptions = await detectSubscriptions(mailbox.emails);
+    const gmailProfile = googleAccess.profile;
+    const messageIds = await listMatchingMessageIds(googleAccess.accessToken, controller.signal);
+    const detailIds = Array.from(messageIds).slice(0, MAX_MESSAGES);
+    const emails = await fetchEmailDetails(detailIds, googleAccess.accessToken, controller.signal);
+    const scoredEmails = emails
+      .filter((email) => !isExcludedEmail(email))
+      .map((email) => ({ ...email, score: scoreEmail(email) }))
+      .filter((email) => email.score >= 3)
+      .sort((left, right) => right.score - left.score)
+      .slice(0, MAX_AI_EMAILS);
+
+    const aiResults = await analyzeWithGroq(scoredEmails, controller.signal);
+    const subscriptions = mergeSubscriptions(aiResults.length ? aiResults : buildHeuristicSubscriptions(scoredEmails));
 
     return jsonResponse({
       subscriptions,
-      emailCount: mailbox.emails.length,
-      matchedEmailCount: mailbox.matchedMessageCount,
+      emailCount: emails.length,
+      matchedEmailCount: messageIds.size,
+      analyzedCandidateCount: scoredEmails.length,
+      debug: {
+        groqConfigured: !!Deno.env.get('GROQ_API_KEY'),
+        topScores: scoredEmails.slice(0, 5).map((email) => ({
+          score: email.score,
+          from: email.from,
+          subject: email.subject,
+        })),
+      },
       connection: {
-        email: googleSession.profile.emailAddress || email || user.email || null,
-        providerUserId: user.id,
-        accessToken: googleSession.accessToken,
-        refreshToken: providerRefreshToken || refreshToken || null,
-        scopes: [GOOGLE_GMAIL_SCOPE],
-        source: providerAccessToken || accessToken ? "google-provider-token" : "google-refresh-token",
+        email: gmailProfile.emailAddress || user.email || null,
+        providerUserId: gmailProfile.emailAddress || user.id,
+        accessToken: googleAccess.accessToken,
+        refreshToken: inputRefreshToken,
+        scopes: [GMAIL_SCOPE],
+        source: googleAccess.source,
       },
     });
   } catch (error) {
-    console.error("scan-emails error:", error);
-    return jsonResponse({ error: error instanceof Error ? error.message : "Erreur interne." }, 500);
+    console.error('scan-emails error:', error);
+    const message = error instanceof Error ? error.message : 'Erreur interne.';
+    const status = message.includes('aborted') || message.includes('AbortError') ? 504 : 500;
+    return jsonResponse({ error: message }, status);
+  } finally {
+    clearTimeout(timeout);
   }
 });
 
@@ -213,27 +201,28 @@ function jsonResponse(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), { status, headers: CORS_HEADERS });
 }
 
-async function getAuthenticatedUser(sessionAccessToken: string | null | undefined): Promise<AuthUser> {
-  if (!sessionAccessToken) {
-    throw new Error("Session utilisateur requise.");
+async function validateSupabaseSession(authHeader: string, signal: AbortSignal): Promise<AuthUser> {
+  const token = authHeader.replace(/^Bearer\s+/i, '').trim();
+  if (!token) {
+    throw new Error('Session Supabase requise.');
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL");
-  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
-
+  const supabaseUrl = Deno.env.get('SUPABASE_URL');
+  const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY');
   if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error("Secrets Supabase manquants dans la fonction Edge.");
+    throw new Error('Secrets Supabase manquants.');
   }
 
   const response = await fetch(`${supabaseUrl}/auth/v1/user`, {
     headers: {
       apikey: supabaseAnonKey,
-      Authorization: `Bearer ${sessionAccessToken}`,
+      Authorization: `Bearer ${token}`,
     },
+    signal,
   });
 
   if (!response.ok) {
-    throw new Error("Session Supabase invalide.");
+    throw new Error('Session Supabase invalide.');
   }
 
   return (await response.json()) as AuthUser;
@@ -242,788 +231,555 @@ async function getAuthenticatedUser(sessionAccessToken: string | null | undefine
 async function ensureGoogleAccess({
   accessToken,
   refreshToken,
+  signal,
 }: {
   accessToken: string | null;
   refreshToken: string | null;
+  signal: AbortSignal;
 }) {
   let activeAccessToken = accessToken;
+  let source: 'google-provider-token' | 'refreshed-token' = 'google-provider-token';
 
   if (!activeAccessToken && refreshToken) {
-    activeAccessToken = await refreshGoogleAccessToken(refreshToken);
+    activeAccessToken = await refreshGoogleAccessToken(refreshToken, signal);
+    source = 'refreshed-token';
   }
 
   if (!activeAccessToken) {
-    throw new Error("Aucun access token Google disponible.");
+    throw new Error('Aucun access token Google disponible.');
   }
 
-  let profileResponse = await fetchGmailProfile(activeAccessToken);
-
+  let profileResponse = await gmailFetch('/profile', activeAccessToken, signal);
   if (profileResponse.status === 401 && refreshToken) {
-    activeAccessToken = await refreshGoogleAccessToken(refreshToken);
-    profileResponse = await fetchGmailProfile(activeAccessToken);
+    activeAccessToken = await refreshGoogleAccessToken(refreshToken, signal);
+    source = 'refreshed-token';
+    profileResponse = await gmailFetch('/profile', activeAccessToken, signal);
   }
 
   if (!profileResponse.ok) {
-    const errorText = await profileResponse.text();
-    throw new Error(`Impossible d'acceder a Gmail API: ${errorText}`);
+    throw new Error(`Gmail API profile impossible: ${await profileResponse.text()}`);
   }
 
-  const profile = (await profileResponse.json()) as GmailProfile;
-
-  return { accessToken: activeAccessToken, profile };
+  return {
+    accessToken: activeAccessToken,
+    profile: (await profileResponse.json()) as GmailProfile,
+    source,
+  };
 }
 
-async function refreshGoogleAccessToken(refreshToken: string) {
-  const clientId = Deno.env.get("GMAIL_CLIENT_ID") || Deno.env.get("GOOGLE_CLIENT_ID");
-  const clientSecret = Deno.env.get("GMAIL_CLIENT_SECRET") || Deno.env.get("GOOGLE_CLIENT_SECRET");
+async function refreshGoogleAccessToken(refreshToken: string, signal: AbortSignal) {
+  const clientId = Deno.env.get('GMAIL_CLIENT_ID') || Deno.env.get('GOOGLE_CLIENT_ID');
+  const clientSecret = Deno.env.get('GMAIL_CLIENT_SECRET');
 
-  if (!clientId || !clientSecret) {
-    throw new Error("Client Google manquant pour rafraichir le token Gmail.");
+  if (!clientId) {
+    throw new Error('GMAIL_CLIENT_ID requis pour rafraîchir le token Google.');
   }
 
-  const response = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      client_id: clientId,
-      client_secret: clientSecret,
-      grant_type: "refresh_token",
-      refresh_token: refreshToken,
-    }),
+  const tokenParams: Record<string, string> = {
+    client_id: clientId,
+    grant_type: 'refresh_token',
+    refresh_token: refreshToken,
+  };
+
+  if (clientSecret) {
+    tokenParams.client_secret = clientSecret;
+  }
+
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams(tokenParams),
+    signal,
   });
 
   const data = await response.json();
-
   if (!response.ok || !data?.access_token) {
-    throw new Error(data?.error_description || data?.error || "Refresh token Google invalide.");
+    if (data?.error === 'invalid_request' && String(data?.error_description || '').includes('client_secret')) {
+      throw new Error(
+        "Google demande le GMAIL_CLIENT_SECRET du client OAuth Web utilisé par Supabase. Le client Android n'a pas de secret. Crée/ouvre un client OAuth 'Web application' dans Google Cloud, copie son Client Secret, puis configure Supabase avec: supabase secrets set GMAIL_CLIENT_SECRET=<secret>",
+      );
+    }
+
+    throw new Error(data?.error_description || data?.error || 'Refresh token Google invalide.');
   }
 
   return String(data.access_token);
 }
 
-function fetchGmailProfile(accessToken: string) {
-  return fetch("https://gmail.googleapis.com/gmail/v1/users/me/profile", {
+function gmailFetch(path: string, accessToken: string, signal: AbortSignal) {
+  return fetch(`https://gmail.googleapis.com/gmail/v1/users/me${path}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
+    signal,
   });
 }
 
-async function fetchGmailEmails(accessToken: string) {
-  const messageIds = new Set<string>();
-  let matchedMessageCount = 0;
+async function listMatchingMessageIds(accessToken: string, signal: AbortSignal) {
+  const responses = await Promise.all(GMAIL_QUERIES.map((query) => listMessageIdsForQuery(query, accessToken, signal)));
 
-  for (let queryIndex = 0; queryIndex < GMAIL_SEARCH_QUERIES.length; queryIndex++) {
-    const query = GMAIL_SEARCH_QUERIES[queryIndex];
-    let pageToken: string | undefined;
+  const ids = new Set<string>();
+  for (const messages of responses) {
+    for (const message of messages) {
+      if (message?.id) ids.add(String(message.id));
+      if (ids.size >= MAX_MESSAGES) return ids;
+    }
+  }
+  return ids;
+}
 
-    while (messageIds.size < MAX_MESSAGES_TO_SCAN) {
-      const pageUrl = new URL("https://gmail.googleapis.com/gmail/v1/users/me/messages");
-      pageUrl.searchParams.set("q", query);
-      pageUrl.searchParams.set("maxResults", String(Math.min(LIST_PAGE_SIZE, MAX_MESSAGES_TO_SCAN - messageIds.size)));
-      if (pageToken) pageUrl.searchParams.set("pageToken", pageToken);
+async function listMessageIdsForQuery(query: string, accessToken: string, signal: AbortSignal) {
+  const messages: any[] = [];
+  let pageToken: string | undefined;
 
-      const listResponse = await fetch(pageUrl.toString(), {
+  while (messages.length < MAX_MESSAGES_PER_QUERY) {
+    try {
+      const url = new URL('https://gmail.googleapis.com/gmail/v1/users/me/messages');
+      url.searchParams.set('q', query);
+      url.searchParams.set('maxResults', String(Math.min(100, MAX_MESSAGES_PER_QUERY - messages.length)));
+      if (pageToken) url.searchParams.set('pageToken', pageToken);
+
+      const response = await fetch(url.toString(), {
         headers: { Authorization: `Bearer ${accessToken}` },
+        signal,
       });
 
-      if (!listResponse.ok) {
-        const errorText = await listResponse.text();
-        throw new Error(`Lecture Gmail impossible: ${errorText}`);
+      if (!response.ok) {
+        console.error('Gmail list failed:', query, await response.text());
+        break;
       }
 
-      const listData = await listResponse.json();
-      const messages = Array.isArray(listData?.messages) ? listData.messages : [];
-      if (!messages.length) break;
+      const data = await response.json();
+      const pageMessages = Array.isArray(data?.messages) ? data.messages : [];
+      messages.push(...pageMessages);
 
-      matchedMessageCount += messages.length;
-
-      for (const message of messages) {
-        if (message?.id) {
-          messageIds.add(String(message.id));
-        }
-        if (messageIds.size >= MAX_MESSAGES_TO_SCAN) break;
-      }
-
-      pageToken = listData?.nextPageToken;
-      if (!pageToken || messageIds.size >= MAX_MESSAGES_TO_SCAN) break;
-    }
-
-    const shouldContinueToFullMailbox =
-      queryIndex < GMAIL_SEARCH_QUERIES.length - 1 &&
-      (messageIds.size < MIN_RELEVANT_MESSAGES_BEFORE_FALLBACK || queryIndex < 2);
-
-    if (!shouldContinueToFullMailbox || messageIds.size >= MAX_MESSAGES_TO_SCAN) {
+      pageToken = data?.nextPageToken;
+      if (!pageToken || pageMessages.length === 0) break;
+    } catch (error) {
+      console.error('Gmail query pagination failed:', query, error);
       break;
     }
   }
 
-  const emails: EmailMessage[] = [];
-  const idList = Array.from(messageIds);
-
-  for (let index = 0; index < idList.length; index += DETAIL_BATCH_SIZE) {
-    const batchIds = idList.slice(index, index + DETAIL_BATCH_SIZE);
-    const batchResults = await Promise.all(
-      batchIds.map(async (messageId) => {
-        const response = await fetch(
-          `https://gmail.googleapis.com/gmail/v1/users/me/messages/${messageId}?format=full`,
-          {
-            headers: { Authorization: `Bearer ${accessToken}` },
-          },
-        );
-
-        if (!response.ok) return null;
-
-        const detail = await response.json();
-        return parseGmailMessage(detail);
-      }),
-    );
-
-    for (const parsed of batchResults) {
-      if (parsed) emails.push(parsed);
-    }
-  }
-
-  return {
-    emails,
-    matchedMessageCount: Math.max(matchedMessageCount, messageIds.size, emails.length),
-  };
+  return messages;
 }
 
-function parseGmailMessage(payload: any): EmailMessage | null {
-  try {
-    const headers = payload?.payload?.headers || [];
-    const getHeader = (name: string) =>
-      headers.find((header: any) => String(header?.name || "").toLowerCase() === name.toLowerCase())?.value || "";
+async function fetchEmailDetails(ids: string[], accessToken: string, signal: AbortSignal) {
+  const emails: EmailForAnalysis[] = [];
 
-    const body = sanitizeEmailText(extractBody(payload?.payload));
+  for (let index = 0; index < ids.length; index += DETAIL_BATCH_SIZE) {
+    const batch = ids.slice(index, index + DETAIL_BATCH_SIZE);
+    const batchResults = await Promise.all(
+      batch.map((id) => fetchSingleEmailDetail(id, accessToken, signal)),
+    );
+    emails.push(...batchResults.filter(Boolean) as EmailForAnalysis[]);
+  }
+
+  return emails;
+}
+
+async function fetchSingleEmailDetail(id: string, accessToken: string, signal: AbortSignal) {
+  try {
+    const metadataUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`;
+    const fullUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`;
+    const [metadataResponse, fullResponse] = await Promise.all([
+      fetch(metadataUrl, { headers: { Authorization: `Bearer ${accessToken}` }, signal }),
+      fetch(fullUrl, { headers: { Authorization: `Bearer ${accessToken}` }, signal }),
+    ]);
+
+    if (!metadataResponse.ok || !fullResponse.ok) {
+      console.error('Gmail detail failed:', id, metadataResponse.status, fullResponse.status);
+      return null;
+    }
+
+    const metadata = await metadataResponse.json();
+    const full = await fullResponse.json();
+    const headers = metadata?.payload?.headers || full?.payload?.headers || [];
 
     return {
-      id: String(payload?.id || crypto.randomUUID()),
-      from: getHeader("from"),
-      subject: getHeader("subject"),
-      body: body.slice(0, 6000),
-      snippet: String(payload?.snippet || "").slice(0, 700),
-      date: payload?.internalDate
-        ? new Date(Number(payload.internalDate)).toISOString()
-        : new Date().toISOString(),
+      id,
+      from: getHeader(headers, 'From'),
+      subject: getHeader(headers, 'Subject'),
+      date: getHeader(headers, 'Date'),
+      snippet: String(full?.snippet || '').slice(0, 700),
+      body: sanitizeText(extractBody(full?.payload)).slice(0, 3000),
+      score: 0,
     };
   } catch (error) {
-    console.error("parseGmailMessage error:", error);
+    console.error('fetchSingleEmailDetail error:', id, error);
     return null;
   }
+}
+
+function getHeader(headers: any[], name: string) {
+  return headers.find((header) => String(header?.name || '').toLowerCase() === name.toLowerCase())?.value || '';
 }
 
 function extractBody(node: any): string {
-  if (!node) return "";
-
-  if (node.body?.data && isReadableMimeType(node.mimeType)) {
+  if (!node) return '';
+  if (node.body?.data && isReadableMime(node.mimeType)) {
     return decodeBase64Url(node.body.data);
   }
-
   if (Array.isArray(node.parts)) {
-    for (const part of node.parts) {
-      const extracted = extractBody(part);
-      if (extracted) return extracted;
-    }
+    return node.parts.map((part) => extractBody(part)).join(' ');
   }
-
-  return "";
+  return '';
 }
 
-function isReadableMimeType(mimeType: string | undefined) {
+function isReadableMime(mimeType?: string) {
   if (!mimeType) return true;
-  return mimeType.includes("text/plain") || mimeType.includes("text/html");
+  return mimeType.includes('text/plain') || mimeType.includes('text/html');
 }
 
-function decodeBase64Url(input: string) {
-  const normalized = input.replace(/-/g, "+").replace(/_/g, "/");
-  return atob(normalized);
+function decodeBase64Url(value: string) {
+  const normalized = value.replace(/-/g, '+').replace(/_/g, '/');
+  try {
+    return atob(normalized);
+  } catch {
+    return '';
+  }
 }
 
-function sanitizeEmailText(text: string) {
+function sanitizeText(text: string) {
   return text
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/\s+/g, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
-async function detectSubscriptions(emails: EmailMessage[]): Promise<Subscription[]> {
-  const heuristicSubscriptions = extractSubscriptionsWithPatterns(emails);
-  const aiSubscriptions = await analyzeEmailsWithAI(emails);
-  return enrichSubscriptions(mergeSubscriptions([...heuristicSubscriptions, ...aiSubscriptions]))
-    .filter((item) => item.status !== "inactive");
+function isExcludedEmail(email: EmailForAnalysis) {
+  return EXCLUDED_EMAIL_PATTERN.test(`${email.from} ${email.subject} ${email.snippet} ${email.body}`);
 }
 
-async function analyzeEmailsWithAI(emails: EmailMessage[]): Promise<Subscription[]> {
-  const groqApiKey = Deno.env.get("GROQ_API_KEY");
-  if (!groqApiKey || !emails.length) {
+function scoreEmail(email: EmailForAnalysis) {
+  const subject = email.subject || '';
+  const body = `${email.snippet} ${email.body}`;
+  const allText = `${email.from} ${subject} ${body}`;
+  let score = 0;
+
+  if (SUBJECT_SIGNAL_PATTERN.test(subject)) score += 3;
+  if (AMOUNT_PATTERN.test(body)) score += 2;
+  if (containsFutureBillingDate(body)) score += 2;
+  if (KNOWN_SERVICE_PATTERN.test(`${email.from} ${subject}`)) score += 2;
+  if (CYCLE_PATTERN.test(allText)) score += 1;
+  if (RECURRING_PATTERN.test(allText)) score += 1;
+
+  return Math.min(10, score);
+}
+
+function containsFutureBillingDate(text: string) {
+  const now = new Date();
+  const isoMatches = text.match(/\b20\d{2}-\d{1,2}-\d{1,2}\b/g) || [];
+  const slashMatches = text.match(/\b\d{1,2}[\/.-]\d{1,2}[\/.-]20\d{2}\b/g) || [];
+  const keywordWindow = /(next charge|next billing|renewal|renouvellement|prochain paiement|facture le|charged on)[^.\n]{0,80}/gi;
+  const keywordMatches = text.match(keywordWindow) || [];
+  const candidates = [...isoMatches, ...slashMatches, ...keywordMatches.flatMap((item) => item.match(/\b(?:20\d{2}-\d{1,2}-\d{1,2}|\d{1,2}[\/.-]\d{1,2}[\/.-]20\d{2})\b/g) || [])];
+
+  return candidates.some((candidate) => {
+    const parsed = parseLooseDate(candidate);
+    return parsed ? parsed > now : false;
+  });
+}
+
+function parseLooseDate(value: string) {
+  if (/^\d{4}-/.test(value)) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  const match = value.match(/(\d{1,2})[\/.-](\d{1,2})[\/.-](20\d{2})/);
+  if (!match) return null;
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+async function analyzeWithGroq(emails: EmailForAnalysis[], signal: AbortSignal) {
+  const apiKey = Deno.env.get('GROQ_API_KEY');
+  if (!apiKey || emails.length === 0) {
+    if (!apiKey) console.error('GROQ_API_KEY missing; using heuristic fallback.');
     return [];
   }
 
-  const aiCandidates = pickAiCandidateEmails(emails).slice(0, MAX_AI_EMAILS);
-  const results: Subscription[] = [];
-
-  for (let index = 0; index < aiCandidates.length; index += AI_CHUNK_SIZE) {
-    const chunk = aiCandidates.slice(index, index + AI_CHUNK_SIZE);
-    const prompt = chunk
-      .map(
-        (email, chunkIndex) =>
-          `Email ${chunkIndex + 1}\nDate: ${email.date}\nDe: ${email.from}\nSujet: ${email.subject}\nExtrait: ${email.snippet}\nContenu: ${email.body.slice(0, 2200)}`,
-      )
-      .join("\n\n---\n\n");
-
-    try {
-      const response = await fetch(GROQ_API_URL, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${groqApiKey}`,
-        },
-        body: JSON.stringify({
-          model: GROQ_MODEL,
-          temperature: 0.1,
-          max_tokens: 1800,
-          messages: [
-            {
-              role: "system",
-              content:
-                'Tu extrais uniquement des abonnements reellement actifs ou en essai depuis des emails de facturation. Ignore strictement les emails de connexion, securite, verification, bienvenue, newsletters, acces compte ou notifications normales. Ne retourne un abonnement que si le mail prouve un paiement, une facture, un renouvellement, une fin d essai ou un plan payant actif. Retourne uniquement du JSON valide: {"subscriptions":[{"serviceName":"Nom","amount":0.00,"regularAmount":0.00,"billingFrequency":"monthly","category":"Streaming","startDate":"YYYY-MM-DD","trialDays":0,"trialEndsAt":null,"nextChargeDate":null,"nextChargeAmount":0.00,"status":"active","confidence":0.0}]}. billingFrequency doit etre weekly, monthly, quarterly ou annual. status doit etre trial, active ou inactive. Si aucune preuve forte n existe, retourne {"subscriptions":[]}. Ne renvoie jamais autre chose que le JSON.',
-            },
-            { role: "user", content: prompt },
-          ],
-        }),
-      });
-
-      const data = await response.json();
-      const content = data?.choices?.[0]?.message?.content;
-
-      if (typeof content === "string") {
-        const match = content.match(/\{[\s\S]*\}/);
-        if (match) {
-          const parsed = JSON.parse(match[0]);
-          if (Array.isArray(parsed?.subscriptions)) {
-            results.push(...parsed.subscriptions);
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Groq analysis error:", error);
-    }
+  const subscriptions: DetectedSubscription[] = [];
+  for (let index = 0; index < emails.length; index += AI_CHUNK_SIZE) {
+    const chunk = emails.slice(index, index + AI_CHUNK_SIZE);
+    const result = await callGroqChunk(chunk, apiKey, signal);
+    subscriptions.push(...result);
   }
-
-  return results;
+  return subscriptions;
 }
 
-function pickAiCandidateEmails(emails: EmailMessage[]) {
-  return [...emails]
-    .filter((email) => {
-      const text = `${email.subject} ${email.snippet} ${email.body}`.toLowerCase();
-      return !isNonSubscriptionEmail(text) && hasStrongSubscriptionEvidence(text);
+function buildHeuristicSubscriptions(emails: EmailForAnalysis[]): DetectedSubscription[] {
+  return emails
+    .filter((email) => email.score >= 4 && AMOUNT_PATTERN.test(`${email.snippet} ${email.body}`))
+    .map((email) => {
+      const text = `${email.from} ${email.subject} ${email.snippet} ${email.body}`;
+      const serviceName = inferKnownServiceName(text) || inferGenericServiceName(email);
+      if (!serviceName || !RECURRING_PATTERN.test(text)) return null;
+
+      const amount = extractAmount(text);
+      if (!amount) return null;
+
+      return {
+        serviceName,
+        amount,
+        regularAmount: amount,
+        billingFrequency: inferBillingFrequency(text),
+        category: inferCategory(serviceName),
+        startDate: normalizeDate(email.date) || new Date().toISOString().slice(0, 10),
+        trialDays: /trial|essai/i.test(text) ? 7 : 0,
+        trialEndsAt: null,
+        nextChargeDate: null,
+        nextChargeAmount: amount,
+        status: /trial|essai/i.test(text) ? 'trial' : 'active',
+        confidence: Math.min(0.78, 0.4 + email.score / 20),
+        sourceSubject: email.subject,
+        sourceFrom: email.from,
+        reviewStatus: email.score >= 7 ? 'probable' : 'uncertain',
+        confidenceLabel: email.score >= 7 ? 'Probable' : 'À vérifier',
+      } as DetectedSubscription;
     })
-    .sort((left, right) => scoreEmailForAi(right) - scoreEmailForAi(left));
+    .filter(Boolean) as DetectedSubscription[];
 }
 
-function scoreEmailForAi(email: EmailMessage) {
-  const text = `${email.subject} ${email.snippet} ${email.body}`.toLowerCase();
-  let score = 0;
-  if (/subscription|abonnement|invoice|receipt|billing|payment|trial|essai|membership|plan|premium|auto-renew/.test(text)) score += 4;
-  if (/€|\$|eur|usd|mad/.test(text)) score += 3;
-  if (/monthly|annual|year|month|hebdo|mensuel|annuel|trial ends|renews|semaine|trimestre|per month|per year/.test(text)) score += 2;
-  if (SERVICE_HINTS.some((hint) => hint.patterns.some((pattern) => pattern.test(text)))) score += 2;
-  if (isNonSubscriptionEmail(text)) score -= 6;
-  return score;
+function inferKnownServiceName(text: string) {
+  const services = [
+    ['Netflix', /netflix/i],
+    ['Spotify', /spotify/i],
+    ['Disney+', /disney/i],
+    ['Amazon Prime', /amazon\s*prime|prime video/i],
+    ['ChatGPT Plus', /chatgpt|openai/i],
+    ['Apple iCloud+', /icloud|apple/i],
+    ['Google One', /google one/i],
+    ['YouTube Premium', /youtube premium/i],
+    ['Adobe Creative Cloud', /adobe|creative cloud/i],
+    ['Microsoft 365', /microsoft 365|office 365/i],
+    ['Dropbox', /dropbox/i],
+    ['Notion', /notion/i],
+    ['NordVPN', /nordvpn/i],
+    ['Canal+', /canal\+/i],
+    ['Deezer', /deezer/i],
+    ['Slack', /slack/i],
+    ['Zoom', /zoom/i],
+    ['PlayStation Plus', /playstation/i],
+  ] as const;
+
+  return services.find(([, pattern]) => pattern.test(text))?.[0] || '';
 }
 
-function extractSubscriptionsWithPatterns(emails: EmailMessage[]): Subscription[] {
-  const results: Subscription[] = [];
+function inferGenericServiceName(email: EmailForAnalysis) {
+  const subject = cleanServiceName(email.subject);
+  const body = `${email.snippet} ${email.body}`;
+  const bodyMatch =
+    body.match(/(?:abonnement|subscription|facturation|billing|renewal|renouvellement)\s+(?:à|a|for|de|du|chez)?\s*([A-Z][A-Za-z0-9+&'. -]{2,40})/i) ||
+    body.match(/([A-Z][A-Za-z0-9+&'. -]{2,40})\s+(?:premium|pro|plus|subscription|abonnement)/i);
 
-  for (const email of emails) {
-    const candidate = extractSubscriptionFromEmail(email);
-    if (candidate) results.push(candidate);
-  }
+  const fromMatch = email.from.match(/@([A-Za-z0-9-]{3,40})\./);
+  const candidates = [
+    subject,
+    bodyMatch?.[1],
+    fromMatch?.[1],
+  ]
+    .map((value) => cleanServiceName(value || ''))
+    .filter(Boolean);
 
-  return mergeSubscriptions(results);
+  return candidates.find((candidate) => !isWeakServiceName(candidate)) || '';
 }
 
-function extractSubscriptionFromEmail(email: EmailMessage): Subscription | null {
-  const text = `${email.from} ${email.subject} ${email.snippet} ${email.body}`;
-  const normalized = text.toLowerCase();
-  const serviceHint = findServiceHint(text);
-
-  if (isNonSubscriptionEmail(normalized)) {
-    return null;
-  }
-
-  if (!serviceHint && !looksLikeBillingEmail(normalized)) {
-    return null;
-  }
-
-  const amount = extractAmount(text);
-  const trialInfo = extractTrialInfo(text);
-  const statusInfo = extractStatusInfo(text, trialInfo);
-  const keepTrialWithoutAmount = statusInfo.status === "trial" && !!(trialInfo.trialDays || trialInfo.trialEndsAt);
-  const hasBillingProofWithAmount =
-    amount > 0 &&
-    /invoice|receipt|charged|payment successful|renew|renewal|subscription|abonnement|facture|billing cycle|next charge|next billing|prelevement/.test(normalized);
-  const hasStrongEvidence = hasStrongSubscriptionEvidence(normalized) || hasBillingProofWithAmount || keepTrialWithoutAmount;
-
-  if (!hasStrongEvidence) {
-    return null;
-  }
-
-  if (amount <= 0 && !keepTrialWithoutAmount) {
-    return null;
-  }
-
-  const explicitStartDate = extractContextualDate(text, [
-    "started",
-    "commence",
-    "debut",
-    "subscription date",
-    "purchase date",
-    "date de commande",
-    "activation",
-  ]);
-  const chargeDate = extractContextualDate(text, [
-    "next billing",
-    "next charge",
-    "renews",
-    "renouvellement",
-    "will renew",
-    "charged on",
-    "facture le",
-  ]);
-  const emailDate = toIsoDate(email.date);
-  const startDate =
-    explicitStartDate ||
-    inferStartDateFromTrial(trialInfo, emailDate) ||
-    chargeDate ||
-    emailDate;
-  const serviceName = serviceHint?.name || inferServiceName(text);
-  const regularAmount = amount > 0 ? amount : 0;
-
-  const candidate: Subscription = {
-    serviceName,
-    amount: regularAmount,
-    regularAmount,
-    billingFrequency: inferFrequency(text),
-    category: serviceHint?.category || inferCategory(text),
-    startDate,
-    trialDays: trialInfo.trialDays,
-    trialEndsAt: trialInfo.trialEndsAt,
-    nextChargeDate: statusInfo.nextChargeDate || trialInfo.trialEndsAt || chargeDate || null,
-    nextChargeAmount: regularAmount,
-    status: statusInfo.status,
-    alternatives: getAlternativesForService(serviceName),
-    confidence: computeConfidence({
-      hasServiceHint: !!serviceHint,
-      hasAmount: amount > 0 || keepTrialWithoutAmount,
-      hasTrialInfo: trialInfo.trialDays > 0 || !!trialInfo.trialEndsAt,
-      hasDate: !!startDate,
-    }),
-  };
-
-  return candidate.serviceName ? candidate : null;
+function cleanServiceName(value: string) {
+  return String(value || '')
+    .replace(/^(re|fw|fwd)\s*:\s*/i, '')
+    .replace(/(votre|your|facture|invoice|receipt|recu|reçu|abonnement|subscription|payment|paiement|billing|facturation|renewal|renouvellement|confirmation|test)/gi, ' ')
+    .replace(/[^A-Za-z0-9+&'. -]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 40);
 }
 
-function looksLikeBillingEmail(text: string) {
-  return /subscription|abonnement|receipt|invoice|billing|payment|facturation|renewal|trial|essai|membership|plan|premium|auto-renew|renews|next charge|prochain prelevement|prelevement|renew/.test(text);
-}
-
-function isNonSubscriptionEmail(text: string) {
-  return NON_SUBSCRIPTION_PATTERNS.some((pattern) => pattern.test(text));
-}
-
-function hasStrongSubscriptionEvidence(text: string) {
-  if (STRONG_SUBSCRIPTION_PATTERNS.some((pattern) => pattern.test(text))) {
-    return true;
-  }
-
-  const hasPlanWord = /subscription|abonnement|membership|plan|premium|plus|pro|family/.test(text);
-  const hasMoney = /€|\$|eur|usd|mad|\b\d{1,4}[.,]\d{2}\b/.test(text);
-  const hasChargeWindow = /monthly|annual|yearly|mensuel|annuel|hebdo|weekly|quarterly|par mois|per month|per year/.test(text);
-
-  return (hasPlanWord && hasMoney) || (hasMoney && hasChargeWindow);
-}
-
-function findServiceHint(text: string) {
-  return SERVICE_HINTS.find((hint) => hint.patterns.some((pattern) => pattern.test(text)));
-}
-
-function inferServiceName(text: string) {
-  const match = text.match(/\b([A-Z][A-Za-z0-9+&.-]{2,}(?:\s+[A-Z][A-Za-z0-9+&.-]{2,}){0,2})\b/);
-  return match ? match[1].trim() : "";
-}
-
-function inferCategory(text: string) {
-  const normalized = text.toLowerCase();
-  if (/music|musique|spotify|deezer/.test(normalized)) return "Musique";
-  if (/cloud|storage|stockage|icloud|dropbox|google one/.test(normalized)) return "Cloud";
-  if (/security|vpn|securite/.test(normalized)) return "Securite";
-  if (/productiv|adobe|office|microsoft|notion/.test(normalized)) return "Productivite";
-  if (/chatgpt|openai|ai|ia/.test(normalized)) return "IA";
-  return "Streaming";
-}
-
-function getAlternativesForService(serviceName: string) {
-  const lower = String(serviceName || "").toLowerCase();
-
-  for (const [service, alternatives] of Object.entries(SERVICE_ALTERNATIVES)) {
-    if (lower.includes(service.toLowerCase())) {
-      return alternatives;
-    }
-  }
-
-  return [];
+function isWeakServiceName(value: string) {
+  const normalized = value.trim().toLowerCase();
+  return (
+    normalized.length < 3 ||
+    /^(gmail|google|mail|email|support|team|account|compte|noreply|no reply|notification|notifications|client|service)$/i.test(normalized) ||
+    /^\d/.test(normalized)
+  );
 }
 
 function extractAmount(text: string) {
   const patterns = [
-    /(\d{1,4}(?:[.,]\d{1,2})?)\s?(€|eur|usd|\$|mad)\b/i,
-    /\b(€|eur|usd|\$|mad)\s?(\d{1,4}(?:[.,]\d{1,2})?)\b/i,
-    /(?:price|amount|total|monthly|annual|mensuel|annuel|facture|billing)[^0-9]{0,12}(\d{1,4}(?:[.,]\d{1,2})?)/i,
+    /[€$£]\s*(\d{1,4}(?:[.,]\d{1,2})?)/i,
+    /\b(\d{1,4}[.,]\d{2})\s*(?:€|\$|£|eur|usd|gbp|mad|dhs|dh)\b/i,
   ];
 
   for (const pattern of patterns) {
     const match = text.match(pattern);
     if (!match) continue;
-    const rawValue = match[2] && /\d/.test(match[2]) ? match[2] : match[1];
-    const amount = Number.parseFloat(String(rawValue).replace(",", "."));
-    if (Number.isFinite(amount) && amount > 0 && amount < 5000) {
-      return amount;
-    }
+    const amount = Number.parseFloat(String(match[1]).replace(',', '.'));
+    if (Number.isFinite(amount) && amount > 0 && amount < 5000) return amount;
   }
 
   return 0;
 }
 
-function inferFrequency(text: string): "weekly" | "monthly" | "quarterly" | "annual" {
-  const normalized = text.toLowerCase();
-  if (/quarter|trimestre|quarterly/.test(normalized)) return "quarterly";
-  if (/annual|annuel|yearly|\/year|per year|par an/.test(normalized)) return "annual";
-  if (/weekly|hebdo|per week|\/week|par semaine/.test(normalized)) return "weekly";
-  return "monthly";
+function inferBillingFrequency(text: string): 'weekly' | 'monthly' | 'quarterly' | 'annual' {
+  if (/weekly|hebdo|per week|par semaine/i.test(text)) return 'weekly';
+  if (/quarterly|trimestre/i.test(text)) return 'quarterly';
+  if (/annual|annuel|yearly|per year|par an/i.test(text)) return 'annual';
+  return 'monthly';
 }
 
-function extractTrialInfo(text: string) {
-  const normalized = text.toLowerCase();
-  const dayMatch =
-    normalized.match(/(?:free trial|trial|essai gratuit|essai)[^\d]{0,12}(\d{1,3})\s*(?:days|day|jours|jour)/i) ||
-    normalized.match(/(\d{1,3})\s*(?:days|day|jours|jour)[^\n]{0,20}(?:free trial|trial|essai gratuit|essai)/i);
-
-  const trialDays = dayMatch ? Number.parseInt(dayMatch[1], 10) : 0;
-  const trialEndsAt = extractContextualDate(text, [
-    "trial ends",
-    "trial will end",
-    "end of trial",
-    "fin de l'essai",
-    "essai se termine",
-  ]);
-
-  return {
-    trialDays: Number.isFinite(trialDays) ? trialDays : 0,
-    trialEndsAt,
-  };
+function inferCategory(serviceName: string) {
+  if (/netflix|disney|youtube|canal|prime video/i.test(serviceName)) return 'Streaming';
+  if (/spotify|deezer/i.test(serviceName)) return 'Musique';
+  if (/chatgpt|openai/i.test(serviceName)) return 'IA';
+  if (/icloud|google one|dropbox/i.test(serviceName)) return 'Cloud';
+  if (/adobe|microsoft|notion|slack|zoom/i.test(serviceName)) return 'Productivite';
+  if (/nordvpn/i.test(serviceName)) return 'Securite';
+  return 'Autre';
 }
 
-function extractStatusInfo(
-  text: string,
-  trialInfo: { trialDays: number; trialEndsAt: string | null },
-) {
-  const normalized = text.toLowerCase();
-  const isTrial =
-    trialInfo.trialDays > 0 ||
-    !!trialInfo.trialEndsAt ||
-    /free trial|trial period|essai gratuit|trial ends|trial will end|essai se termine|essai jusqu/.test(normalized);
-  const isInactive =
-    /cancelled|canceled|termination|ended subscription|subscription ended|resilie|resiliation/.test(normalized);
-  const nextChargeDate = extractContextualDate(text, [
-    "next billing",
-    "next charge",
-    "renews",
-    "renewal date",
-    "renews on",
-    "prochain prelevement",
-    "prochain paiement",
-    "facture le",
-  ]);
+async function callGroqChunk(chunk: EmailForAnalysis[], apiKey: string, signal: AbortSignal) {
+  const userPrompt = chunk
+    .map((email, index) => [
+      `Email ${index + 1}`,
+      `Score: ${email.score}`,
+      `From: ${email.from}`,
+      `Subject: ${email.subject}`,
+      `Date: ${email.date}`,
+      `Snippet: ${email.snippet}`,
+      `Body: ${email.body}`,
+    ].join('\n'))
+    .join('\n\n---\n\n');
 
-  if (isInactive) {
-    return { status: "inactive" as const, nextChargeDate };
-  }
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const response = await fetch(GROQ_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: GROQ_MODEL,
+        temperature: 0.1,
+        max_tokens: 1800,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: userPrompt },
+        ],
+      }),
+      signal,
+    });
 
-  if (isTrial) {
-    return { status: "trial" as const, nextChargeDate };
-  }
-
-  return { status: "active" as const, nextChargeDate };
-}
-
-function extractContextualDate(text: string, keywords: string[]) {
-  const snippets = buildKeywordSnippets(text, keywords);
-
-  for (const snippet of snippets) {
-    const parsed = extractFirstDate(snippet);
-    if (parsed) return parsed;
-  }
-
-  return extractFirstDate(text);
-}
-
-function buildKeywordSnippets(text: string, keywords: string[]) {
-  const snippets: string[] = [];
-  const lower = text.toLowerCase();
-
-  for (const keyword of keywords) {
-    const index = lower.indexOf(keyword.toLowerCase());
-    if (index >= 0) {
-      snippets.push(text.slice(Math.max(0, index - 20), Math.min(text.length, index + 120)));
-    }
-  }
-
-  return snippets;
-}
-
-function extractFirstDate(text: string) {
-  const candidates = [
-    ...extractIsoDates(text),
-    ...extractSlashDates(text),
-    ...extractNamedDates(text),
-  ];
-
-  return candidates.length ? candidates[0] : null;
-}
-
-function extractIsoDates(text: string) {
-  const matches = text.match(/\b(20\d{2})-(\d{1,2})-(\d{1,2})\b/g) || [];
-  return matches.map((value) => toIsoDate(value)).filter(Boolean) as string[];
-}
-
-function extractSlashDates(text: string) {
-  const regex = /\b(\d{1,2})[\/.-](\d{1,2})[\/.-](20\d{2})\b/g;
-  const results: string[] = [];
-  let match: RegExpExecArray | null;
-
-  while ((match = regex.exec(text)) !== null) {
-    const day = Number.parseInt(match[1], 10);
-    const month = Number.parseInt(match[2], 10);
-    const year = Number.parseInt(match[3], 10);
-    results.push(buildIsoDate(year, month, day));
-  }
-
-  return results.filter(Boolean);
-}
-
-function extractNamedDates(text: string) {
-  const monthMap: Record<string, number> = {
-    january: 1,
-    february: 2,
-    march: 3,
-    april: 4,
-    may: 5,
-    june: 6,
-    july: 7,
-    august: 8,
-    september: 9,
-    october: 10,
-    november: 11,
-    december: 12,
-    janvier: 1,
-    fevrier: 2,
-    "février": 2,
-    mars: 3,
-    avril: 4,
-    mai: 5,
-    juin: 6,
-    juillet: 7,
-    aout: 8,
-    "août": 8,
-    septembre: 9,
-    octobre: 10,
-    novembre: 11,
-    decembre: 12,
-    "décembre": 12,
-  };
-
-  const regex =
-    /\b(\d{1,2})\s+(january|february|march|april|may|june|july|august|september|october|november|december|janvier|fevrier|février|mars|avril|mai|juin|juillet|aout|août|septembre|octobre|novembre|decembre|décembre)\s+(20\d{2})\b/i;
-  const match = text.match(regex);
-  if (!match) return [];
-
-  const day = Number.parseInt(match[1], 10);
-  const month = monthMap[match[2].toLowerCase()];
-  const year = Number.parseInt(match[3], 10);
-  const iso = buildIsoDate(year, month, day);
-  return iso ? [iso] : [];
-}
-
-function buildIsoDate(year: number, month: number, day: number) {
-  if (!year || !month || !day) return "";
-  const date = new Date(Date.UTC(year, month - 1, day));
-  if (
-    Number.isNaN(date.getTime()) ||
-    date.getUTCFullYear() !== year ||
-    date.getUTCMonth() !== month - 1 ||
-    date.getUTCDate() !== day
-  ) {
-    return "";
-  }
-  return date.toISOString().slice(0, 10);
-}
-
-function inferStartDateFromTrial(
-  trialInfo: { trialDays: number; trialEndsAt: string | null },
-  fallbackDate: string | null,
-) {
-  if (trialInfo.trialDays > 0 && trialInfo.trialEndsAt) {
-    const trialEnd = new Date(trialInfo.trialEndsAt);
-    trialEnd.setUTCDate(trialEnd.getUTCDate() - trialInfo.trialDays);
-    return trialEnd.toISOString().slice(0, 10);
-  }
-
-  return fallbackDate;
-}
-
-function toIsoDate(input: string | undefined | null) {
-  if (!input) return null;
-  const date = new Date(input);
-  if (Number.isNaN(date.getTime())) return null;
-  return date.toISOString().slice(0, 10);
-}
-
-function addDaysToIsoDate(dateString: string, days: number) {
-  const date = new Date(dateString);
-  if (Number.isNaN(date.getTime())) return null;
-  date.setUTCDate(date.getUTCDate() + days);
-  return date.toISOString().slice(0, 10);
-}
-
-function computeConfidence({
-  hasServiceHint,
-  hasAmount,
-  hasTrialInfo,
-  hasDate,
-}: {
-  hasServiceHint: boolean;
-  hasAmount: boolean;
-  hasTrialInfo: boolean;
-  hasDate: boolean;
-}) {
-  let score = 0.35;
-  if (hasServiceHint) score += 0.3;
-  if (hasAmount) score += 0.2;
-  if (hasDate) score += 0.1;
-  if (hasTrialInfo) score += 0.05;
-  return Math.min(0.99, Number(score.toFixed(2)));
-}
-
-function mergeSubscriptions(items: Subscription[]) {
-  const merged = new Map<string, Subscription>();
-
-  for (const item of items) {
-    const keepTrialWithoutAmount =
-      Number(item.amount || 0) <= 0 &&
-      (item.status === "trial" || Number(item.trialDays || 0) > 0 || !!item.trialEndsAt);
-
-    if (!item?.serviceName || (!keepTrialWithoutAmount && (!item?.amount || item.amount <= 0))) continue;
-
-    const normalizedKey = item.serviceName.trim().toLowerCase();
-    const normalizedItem: Subscription = {
-      serviceName: item.serviceName.trim(),
-      amount: Number(item.amount),
-      regularAmount: Number(item.regularAmount ?? item.amount ?? 0),
-      billingFrequency: normalizeFrequency(item.billingFrequency),
-      category: item.category || "Autre",
-      startDate: toIsoDate(item.startDate) || undefined,
-      trialDays: Number.isFinite(Number(item.trialDays)) ? Number(item.trialDays) : 0,
-      trialEndsAt: toIsoDate(item.trialEndsAt) || null,
-      nextChargeDate: toIsoDate(item.nextChargeDate) || null,
-      nextChargeAmount: Number.isFinite(Number(item.nextChargeAmount)) ? Number(item.nextChargeAmount) : Number(item.amount ?? 0),
-      status: item.status || "active",
-      alternatives: Array.isArray(item.alternatives) ? item.alternatives.filter(Boolean) : [],
-      confidence: Number.isFinite(Number(item.confidence)) ? Number(item.confidence) : 0.55,
-    };
-
-    const existing = merged.get(normalizedKey);
-
-    if (!existing) {
-      merged.set(normalizedKey, normalizedItem);
+    if (response.status === 429 && attempt === 0) {
+      await delay(GROQ_RETRY_DELAY_MS);
       continue;
     }
 
-    const candidateScore =
-      (normalizedItem.confidence || 0) +
-      (normalizedItem.trialDays ? 0.08 : 0) +
-      (normalizedItem.startDate ? 0.05 : 0);
-    const existingScore =
-      (existing.confidence || 0) + (existing.trialDays ? 0.08 : 0) + (existing.startDate ? 0.05 : 0);
+    if (!response.ok) {
+      console.error('Groq chunk failed:', response.status, await response.text());
+      return [];
+    }
 
-    merged.set(normalizedKey, {
-      ...existing,
-      ...(candidateScore >= existingScore ? normalizedItem : {}),
-      serviceName: existing.serviceName || normalizedItem.serviceName,
-      amount: normalizedItem.amount || existing.amount,
-      regularAmount: normalizedItem.regularAmount || existing.regularAmount || normalizedItem.amount || existing.amount,
-      trialDays: Math.max(existing.trialDays || 0, normalizedItem.trialDays || 0),
-      trialEndsAt: normalizedItem.trialEndsAt || existing.trialEndsAt || null,
-      startDate: normalizedItem.startDate || existing.startDate,
-      nextChargeDate: normalizedItem.nextChargeDate || existing.nextChargeDate || null,
-      nextChargeAmount: normalizedItem.nextChargeAmount || existing.nextChargeAmount || normalizedItem.amount || existing.amount,
-      status:
-        existing.status === "trial" || normalizedItem.status === "trial"
-          ? "trial"
-          : normalizedItem.status === "inactive" && existing.status !== "active"
-            ? "inactive"
-            : "active",
-      alternatives: Array.from(new Set([...(existing.alternatives || []), ...(normalizedItem.alternatives || [])])),
-      confidence: Math.max(existing.confidence || 0, normalizedItem.confidence || 0),
-    });
+    const data = await response.json();
+    const content = data?.choices?.[0]?.message?.content || '';
+    return parseGroqSubscriptions(content);
   }
 
-  return Array.from(merged.values()).sort((left, right) => (right.confidence || 0) - (left.confidence || 0));
+  return [];
 }
 
-function enrichSubscriptions(items: Subscription[]) {
-  const today = new Date().toISOString().slice(0, 10);
-
-  return items.map((item) => {
-    const trialDays = Number.isFinite(Number(item.trialDays)) ? Number(item.trialDays) : 0;
-    const startDate = toIsoDate(item.startDate) || today;
-    const computedTrialEnd =
-      toIsoDate(item.trialEndsAt) || (trialDays > 0 && startDate ? addDaysToIsoDate(startDate, trialDays) : null);
-    const isTrialActive = item.status === "trial" && !!computedTrialEnd && computedTrialEnd >= today;
-    const regularAmount = Number(item.regularAmount ?? item.amount ?? 0) || 0;
-
-    return {
-      ...item,
-      amount: regularAmount,
-      regularAmount,
-      startDate,
-      trialDays,
-      trialEndsAt: computedTrialEnd,
-      nextChargeDate: isTrialActive
-        ? computedTrialEnd
-        : toIsoDate(item.nextChargeDate) || computedTrialEnd || startDate,
-      nextChargeAmount: Number(item.nextChargeAmount ?? regularAmount) || regularAmount,
-      status: isTrialActive ? "trial" : item.status === "inactive" ? "inactive" : "active",
-      alternatives: item.alternatives?.length ? item.alternatives : getAlternativesForService(item.serviceName),
-    };
-  });
-}
-
-function normalizeFrequency(value: string | undefined) {
-  switch (String(value || "").toLowerCase()) {
-    case "weekly":
-      return "weekly";
-    case "quarterly":
-      return "quarterly";
-    case "annual":
-    case "yearly":
-      return "annual";
-    default:
-      return "monthly";
+function parseGroqSubscriptions(content: string) {
+  try {
+    const match = content.match(/\{[\s\S]*\}/);
+    if (!match) return [];
+    const parsed = JSON.parse(match[0]);
+    return Array.isArray(parsed?.subscriptions) ? parsed.subscriptions : [];
+  } catch (error) {
+    console.error('Groq JSON parse failed:', error, content);
+    return [];
   }
+}
+
+function mergeSubscriptions(items: DetectedSubscription[]) {
+  const merged = new Map<string, DetectedSubscription>();
+
+  for (const item of items) {
+    const key = String(item?.serviceName || '').trim().toLowerCase();
+    if (!key) continue;
+
+    const normalized = normalizeSubscription(item);
+    const existing = merged.get(key);
+    if (!existing || Number(normalized.confidence || 0) > Number(existing.confidence || 0)) {
+      merged.set(key, normalized);
+    }
+  }
+
+  return Array.from(merged.values()).sort((left, right) => Number(right.confidence || 0) - Number(left.confidence || 0));
+}
+
+function normalizeSubscription(item: DetectedSubscription): DetectedSubscription {
+  const amount = toAmount(item.amount);
+  const confidence = Number(item.confidence);
+  const reviewStatus = ['confirmed', 'probable', 'uncertain'].includes(String(item.reviewStatus))
+    ? item.reviewStatus
+    : confidence >= 0.85
+      ? 'confirmed'
+      : confidence >= 0.65
+        ? 'probable'
+        : 'uncertain';
+
+  return {
+    serviceName: String(item.serviceName || '').trim(),
+    amount,
+    regularAmount: toAmount(item.regularAmount ?? amount),
+    billingFrequency: normalizeFrequency(item.billingFrequency),
+    category: item.category || 'Autre',
+    startDate: normalizeDate(item.startDate),
+    trialDays: Number.isFinite(Number(item.trialDays)) ? Number(item.trialDays) : 0,
+    trialEndsAt: normalizeDate(item.trialEndsAt),
+    nextChargeDate: normalizeDate(item.nextChargeDate),
+    nextChargeAmount: toAmount(item.nextChargeAmount ?? item.regularAmount ?? amount),
+    status: normalizeStatus(item.status),
+    confidence: Number.isFinite(confidence) ? Math.max(0, Math.min(1, confidence)) : 0.5,
+    sourceSubject: item.sourceSubject || '',
+    sourceFrom: item.sourceFrom || '',
+    reviewStatus,
+    confidenceLabel: item.confidenceLabel || (reviewStatus === 'confirmed' ? 'Confirmé' : reviewStatus === 'probable' ? 'Probable' : 'À vérifier'),
+  };
+}
+
+function normalizeFrequency(value: unknown): 'weekly' | 'monthly' | 'quarterly' | 'annual' {
+  const lower = String(value || '').toLowerCase();
+  if (lower === 'weekly') return 'weekly';
+  if (lower === 'quarterly') return 'quarterly';
+  if (lower === 'annual' || lower === 'yearly') return 'annual';
+  return 'monthly';
+}
+
+function normalizeStatus(value: unknown): 'active' | 'trial' | 'inactive' {
+  const lower = String(value || '').toLowerCase();
+  if (lower === 'trial') return 'trial';
+  if (lower === 'inactive') return 'inactive';
+  return 'active';
+}
+
+function normalizeDate(value: unknown) {
+  if (!value) return null;
+  const date = new Date(String(value));
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toISOString().slice(0, 10);
+}
+
+function toAmount(value: unknown) {
+  const parsed = Number.parseFloat(String(value ?? 0).replace(',', '.'));
+  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+}
+
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

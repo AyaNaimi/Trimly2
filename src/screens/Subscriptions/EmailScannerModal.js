@@ -13,6 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useApp } from '../../context/AppContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { supabase } from '../../utils/supabase';
 import { Fonts, Radius, Shadow } from '../../theme';
@@ -30,6 +31,8 @@ const addAlpha = (hex, opacity) => {
   return `#${normalized}${op}`;
 };
 
+// SCAN_STAGES moved inside component for localization
+
 export default function EmailScannerModal({
   visible,
   onClose,
@@ -46,6 +49,14 @@ export default function EmailScannerModal({
     importDetectedSubscription,
     dismissDetectedSubscription,
   } = useApp();
+  const { t, locale } = useLanguage();
+
+  const SCAN_STAGES = useMemo(() => [
+    t('scanner.stages.connecting'),
+    t('scanner.stages.searching'),
+    t('scanner.stages.analyzing'),
+    t('scanner.stages.preparing'),
+  ], [t]);
 
   const [step, setStep] = useState('choose');
   const [provider, setProvider] = useState(null);
@@ -56,6 +67,9 @@ export default function EmailScannerModal({
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [expandedIndex, setExpandedIndex] = useState(null);
+  const [rowBusyIndex, setRowBusyIndex] = useState(null);
+  const [scanStageIndex, setScanStageIndex] = useState(0);
 
   useEffect(() => {
     if (!visible) return;
@@ -69,7 +83,23 @@ export default function EmailScannerModal({
     setLogs([]);
     setLoading(false);
     setError(null);
+    setExpandedIndex(null);
+    setRowBusyIndex(null);
+    setScanStageIndex(0);
   }, [visible, initialEmail]);
+
+  useEffect(() => {
+    if (step !== 'scanning') {
+      setScanStageIndex(0);
+      return undefined;
+    }
+
+    const timer = setInterval(() => {
+      setScanStageIndex((current) => (current + 1) % SCAN_STAGES.length);
+    }, 1100);
+
+    return () => clearInterval(timer);
+  }, [step]);
 
   const pendingForReview = useMemo(
     () => (pendingDetectedSubscriptions || []).filter((item) => item && item.status === 'pending'),
@@ -100,24 +130,28 @@ export default function EmailScannerModal({
     setLogs([]);
     setLoading(false);
     setError(null);
+    setExpandedIndex(null);
+    setRowBusyIndex(null);
+    setScanStageIndex(0);
     onClose();
   };
 
   const openReview = (items) => {
     setFound(items);
     setSelected(new Set(items.map((_, index) => index)));
+    setExpandedIndex(items.length ? 0 : null);
     setStep('review');
   };
 
   const buildFriendlyNetworkError = (scanError) => {
-    const message = scanError?.message || 'Erreur inconnue';
+    const message = scanError?.message || t('errors.generic');
 
     if (message.includes('Network request failed')) {
-      return "Impossible de joindre le service de scan. Vérifiez l'URL du backend ou l'adresse IP de votre machine.";
+      return t('scanner.errors.networkReach');
     }
 
     if (message.includes('timed out')) {
-      return "Le scan a démarré mais a dépassé le délai. Vérifiez les logs du backend email-scanner ou testez avec moins d'emails.";
+      return t('scanner.errors.timeout');
     }
 
     return message;
@@ -127,20 +161,19 @@ export default function EmailScannerModal({
     if (!value) return null;
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return null;
-    return date.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+    return date.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
   };
 
-  const formatCycleLabel = (cycle) =>
-    ({
-      weekly: 'hebdo',
-      monthly: 'mensuel',
-      quarterly: 'trimestriel',
-      annual: 'annuel',
-    }[cycle] || cycle || 'mensuel');
+  const formatCycleLabel = (cycle) => ({
+      weekly: t('subscriptions.cycles.weeklyFull').substring(0, 5).toLowerCase(),
+      monthly: t('subscriptions.monthly').toLowerCase(),
+      quarterly: t('subscriptions.cycles.quarterlyFull').toLowerCase(),
+      annual: t('subscriptions.annual').toLowerCase(),
+    }[cycle] || cycle || t('subscriptions.monthly').toLowerCase());
 
   const getResultPrimaryLine = (item) => {
-    const statusText = item.statusLabel || (item.isTrialActive ? 'Essai gratuit actif' : 'Abonnement actif');
-    return [item.category || 'Autre', formatCycleLabel(item.cycle), statusText].filter(Boolean).join(' • ');
+    const statusText = item.statusLabel || (item.isTrialActive ? t('subscriptions.detail.trialActive') : t('subscriptions.active'));
+    return [item.category || t('transactions.other'), formatCycleLabel(item.cycle), statusText].filter(Boolean).join(' • ');
   };
 
   const getResultSecondaryLine = (item) => {
@@ -152,11 +185,11 @@ export default function EmailScannerModal({
     }
 
     if (item.nextChargeDate) {
-      parts.push(`${item.isTrialActive ? 'Facturation le' : 'Prochain débit'} ${formatResultDate(item.nextChargeDate)}`);
+      parts.push(`${item.isTrialActive ? t('modals.addSubscription.startDateTitle') : t('subscriptions.detail.nextCharge')} ${formatResultDate(item.nextChargeDate)}`);
     }
 
     if (Number(item.nextChargeAmount) > 0) {
-      parts.push(`${Number(item.nextChargeAmount).toFixed(2)} EUR`);
+      parts.push(`${Number(item.nextChargeAmount).toFixed(2)} ${state.currency || '€'}`);
     }
 
     return parts.join(' • ');
@@ -223,7 +256,7 @@ export default function EmailScannerModal({
     setLogs([]);
     setStep('scanning');
 
-    addLog(`Scan avec ${selectedProvider}...`);
+    addLog(t('scanner.scanning.logs.start', { provider: selectedProvider }));
 
     try {
       const {
@@ -231,23 +264,23 @@ export default function EmailScannerModal({
       } = await supabase.auth.getSession();
 
       if (!session?.user) {
-        throw new Error("Connectez-vous d'abord à votre compte.");
+        throw new Error(t('scanner.errors.loginRequired'));
       }
 
       if (selectedProvider !== 'gmail') {
-        throw new Error('Seul le scan Gmail via Google est configuré pour le moment.');
+        throw new Error(t('scanner.errors.gmailOnly'));
       }
 
       const mailboxEmail = (session.user.email || '').trim().toLowerCase();
       const { accessToken, refreshToken } = await getGoogleTokensForScan(session);
 
       if (!accessToken && !refreshToken) {
-        throw new Error("Aucun jeton Gmail trouvé. Connectez-vous avec Google puis réessayez.");
+        throw new Error(t('scanner.errors.noTokens'));
       }
 
       setUserEmail(mailboxEmail);
-      addLog(`Boite Gmail: ${mailboxEmail}`);
-      addLog('Lecture des emails via Gmail API...');
+      addLog(t('scanner.scanning.logs.mailbox', { email: mailboxEmail }));
+      addLog(t('scanner.scanning.logs.reading'));
 
       let providerProfile = {
         email: mailboxEmail,
@@ -270,9 +303,18 @@ export default function EmailScannerModal({
         existingNames: existingSubscriptionNames,
       });
 
-      addLog(`${scanResult.raw?.matchedEmailCount || scanResult.emailCount || 0} emails pertinents trouvés`);
-      addLog(`${scanResult.emailCount || 0} emails analysés en détail`);
-      addLog(`${scanResult.subscriptions.length} abonnements trouvés`);
+      addLog(t('scanner.scanning.logs.foundEmails', { count: scanResult.raw?.matchedEmailCount || scanResult.emailCount || 0 }));
+      addLog(t('scanner.scanning.logs.analyzed', { count: scanResult.emailCount || 0 }));
+      if (scanResult.raw?.analyzedCandidateCount !== undefined) {
+        addLog(`${scanResult.raw.analyzedCandidateCount} emails candidats analysés par IA`);
+      }
+      if (scanResult.subscriptions.length === 0 && scanResult.raw?.debug?.topScores?.length) {
+        addLog(`Top candidat: ${scanResult.raw.debug.topScores[0].subject || scanResult.raw.debug.topScores[0].from}`);
+      }
+      if (scanResult.subscriptions.length === 0 && scanResult.raw?.debug?.groqConfigured === false) {
+        addLog('Groq non configuré côté Supabase: fallback local utilisé');
+      }
+      addLog(t('scanner.scanning.logs.foundSubs', { count: scanResult.subscriptions.length }));
 
       const persisted = await saveEmailScanResult({
         provider: selectedProvider,
@@ -298,8 +340,8 @@ export default function EmailScannerModal({
       openReview(persisted?.detectedSubscriptions || scanResult.subscriptions);
     } catch (scanError) {
       console.error('Scan Error:', scanError);
-      setError(scanError.message || 'Erreur inconnue');
-      addLog(`Erreur: ${scanError.message}`);
+      setError(scanError.message || t('errors.generic'));
+      addLog(t('scanner.scanning.logs.error', { message: scanError.message }));
       setStep('choose');
     } finally {
       setLoading(false);
@@ -311,13 +353,13 @@ export default function EmailScannerModal({
     const password = appPassword.replace(/\s/g, '');
 
     if (!email) {
-      setError('Veuillez renseigner une adresse email.');
+      setError(t('scanner.errors.emailRequired'));
       PremiumHaptics.error();
       return;
     }
 
     if (!password) {
-      setError('Veuillez renseigner un App Password Gmail.');
+      setError(t('scanner.errors.passwordRequired'));
       PremiumHaptics.error();
       return;
     }
@@ -328,8 +370,8 @@ export default function EmailScannerModal({
     setLogs([]);
     setStep('scanning');
 
-    addLog(`Boite mail cible: ${email}`);
-    addLog('Connexion au scanner local...');
+    addLog(t('scanner.scanning.logs.mailbox', { email }));
+    addLog(t('scanner.manual.startButton')); // Reuse start text or connecting log
 
     try {
       const scanResult = await EmailService.runManualScan({
@@ -351,15 +393,15 @@ export default function EmailScannerModal({
         metadata: { mode: 'local-imap' },
       });
 
-      addLog(`${scanResult.emailCount} emails analysés`);
-      addLog(`${scanResult.subscriptions.length} abonnements détectés`);
+      addLog(t('scanner.scanning.logs.analyzed', { count: scanResult.emailCount }));
+      addLog(t('scanner.scanning.logs.foundSubs', { count: scanResult.subscriptions.length }));
 
       openReview(persisted?.detectedSubscriptions || scanResult.subscriptions);
     } catch (scanError) {
       console.error('Scan Error:', scanError);
       const friendlyError = buildFriendlyNetworkError(scanError);
       setError(friendlyError);
-      addLog(`Erreur: ${friendlyError}`);
+      addLog(t('scanner.scanning.logs.error', { message: friendlyError }));
 
       await saveEmailScanResult({
         provider: 'manual',
@@ -387,6 +429,72 @@ export default function EmailScannerModal({
     else next.add(index);
     setSelected(next);
     PremiumHaptics.selection();
+  };
+
+  const removeFoundAt = (indexToRemove) => {
+    setFound((items) => items.filter((_, index) => index !== indexToRemove));
+    setSelected((prev) => {
+      const next = new Set();
+      prev.forEach((index) => {
+        if (index < indexToRemove) next.add(index);
+        if (index > indexToRemove) next.add(index - 1);
+      });
+      return next;
+    });
+    setExpandedIndex((current) => {
+      if (current === indexToRemove) return null;
+      if (current > indexToRemove) return current - 1;
+      return current;
+    });
+  };
+
+  const handleSingleImport = async (item, index) => {
+    setRowBusyIndex(index);
+    setError(null);
+
+    try {
+      let success = false;
+
+      if (item.id) {
+        success = await importDetectedSubscription(item);
+      } else if (onImport) {
+        success = await onImport(item);
+      }
+
+      if (!success) {
+        throw new Error(t('scanner.errors.importFailed'));
+      }
+
+      removeFoundAt(index);
+      PremiumHaptics.success();
+    } catch (importError) {
+      console.error('Single import error:', importError);
+      setError(importError.message || t('scanner.errors.importFailed'));
+      PremiumHaptics.error();
+    } finally {
+      setRowBusyIndex(null);
+    }
+  };
+
+  const handleSingleDismiss = async (item, index) => {
+    setRowBusyIndex(index);
+    setError(null);
+
+    try {
+      if (item.id) {
+        const dismissed = await dismissDetectedSubscription(item.id);
+        if (!dismissed) throw new Error(t('scanner.errors.dismissFailed'));
+      }
+
+      removeFoundAt(index);
+      PremiumHaptics.selection();
+    } catch (dismissError) {
+      console.error('Dismiss error:', dismissError);
+      setError(dismissError.message || t('scanner.errors.dismissFailed'));
+      PremiumHaptics.error();
+    } finally {
+      setRowBusyIndex(null);
+    }
   };
 
   const handleImport = async () => {
@@ -422,12 +530,12 @@ export default function EmailScannerModal({
       }
 
       PremiumHaptics.success();
-      Alert.alert('Succès', `${importedCount} abonnements importés dans Trimly.`, [
-        { text: 'Fermer', onPress: resetAndClose },
+      Alert.alert(t('common.success'), t('scanner.review.successMessage', { count: importedCount }), [
+        { text: t('common.close'), onPress: resetAndClose },
       ]);
     } catch (importError) {
       console.error('Import error:', importError);
-      setError(importError.message || "Impossible d'importer les abonnements.");
+      setError(importError.message || t('scanner.errors.importFailed'));
     } finally {
       setLoading(false);
     }
@@ -436,12 +544,12 @@ export default function EmailScannerModal({
   const renderChooseStep = () => (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentBody}>
       <View style={styles.heroCard}>
-        <Text style={styles.heroEyebrow}>Flow hybride</Text>
+        <Text style={styles.heroEyebrow}>{t('scanner.choose.subtitle')}</Text>
         <Text style={styles.heroTitle}>
-          {autoPrompt ? 'Connectez votre boite mail' : 'Détectez vos abonnements'}
+          {autoPrompt ? t('scanner.choose.titleAuto') : t('scanner.choose.title')}
         </Text>
         <Text style={styles.heroText}>
-          Trimly peut scanner Gmail via Google OAuth ou utiliser un scan manuel local pour retrouver vos abonnements avant import.
+          {t('scanner.choose.description')}
         </Text>
       </View>
 
@@ -451,9 +559,9 @@ export default function EmailScannerModal({
           onPress={() => openReview(pendingForReview)}
           activeOpacity={0.85}
         >
-          <Text style={styles.pendingTitle}>Détections en attente</Text>
+          <Text style={styles.pendingTitle}>{t('scanner.choose.pendingTitle')}</Text>
           <Text style={styles.pendingText}>
-            {pendingForReview.length} abonnements attendent votre validation.
+            {t('scanner.choose.pendingDescription', { count: pendingForReview.length })}
           </Text>
         </TouchableOpacity>
       ) : null}
@@ -492,15 +600,15 @@ export default function EmailScannerModal({
   const renderManualStep = () => (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentBody}>
       <View style={styles.heroCard}>
-        <Text style={styles.heroEyebrow}>Configuration IMAP</Text>
-        <Text style={styles.heroTitle}>Scan manuel Gmail</Text>
+        <Text style={styles.heroEyebrow}>{t('scanner.manual.subtitle')}</Text>
+        <Text style={styles.heroTitle}>{t('scanner.manual.title')}</Text>
         <Text style={styles.heroText}>
-          Utilisez un "Mot de passe d'application" Google pour permettre à Trimly de lire vos emails de facturation en toute sécurité.
+          {t('scanner.manual.description')}
         </Text>
       </View>
 
       <View style={styles.formCard}>
-        <Text style={styles.label}>Adresse Email</Text>
+        <Text style={styles.label}>{t('scanner.manual.emailLabel')}</Text>
         <TextInput
           style={styles.input}
           value={userEmail}
@@ -511,7 +619,7 @@ export default function EmailScannerModal({
           keyboardType="email-address"
         />
 
-        <Text style={styles.label}>App Password Gmail</Text>
+        <Text style={styles.label}>{t('scanner.manual.passwordLabel')}</Text>
         <TextInput
           style={styles.input}
           value={appPassword}
@@ -536,24 +644,39 @@ export default function EmailScannerModal({
           {loading ? (
             <ActivityIndicator color={Colors.pureWhite} />
           ) : (
-            <Text style={styles.primaryButtonText}>Démarrer le scan manuel</Text>
+            <Text style={styles.primaryButtonText}>{t('scanner.manual.startButton')}</Text>
           )}
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity style={[styles.secondaryButton, { marginTop: 12 }]} onPress={() => setStep('choose')}>
-        <Text style={styles.secondaryButtonText}>Retour</Text>
+        <Text style={styles.secondaryButtonText}>{t('common.back')}</Text>
       </TouchableOpacity>
     </ScrollView>
   );
 
   const renderScanningStep = () => (
     <View style={styles.scanningContainer}>
-      <ActivityIndicator size="large" color={Colors.text} />
-      <Text style={styles.scanningTitle}>Analyse en cours...</Text>
+      <View style={styles.scanPulse}>
+        <ActivityIndicator size="small" color={Colors.text} />
+      </View>
+      <Text style={styles.scanningTitle}>{t('scanner.scanning.title')}</Text>
       <Text style={styles.scanningText}>
-        Nous parcourons vos emails récents pour identifier les factures et confirmations d'abonnement.
+        {SCAN_STAGES[scanStageIndex]}
       </Text>
+
+      <View style={styles.skeletonCard}>
+        {[0, 1, 2].map((item) => (
+          <View key={item} style={styles.skeletonRow}>
+            <View style={styles.skeletonIcon} />
+            <View style={styles.skeletonTextWrap}>
+              <View style={[styles.skeletonLine, { width: item === 1 ? '64%' : '78%' }]} />
+              <View style={[styles.skeletonLineSmall, { width: item === 2 ? '46%' : '58%' }]} />
+            </View>
+            <View style={styles.skeletonAmount} />
+          </View>
+        ))}
+      </View>
 
       <View style={styles.logsCard}>
         <ScrollView>
@@ -572,66 +695,122 @@ export default function EmailScannerModal({
       <View style={styles.summaryCard}>
         <View>
           <Text style={styles.summaryValue}>{found.length}</Text>
-          <Text style={styles.summaryLabel}>Détectés</Text>
+          <Text style={styles.summaryLabel}>{t('scanner.review.detected')}</Text>
         </View>
         <View style={styles.summaryDivider} />
         <View style={{ alignItems: 'flex-end' }}>
-          <Text style={styles.summaryValue}>{total.toFixed(2)}€</Text>
-          <Text style={styles.summaryLabel}>Total mensuel</Text>
+          <Text style={styles.summaryValue}>{total.toFixed(2)}{state.currency || '€'}</Text>
+          <Text style={styles.summaryLabel}>{t('scanner.review.monthlyTotal')}</Text>
         </View>
       </View>
+
+      {error ? (
+        <View style={styles.reviewErrorBox}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      ) : null}
 
       <ScrollView style={styles.content} contentContainerStyle={styles.resultList}>
         {found.length === 0 ? (
           <View style={styles.emptyBox}>
-            <Text style={styles.emptyTitle}>Rien trouvé</Text>
+            <Text style={styles.emptyTitle}>{t('scanner.review.emptyTitle')}</Text>
             <Text style={styles.emptyText}>
-              Aucun abonnement n'a été détecté dans les emails analysés. Essayez une autre période ou un autre compte.
+              {t('scanner.review.emptyDescription')}
             </Text>
             <TouchableOpacity style={styles.primaryButton} onPress={() => setStep('choose')}>
-              <Text style={styles.primaryButtonText}>Réessayer</Text>
+              <Text style={styles.primaryButtonText}>{t('scanner.review.retry')}</Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View style={{ gap: 12 }}>
-            {found.map((item, index) => (
-              <TouchableOpacity
-                key={index}
-                style={[styles.resultCard, selected.has(index) && styles.resultCardSelected]}
-                onPress={() => toggleItem(index)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.checkbox, selected.has(index) && styles.checkboxActive]}>
-                  {selected.has(index) && <Text style={styles.checkboxMark}>✓</Text>}
-                </View>
+            {found.map((item, index) => {
+              const isExpanded = expandedIndex === index;
+              const isBusy = rowBusyIndex === index;
+              const alternatives = item.alternatives || [];
 
-                <View style={styles.resultIconWrap}>
-                  <Text style={styles.resultIcon}>{item.emoji || '💳'}</Text>
-                </View>
+              return (
+                <TouchableOpacity
+                  key={item.id || `${item.name}_${index}`}
+                  style={[styles.resultCard, selected.has(index) && styles.resultCardSelected]}
+                  onPress={() => setExpandedIndex(isExpanded ? null : index)}
+                  activeOpacity={0.78}
+                >
+                  <View style={styles.resultTopRow}>
+                    <TouchableOpacity
+                      style={[styles.checkbox, selected.has(index) && styles.checkboxActive]}
+                      onPress={() => toggleItem(index)}
+                      activeOpacity={0.8}
+                    >
+                      {selected.has(index) && <Text style={styles.checkboxMark}>✓</Text>}
+                    </TouchableOpacity>
 
-                <View style={styles.resultTextWrap}>
-                  <Text style={styles.resultTitle}>{item.name}</Text>
-                  <View style={styles.resultBadgeRow}>
-                    <View style={[styles.confidenceBadge, { backgroundColor: getConfidenceBg(item) }]}>
-                      <Text style={[styles.confidenceBadgeText, { color: getConfidenceColor(item) }]}>
-                        {item.confidenceLabel || 'Probable'}
-                      </Text>
+                    <View style={styles.resultIconWrap}>
+                      <Text style={styles.resultIcon}>{item.emoji || item.icon || '💳'}</Text>
                     </View>
-                    {item.confidence ? (
-                      <Text style={styles.confidenceValue}>{Math.round(Number(item.confidence) * 100)}%</Text>
-                    ) : null}
+
+                    <View style={styles.resultTextWrap}>
+                      <Text style={styles.resultTitle}>{item.name}</Text>
+                      <View style={styles.resultBadgeRow}>
+                        <View style={[styles.confidenceBadge, { backgroundColor: getConfidenceBg(item) }]}>
+                          <Text style={[styles.confidenceBadgeText, { color: getConfidenceColor(item) }]}>
+                            {item.confidenceLabel || t('subscriptions.filters.trial')}
+                          </Text>
+                        </View>
+                        {item.confidence ? (
+                          <Text style={styles.confidenceValue}>{Math.round(Number(item.confidence) * 100)}%</Text>
+                        ) : null}
+                      </View>
+                      <Text style={styles.resultStatusText}>{getResultPrimaryLine(item)}</Text>
+                      {item.sourceSubject ? <Text style={styles.resultSourceSubject}>{item.sourceSubject}</Text> : null}
+                      <Text style={styles.resultMeta}>{getResultSecondaryLine(item)}</Text>
+                    </View>
+
+                    <View style={styles.resultAmountWrap}>
+                      <Text style={styles.resultAmount}>{Number(item.displayAmount ?? item.amount).toFixed(2)} {state.currency || '€'}</Text>
+                      <Text style={styles.expandHint}>{isExpanded ? t('scanner.review.close') : t('scanner.review.actions')}</Text>
+                    </View>
                   </View>
-                  <Text style={styles.resultStatusText}>{getResultPrimaryLine(item)}</Text>
-                  <Text style={styles.resultSubtitle} />
-                  {item.sourceSubject ? <Text style={styles.resultSourceSubject}>{item.sourceSubject}</Text> : null}
-                  <Text style={styles.resultMeta}>{getResultSecondaryLine(item)}</Text>
-                  {item.alternatives?.length ? (
-                    <Text style={styles.resultAltText}>Alternatives: {item.alternatives.join(', ')}</Text>
+
+                  {isExpanded ? (
+                    <View style={styles.resultExpanded}>
+                      <View style={styles.aiAltBox}>
+                        <Text style={styles.aiAltTitle}>{t('scanner.review.aiAlternatives')}</Text>
+                        {alternatives.length ? (
+                          <View style={styles.altPillRow}>
+                            {alternatives.map((alternative) => (
+                              <Text key={alternative} style={styles.altPill}>{alternative}</Text>
+                            ))}
+                          </View>
+                        ) : (
+                          <Text style={styles.resultAltText}>{t('scanner.review.noAlternatives')}</Text>
+                        )}
+                      </View>
+
+                      <View style={styles.resultActionRow}>
+                        <TouchableOpacity
+                          style={[styles.inlineAction, styles.inlineActionPrimary, isBusy && styles.buttonDisabled]}
+                          onPress={() => handleSingleImport(item, index)}
+                          disabled={isBusy}
+                        >
+                          {isBusy ? (
+                            <ActivityIndicator size="small" color={Colors.pureWhite} />
+                          ) : (
+                            <Text style={styles.inlineActionPrimaryText}>{t('scanner.review.import')}</Text>
+                          )}
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.inlineAction, isBusy && styles.buttonDisabled]}
+                          onPress={() => handleSingleDismiss(item, index)}
+                          disabled={isBusy}
+                        >
+                          <Text style={styles.inlineActionText}>{t('scanner.review.ignore')}</Text>
+                        </TouchableOpacity>
+                      </View>
+                    </View>
                   ) : null}
-                </View>
-                <Text style={styles.resultAmount}>{Number(item.displayAmount ?? item.amount).toFixed(2)} EUR</Text>
-              </TouchableOpacity>
-            ))}
+                </TouchableOpacity>
+              );
+            })}
           </View>
         )}
       </ScrollView>
@@ -790,7 +969,18 @@ function makeStyles(Colors) {
       borderColor: Colors.borderStrong,
     },
     secondaryButtonText: { ...Fonts.primary, ...Fonts.bold, fontSize: 13, color: Colors.text },
-    scanningContainer: { flex: 1, padding: 32, alignItems: 'center', justifyContent: 'center' },
+    scanningContainer: { flex: 1, padding: 28, alignItems: 'center', justifyContent: 'center' },
+    scanPulse: {
+      width: 58,
+      height: 58,
+      borderRadius: 29,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: Colors.white,
+      borderWidth: 1,
+      borderColor: Colors.border,
+      ...Shadow.soft,
+    },
     scanningTitle: { ...Fonts.primary, ...Fonts.black, fontSize: 22, color: Colors.text, marginTop: 20 },
     scanningText: {
       ...Fonts.primary,
@@ -800,10 +990,32 @@ function makeStyles(Colors) {
       marginTop: 8,
       lineHeight: 20,
     },
+    skeletonCard: {
+      width: '100%',
+      marginTop: 24,
+      borderRadius: Radius.lg,
+      backgroundColor: Colors.white,
+      borderWidth: 1,
+      borderColor: Colors.border,
+      padding: 14,
+      gap: 12,
+    },
+    skeletonRow: { flexDirection: 'row', alignItems: 'center' },
+    skeletonIcon: {
+      width: 42,
+      height: 42,
+      borderRadius: 12,
+      backgroundColor: Colors.surfaceAlt,
+      marginRight: 12,
+    },
+    skeletonTextWrap: { flex: 1, gap: 8 },
+    skeletonLine: { height: 12, borderRadius: 6, backgroundColor: Colors.surfaceAlt },
+    skeletonLineSmall: { height: 9, borderRadius: 5, backgroundColor: Colors.surface },
+    skeletonAmount: { width: 58, height: 16, borderRadius: 8, backgroundColor: Colors.surfaceAlt, marginLeft: 12 },
     logsCard: {
       width: '100%',
-      height: 220,
-      marginTop: 24,
+      height: 150,
+      marginTop: 16,
       borderRadius: Radius.lg,
       backgroundColor: Colors.white,
       borderWidth: 1,
@@ -817,6 +1029,15 @@ function makeStyles(Colors) {
       borderColor: '#FFE0E0',
       borderRadius: Radius.md,
       padding: 16,
+    },
+    reviewErrorBox: {
+      marginHorizontal: 24,
+      marginBottom: 12,
+      backgroundColor: '#FFF1F1',
+      borderWidth: 1,
+      borderColor: '#FFE0E0',
+      borderRadius: Radius.md,
+      padding: 14,
     },
     errorText: { ...Fonts.primary, fontSize: 13, color: Colors.error, lineHeight: 20 },
     summaryCard: {
@@ -835,8 +1056,6 @@ function makeStyles(Colors) {
     summaryDivider: { width: 1, height: 40, backgroundColor: '#334155' },
     resultList: { gap: 12, paddingHorizontal: 24, paddingBottom: 16 },
     resultCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
       backgroundColor: Colors.white,
       borderRadius: Radius.md,
       padding: 14,
@@ -844,6 +1063,7 @@ function makeStyles(Colors) {
       borderColor: Colors.border,
     },
     resultCardSelected: { borderColor: Colors.text, backgroundColor: Colors.surface },
+    resultTopRow: { flexDirection: 'row', alignItems: 'center' },
     checkbox: {
       width: 22,
       height: 22,
@@ -877,7 +1097,50 @@ function makeStyles(Colors) {
     resultSourceSubject: { ...Fonts.primary, fontSize: 11, color: Colors.textMuted, marginTop: 4 },
     resultMeta: { ...Fonts.primary, fontSize: 11, color: Colors.textSecondary, marginTop: 4 },
     resultAltText: { ...Fonts.primary, fontSize: 11, color: Colors.accent, marginTop: 4 },
-    resultAmount: { ...Fonts.primary, ...Fonts.bold, fontSize: 14, color: Colors.text },
+    resultAmountWrap: { alignItems: 'flex-end', marginLeft: 10, maxWidth: 88 },
+    resultAmount: { ...Fonts.primary, ...Fonts.bold, fontSize: 14, color: Colors.text, textAlign: 'right' },
+    expandHint: { ...Fonts.primary, ...Fonts.bold, fontSize: 10, color: Colors.textMuted, marginTop: 6, textTransform: 'uppercase' },
+    resultExpanded: {
+      marginTop: 14,
+      paddingTop: 14,
+      borderTopWidth: 1,
+      borderTopColor: Colors.border,
+      gap: 14,
+    },
+    aiAltBox: {
+      backgroundColor: Colors.white,
+      borderRadius: Radius.md,
+      borderWidth: 1,
+      borderColor: Colors.border,
+      padding: 12,
+    },
+    aiAltTitle: { ...Fonts.primary, ...Fonts.bold, fontSize: 12, color: Colors.text, marginBottom: 10 },
+    altPillRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+    altPill: {
+      ...Fonts.primary,
+      ...Fonts.bold,
+      fontSize: 11,
+      color: Colors.text,
+      backgroundColor: Colors.surfaceAlt,
+      borderRadius: 999,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      overflow: 'hidden',
+    },
+    resultActionRow: { flexDirection: 'row', gap: 10 },
+    inlineAction: {
+      flex: 1,
+      minHeight: 44,
+      borderRadius: Radius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: Colors.white,
+      borderWidth: 1,
+      borderColor: Colors.borderStrong,
+    },
+    inlineActionPrimary: { backgroundColor: Colors.text, borderColor: Colors.text },
+    inlineActionText: { ...Fonts.primary, ...Fonts.bold, fontSize: 12, color: Colors.text, textTransform: 'uppercase' },
+    inlineActionPrimaryText: { ...Fonts.primary, ...Fonts.bold, fontSize: 12, color: Colors.pureWhite, textTransform: 'uppercase' },
     emptyBox: { padding: 24, alignItems: 'center' },
     emptyTitle: { ...Fonts.primary, ...Fonts.black, fontSize: 18, color: Colors.text },
     emptyText: {

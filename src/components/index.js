@@ -1,16 +1,18 @@
 // src/components/index.js
 // Trimly-Minimal: Clean Professional components
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View, Text, StyleSheet, Animated, Pressable,
 } from 'react-native';
 import {
   LightColors, Fonts, Radius, Shadow, Spacing, Metrics,
 } from '../theme';
+import { Ionicons } from '@expo/vector-icons';
 import { PremiumHaptics } from '../utils/haptics';
 import { useApp } from '../context/AppContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const addAlpha = (hex, opacity) => {
   if (!hex) return 'transparent';
@@ -22,30 +24,8 @@ const addAlpha = (hex, opacity) => {
   const op = Math.round(opacity * 255).toString(16).padStart(2, '0');
   return `#${normalized}${op}`;
 };
+import { usePressScale } from '../hooks/usePressScale';
 
-function usePressScale() {
-  const scale = useRef(new Animated.Value(1)).current;
-
-  const onPressIn = () => {
-    Animated.spring(scale, {
-      toValue: 0.985,
-      useNativeDriver: true,
-      speed: 26,
-      bounciness: 4,
-    }).start();
-  };
-
-  const onPressOut = () => {
-    Animated.spring(scale, {
-      toValue: 1,
-      useNativeDriver: true,
-      speed: 20,
-      bounciness: 5,
-    }).start();
-  };
-
-  return { scale, onPressIn, onPressOut };
-}
 
 export function AnimatedProgressBar({ pct, color, style }) {
   const { Colors } = useTheme();
@@ -74,7 +54,8 @@ export function AnimatedProgressBar({ pct, color, style }) {
 
 export function CategoryRow({ category, onPress, simple }) {
   const { state } = useApp();
-  const { Colors } = useTheme();
+  const { Colors, isDark } = useTheme();
+  const { locale, t } = useLanguage();
   const { name, icon, color, budget, spent } = category;
   const left = budget - spent;
   const isOver = left < 0;
@@ -85,26 +66,78 @@ export function CategoryRow({ category, onPress, simple }) {
     onPress && onPress();
   };
 
+  const formattedBudget = `${budget.toFixed(0)} ${state.currency || '€'}`;
+  const formattedLeft = `${left.toFixed(0)} ${state.currency || '€'}`;
+
   return (
     <Pressable onPress={handlePress} onPressIn={onPressIn} onPressOut={onPressOut}>
       <Animated.View style={[{
-        flexDirection: 'row', alignItems: 'center', paddingVertical: Spacing.md,
-        borderBottomWidth: 1, borderBottomColor: Colors.border,
-        minHeight: Metrics.minTouch + 8,
-      }, simple && { paddingVertical: 12 }, { transform: [{ scale }] }]}>
-        <View style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: addAlpha(color, 0.18) }}>
-          <Text style={{ fontSize: 16, color: color }}>{icon}</Text>
-        </View>
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={{ ...Fonts.primary, ...Fonts.bold, fontSize: 14, color: Colors.text }}>{name}</Text>
-          <Text style={{ ...Fonts.primary, fontSize: 11, color: Colors.textSecondary, marginTop: 2 }}>Budget {budget}{state.currency}</Text>
-        </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text style={[{ ...Fonts.primary, ...Fonts.bold, fontSize: 15, color: Colors.text }, isOver && { color: Colors.error }]}>
-            {spent.toFixed(0)} {state.currency}
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        paddingVertical: 8, 
+        paddingHorizontal: 14,
+        minHeight: 52,
+      }, { transform: [{ scale }] }]}>
+        
+        {/* Left Side: Icon & Category Name */}
+        <View style={{ flex: 1.2, flexDirection: 'row', alignItems: 'center' }}>
+          <View style={{ 
+            width: 32, 
+            height: 32, 
+            borderRadius: 16, 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            backgroundColor: color || Colors.accent,
+            shadowColor: color || '#000',
+            shadowOffset: { width: 0, height: 1 },
+            shadowOpacity: 0.08,
+            shadowRadius: 2,
+            elevation: 1,
+          }}>
+            <Text style={{ fontSize: 15, color: '#FFFFFF' }}>{icon}</Text>
+          </View>
+          
+          <Text 
+            style={{ 
+              ...Fonts.primary, 
+              ...Fonts.semiBold, 
+              fontSize: 14, 
+              color: Colors.text, 
+              marginLeft: 10,
+              flexShrink: 1
+            }}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {name}
           </Text>
-          <Text style={{ ...Fonts.primary, fontSize: 10, color: Colors.textMuted, marginTop: 2 }}>{left > 0 ? `Restant ${left.toFixed(0)}${state.currency}` : 'Depassement'}</Text>
         </View>
+        
+        {/* Middle: Budgeted */}
+        <View style={{ flex: 1, alignItems: 'flex-end', paddingRight: 8 }}>
+          <Text style={{ ...Fonts.primary, ...Fonts.medium, fontSize: 13, color: Colors.text }}>
+            {formattedBudget}
+          </Text>
+        </View>
+        
+        {/* Far Right: Left amount */}
+        <View style={{ flex: 1, alignItems: 'flex-end' }}>
+          <Text 
+            style={[
+              { 
+                ...Fonts.primary, 
+                ...Fonts.medium, 
+                fontSize: 13, 
+                color: Colors.text 
+              }, 
+              isOver && { color: Colors.error }
+            ]}
+            numberOfLines={1}
+          >
+            {formattedLeft}
+          </Text>
+        </View>
+        
       </Animated.View>
     </Pressable>
   );
@@ -112,22 +145,79 @@ export function CategoryRow({ category, onPress, simple }) {
 
 export function CategorySection({ label, daysLeft, budgeted, left, children }) {
   const { state } = useApp();
-  const { Colors } = useTheme();
+  const { Colors, isDark } = useTheme();
+  const { locale, t } = useLanguage();
+  
+  // Format budget and left values
+  const formattedBudget = `${budgeted.toFixed(0)} ${state.currency || '€'}`;
+  const formattedLeft = `${left.toFixed(0)} ${state.currency || '€'}`;
+  
+  // Localized title & days remaining copy matching screenshot precisely
+  const formattedLabel = label === t('common.week') 
+    ? (locale === 'fr' ? 'Hebdomadaire' : 'Weekly') 
+    : label === t('common.month') 
+      ? (locale === 'fr' ? 'Mensuel' : 'Monthly') 
+      : label;
+
+  const getDaysRemainingText = (count) => {
+    if (locale === 'fr') {
+      return count === 1 ? '1 jour restant' : `${count} jours restants`;
+    } else {
+      return count === 1 ? '1 day left' : `${count} days left`;
+    }
+  };
+
+  const budgetedLabel = locale === 'fr' ? 'Budgetisé' : 'Budgeted';
+  const leftLabel = locale === 'fr' ? 'Restant' : 'Left';
+
   return (
-    <View style={{ marginBottom: Spacing.xl }}>
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', paddingBottom: Spacing.smd, borderBottomWidth: 1.5, borderBottomColor: Colors.text, marginBottom: 8 }}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ ...Fonts.primary, ...Fonts.black, fontSize: 17, color: Colors.text, textTransform: 'uppercase', letterSpacing: 0.5 }}>{label}</Text>
-          <Text style={{ ...Fonts.primary, fontSize: 11, color: Colors.textSecondary, marginTop: 4 }}>{daysLeft} jours restants</Text>
-        </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text style={[{ ...Fonts.primary, ...Fonts.black, fontSize: 17, color: Colors.text }, left < 0 && { color: Colors.error }]}>
-            {left.toFixed(0)} {state.currency}
+    <View style={{ marginBottom: Spacing.lg }}>
+      {/* Premium Header Card */}
+      <View style={{ 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        backgroundColor: Colors.surface, 
+        borderWidth: 1, 
+        borderColor: Colors.border, 
+        borderRadius: 12, 
+        paddingVertical: 10, 
+        paddingHorizontal: 14, 
+        marginBottom: 6,
+        ...Shadow.soft
+      }}>
+        {/* Left Column: Title & Remaining duration */}
+        <View style={{ flex: 1.2 }}>
+          <Text style={{ ...Fonts.primary, ...Fonts.medium, fontSize: 11, color: Colors.textMuted, marginBottom: 1 }}>
+            {formattedLabel}
           </Text>
-          <Text style={{ ...Fonts.primary, fontSize: 10, color: Colors.textMuted, textTransform: 'uppercase', letterSpacing: 0.5 }}>Restant</Text>
+          <Text style={{ ...Fonts.primary, ...Fonts.bold, fontSize: 13, color: Colors.text }}>
+            {getDaysRemainingText(daysLeft)}
+          </Text>
+        </View>
+        
+        {/* Middle Column: Budgeted header label & amount */}
+        <View style={{ flex: 1, alignItems: 'flex-end', paddingRight: 8 }}>
+          <Text style={{ ...Fonts.primary, ...Fonts.medium, fontSize: 11, color: Colors.textMuted, marginBottom: 1 }}>
+            {budgetedLabel}
+          </Text>
+          <Text style={{ ...Fonts.primary, ...Fonts.bold, fontSize: 13, color: Colors.text }}>
+            {formattedBudget}
+          </Text>
+        </View>
+        
+        {/* Right Column: Left header label & remaining amount */}
+        <View style={{ flex: 1, alignItems: 'flex-end' }}>
+          <Text style={{ ...Fonts.primary, ...Fonts.medium, fontSize: 11, color: Colors.textMuted, marginBottom: 1 }}>
+            {leftLabel}
+          </Text>
+          <Text style={[{ ...Fonts.primary, ...Fonts.bold, fontSize: 13, color: Colors.text }, left < 0 && { color: Colors.error }]}>
+            {formattedLeft}
+          </Text>
         </View>
       </View>
-      <View style={{ paddingTop: 4 }}>
+      
+      {/* Category Rows listed cleanly beneath */}
+      <View style={{ paddingTop: 1 }}>
         {children}
       </View>
     </View>
@@ -171,31 +261,202 @@ export function Toggle({ value, onChange }) {
   );
 }
 
-export function SubCard({ sub, billing, onPress }) {
+export function SubCard({ sub, billing, onPress, onLongPress, onDelete }) {
   const { state } = useApp();
-  const { Colors } = useTheme();
+  const { Colors, isDark } = useTheme();
+  const [showInlineActions, setShowInlineActions] = useState(false);
   const isUrgent = billing.urgency === 'urgent' || billing.urgency === 'today';
   const { scale, onPressIn, onPressOut } = usePressScale();
+  const slideAnim = useRef(new Animated.Value(100)).current;
+
+  useEffect(() => {
+    Animated.spring(slideAnim, {
+      toValue: showInlineActions ? 0 : 100,
+      useNativeDriver: true,
+      friction: 8,
+      tension: 40,
+    }).start();
+  }, [showInlineActions]);
+
+  const formattedAmount = `${sub.amount.toFixed(2)} ${state.currency || '€'}`;
 
   return (
-    <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-      <Animated.View style={[{
-        flexDirection: 'row', alignItems: 'center', padding: 16,
-        backgroundColor: Colors.surface, borderRadius: Radius.lg, marginBottom: 10,
-        borderWidth: 1.2, borderColor: Colors.border, minHeight: 76,
-      }, isUrgent && { borderColor: Colors.error }, { transform: [{ scale }] }]}>
-        <View style={{ width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', backgroundColor: addAlpha(sub.color, 0.18) }}>
-          <Text style={{ fontSize: 18, color: sub.color }}>{sub.icon}</Text>
-        </View>
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <Text style={{ ...Fonts.primary, ...Fonts.bold, fontSize: 15, color: Colors.text }}>{sub.name}</Text>
-          <Text style={{ ...Fonts.primary, fontSize: 11, color: Colors.textSecondary, marginTop: 3 }}>{sub.category} - {billing.label}</Text>
-        </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text style={{ ...Fonts.primary, ...Fonts.bold, fontSize: 15, color: Colors.text }}>{sub.amount.toFixed(2)} {state.currency}</Text>
-          <Text style={[{ ...Fonts.primary, fontSize: 9, ...Fonts.black, color: Colors.textMuted, marginTop: 4 }, isUrgent && { color: Colors.error }]}>{billing.urgency.toUpperCase()}</Text>
-        </View>
-      </Animated.View>
+    <Pressable 
+      onPress={() => {
+        if (showInlineActions) {
+          setShowInlineActions(false);
+        } else {
+          onPress?.();
+        }
+      }} 
+      onLongPress={() => {
+        PremiumHaptics.selection();
+        setShowInlineActions(true);
+      }}
+      onPressIn={onPressIn} 
+      onPressOut={onPressOut}
+      style={{ width: '100%' }}
+    >
+      <View style={{
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        paddingVertical: 8,
+        paddingHorizontal: 14,
+        backgroundColor: 'transparent',
+        minHeight: 52,
+        width: '100%',
+        overflow: 'hidden',
+      }}>
+        <Animated.View style={{ 
+          width: '100%',
+          flexDirection: 'row', 
+          alignItems: 'center',
+          transform: [
+            { scale },
+            {
+              translateX: slideAnim.interpolate({
+                inputRange: [0, 100],
+                outputRange: [-90, 0]
+              })
+            }
+          ] 
+        }}>
+          {/* Left Column: Icon & Subscription Name */}
+          <View style={{ flex: 1.2, flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ 
+              width: 32, 
+              height: 32, 
+              borderRadius: 16, 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              backgroundColor: sub.color || Colors.accent,
+              shadowColor: sub.color || '#000',
+              shadowOffset: { width: 0, height: 1 },
+              shadowOpacity: 0.08,
+              shadowRadius: 2,
+              elevation: 1,
+            }}>
+              <Text style={{ fontSize: 15, color: '#FFFFFF' }}>{sub.icon}</Text>
+            </View>
+            
+            <Text 
+              style={{ 
+                ...Fonts.primary, 
+                ...Fonts.semiBold, 
+                fontSize: 14, 
+                color: Colors.text, 
+                marginLeft: 10,
+                flexShrink: 1
+              }}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {sub.name}
+            </Text>
+          </View>
+          
+          {/* Middle Column: Frequency / Category */}
+          <View style={{ flex: 1, alignItems: 'flex-end', paddingRight: 8 }}>
+            <Text style={{ ...Fonts.primary, ...Fonts.medium, fontSize: 13, color: Colors.textSecondary }}>
+              {billing.label}
+            </Text>
+          </View>
+          
+          {/* Right Column: Amount Badge Pill */}
+          <Animated.View style={{ 
+            flex: 1, 
+            alignItems: 'flex-end',
+            opacity: slideAnim.interpolate({
+              inputRange: [0, 100],
+              outputRange: [0, 1]
+            })
+          }}>
+            <View style={{
+              backgroundColor: sub.active 
+                ? addAlpha(sub.color || Colors.accent, isDark ? 0.22 : 0.09)
+                : (isDark ? 'rgba(255, 255, 255, 0.06)' : '#F2F2F7'),
+              borderRadius: 10,
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              minWidth: 62,
+              alignItems: 'center',
+              justifyContent: 'center',
+              borderWidth: sub.active ? 1 : 0,
+              borderColor: sub.active ? addAlpha(sub.color || Colors.accent, 0.2) : 'transparent',
+            }}>
+              <Text 
+                style={[
+                  { 
+                    ...Fonts.primary, 
+                    ...Fonts.semiBold, 
+                    fontSize: 12, 
+                    color: sub.active 
+                      ? (sub.color || Colors.accent)
+                      : (isDark ? Colors.textSecondary : '#555558') 
+                  }, 
+                  isUrgent && sub.active && { color: Colors.error }
+                ]}
+                numberOfLines={1}
+              >
+                {formattedAmount}
+              </Text>
+            </View>
+          </Animated.View>
+        </Animated.View>
+
+        <Animated.View 
+          pointerEvents={showInlineActions ? "auto" : "none"}
+          style={{ 
+            flexDirection: 'row', 
+            gap: 8, 
+            paddingLeft: 8,
+            position: 'absolute',
+            right: 14,
+            zIndex: showInlineActions ? 10 : -1,
+            opacity: slideAnim.interpolate({
+              inputRange: [0, 100],
+              outputRange: [1, 0]
+            }),
+            transform: [{
+              translateX: slideAnim.interpolate({
+                inputRange: [0, 100],
+                outputRange: [0, 180]
+              })
+            }]
+          }}
+        >
+          <Pressable 
+            onPress={() => {
+              PremiumHaptics.impact('light');
+              onLongPress?.();
+              setShowInlineActions(false);
+            }}
+            style={{ 
+              width: 36, height: 36, borderRadius: 18, 
+              backgroundColor: addAlpha(sub.active ? Colors.warning : Colors.income, 0.12), 
+              alignItems: 'center', justifyContent: 'center', 
+              borderWidth: 1.5, borderColor: addAlpha(sub.active ? Colors.warning : Colors.income, 0.3) 
+            }}
+          >
+            <Ionicons name={sub.active ? "archive-outline" : "refresh-outline"} size={18} color={sub.active ? Colors.warning : Colors.income} />
+          </Pressable>
+          <Pressable 
+            onPress={() => {
+              PremiumHaptics.impact('medium');
+              if (onDelete) onDelete();
+              setShowInlineActions(false);
+            }}
+            style={{ 
+              width: 36, height: 36, borderRadius: 18, 
+              backgroundColor: addAlpha(Colors.error, 0.12), 
+              alignItems: 'center', justifyContent: 'center', 
+              borderWidth: 1.5, borderColor: addAlpha(Colors.error, 0.3) 
+            }}
+          >
+            <Ionicons name="trash-outline" size={18} color={Colors.error} />
+          </Pressable>
+        </Animated.View>
+      </View>
     </Pressable>
   );
 }
@@ -260,26 +521,26 @@ export function PeriodPill({ label, onPress }) {
 
 export function TrialBanner({ daysLeft, onSubscribe, onClose }) {
   const { Colors } = useTheme();
+  const { t } = useLanguage();
   const { scale, onPressIn, onPressOut } = usePressScale();
-  const dayLabel = daysLeft > 1 ? 'jours' : 'jour';
   const urgencyCopy = daysLeft <= 3
-    ? 'Votre essai se termine bientot. Passez a Pro pour garder toutes vos fonctionnalites.'
-    : "Profitez pleinement de votre essai, puis passez a Pro sans interruption.";
+    ? t('home.trial.endingSoonWarning')
+    : t('home.trial.enjoyTrial');
   return (
     <View style={{ backgroundColor: Colors.surface, borderRadius: Radius.xl, borderWidth: 1, borderColor: Colors.borderStrong, padding: Spacing.md, marginBottom: Spacing.md, ...Shadow.medium }}>
       <View style={{ alignSelf: 'flex-start', backgroundColor: Colors.surfaceAlt, borderRadius: Radius.pill, paddingHorizontal: 10, paddingVertical: 5, marginBottom: 10 }}>
-        <Text style={{ ...Fonts.primary, fontSize: 10, ...Fonts.bold, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>Essai gratuit</Text>
+        <Text style={{ ...Fonts.primary, fontSize: 10, ...Fonts.bold, color: Colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }}>{t('home.trial.freeTrial')}</Text>
       </View>
-      <Text style={{ ...Fonts.primary, ...Fonts.black, fontSize: 18, color: Colors.text, lineHeight: 23, marginBottom: 8 }}>Il vous reste {daysLeft} {dayLabel} d'essai gratuit</Text>
+      <Text style={{ ...Fonts.primary, ...Fonts.black, fontSize: 18, color: Colors.text, lineHeight: 23, marginBottom: 8 }}>{t('home.trial.daysLeftFull', { days: daysLeft })}</Text>
       <Text style={{ ...Fonts.primary, fontSize: 12, color: Colors.textSecondary, lineHeight: 17, marginBottom: 14 }}>{urgencyCopy}</Text>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Pressable onPress={() => { PremiumHaptics.success(); onSubscribe && onSubscribe(); }} onPressIn={onPressIn} onPressOut={onPressOut}>
           <Animated.View style={[{ backgroundColor: Colors.accent, borderRadius: Radius.pill, paddingHorizontal: 14, paddingVertical: 9, minHeight: 36, justifyContent: 'center', alignItems: 'center' }, { transform: [{ scale }] }]}>
-            <Text style={{ ...Fonts.primary, ...Fonts.bold, fontSize: 10, color: Colors.pureWhite, textTransform: 'uppercase', letterSpacing: 0.4 }}>Decouvrir Pro</Text>
+            <Text style={{ ...Fonts.primary, ...Fonts.bold, fontSize: 10, color: Colors.pureWhite, textTransform: 'uppercase', letterSpacing: 0.4 }}>{t('home.trial.discoverPro')}</Text>
           </Animated.View>
         </Pressable>
         <Pressable style={{ borderWidth: 1, borderColor: Colors.borderStrong, borderRadius: Radius.pill, paddingHorizontal: 12, paddingVertical: 9, minHeight: 36, justifyContent: 'center', backgroundColor: Colors.surface }} onPress={() => { PremiumHaptics.click(); onClose && onClose(); }}>
-          <Text style={{ ...Fonts.primary, ...Fonts.bold, fontSize: 10, color: Colors.textSecondary }}>Plus tard</Text>
+          <Text style={{ ...Fonts.primary, ...Fonts.bold, fontSize: 10, color: Colors.textSecondary }}>{t('common.later')}</Text>
         </Pressable>
       </View>
     </View>

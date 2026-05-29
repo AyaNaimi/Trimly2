@@ -36,28 +36,38 @@ function periodRange(periodKey, offset = 0) {
 }
 
 /** Human-readable label for a period range */
-function periodLabel(periodKey, offset) {
+function periodLabel(periodKey, offset, locale = 'en', t) {
   const { start, end } = periodRange(periodKey, offset);
+  const bcp47 = locale === 'en' ? 'en-US' : locale === 'fr' ? 'fr-FR' : locale;
   const opts = { day: 'numeric', month: 'short' };
+  
   if (periodKey === 'week') {
-    return `${start.toLocaleDateString('fr-FR', opts)} – ${end.toLocaleDateString('fr-FR', opts)}`;
+    return `${start.toLocaleDateString(bcp47, opts)} – ${end.toLocaleDateString(bcp47, opts)}`;
   }
   if (periodKey === 'month') {
-    return start.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    return start.toLocaleDateString(bcp47, { month: 'long', year: 'numeric' });
   }
   if (periodKey === 'quarter') {
     const q = Math.floor(start.getMonth() / 3) + 1;
-    return `T${q} ${start.getFullYear()}`;
+    return `${t('reports.quarterShort')}${q} ${start.getFullYear()}`;
   }
   return `${start.getFullYear()}`;
 }
 
 /** Build bar-chart slots for the evolution section */
-function buildSlots(periodKey, offset) {
+function buildSlots(periodKey, offset, locale = 'en', t) {
   const slots = [];
+  const bcp47 = locale === 'en' ? 'en-US' : locale === 'fr' ? 'fr-FR' : locale;
+  
   if (periodKey === 'week') {
     const { start } = periodRange('week', offset);
-    const days = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+    // Use Intl to get day names in current locale
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(start); d.setDate(start.getDate() + i);
+      days.push(d.toLocaleDateString(bcp47, { weekday: 'short' }).replace('.','').slice(0,3));
+    }
+    
     for (let i = 0; i < 7; i++) {
       const d = new Date(start); d.setDate(start.getDate() + i);
       const key = d.toISOString().split('T')[0];
@@ -68,11 +78,12 @@ function buildSlots(periodKey, offset) {
     const weeks = [];
     let cur = new Date(start);
     let w = 1;
+    const prefix = t('reports.weekShort');
     while (cur <= end) {
       const wStart = new Date(cur);
       const wEnd   = new Date(cur); wEnd.setDate(cur.getDate() + 6);
       if (wEnd > end) wEnd.setTime(end.getTime());
-      weeks.push({ key: `W${w}`, label: `S${w}`, startD: wStart, endD: wEnd, total: 0 });
+      weeks.push({ key: `W${w}`, label: `${prefix}${w}`, startD: wStart, endD: wEnd, total: 0 });
       cur.setDate(cur.getDate() + 7);
       w++;
     }
@@ -82,7 +93,7 @@ function buildSlots(periodKey, offset) {
     for (let m = 0; m < 3; m++) {
       const d = new Date(start.getFullYear(), start.getMonth() + m, 1);
       const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
-      const label = d.toLocaleDateString('fr-FR', { month: 'short' }).replace('.','').slice(0,3);
+      const label = d.toLocaleDateString(bcp47, { month: 'short' }).replace('.','').slice(0,3);
       slots.push({ key, label, total: 0 });
     }
   } else { // year
@@ -90,7 +101,7 @@ function buildSlots(periodKey, offset) {
     for (let m = 0; m < 12; m++) {
       const d = new Date(start.getFullYear(), m, 1);
       const key = `${d.getFullYear()}-${String(m+1).padStart(2,'0')}`;
-      const label = d.toLocaleDateString('fr-FR', { month: 'short' }).replace('.','').slice(0,3);
+      const label = d.toLocaleDateString(bcp47, { month: 'short' }).replace('.','').slice(0,3);
       slots.push({ key, label, total: 0 });
     }
   }
@@ -99,15 +110,16 @@ function buildSlots(periodKey, offset) {
 
 const NUM_MONTHS = 7;
 
-function buildMonthSlots(count) {
+function buildMonthSlots(count, locale = 'en') {
   const slots = [];
   const now = new Date();
+  const bcp47 = locale === 'en' ? 'en-US' : locale === 'fr' ? 'fr-FR' : locale;
 
   for (let index = count - 1; index >= 0; index -= 1) {
     const date = new Date(now.getFullYear(), now.getMonth() - index, 1);
     const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
     const label = date
-      .toLocaleDateString('fr-FR', { month: 'short' })
+      .toLocaleDateString(bcp47, { month: 'short' })
       .replace('.', '')
       .slice(0, 3);
 
@@ -127,23 +139,24 @@ function clamp(value, min, max) {
  * - Décimales : uniquement si la valeur en a (max 2)
  * - Jamais de virgule sans espace milliers
  */
-function formatAmount(value, currency) {
+function formatAmount(value, currency, locale = 'en') {
   const amount = Number(value) || 0;
   const abs = Math.abs(amount);
+  const bcp47 = locale === 'en' ? 'en-US' : locale === 'fr' ? 'fr-FR' : locale;
+  
   // Afficher les centimes seulement si la valeur est < 10 000 et a des décimales réelles
   const showDecimals = abs < 10000 && Math.abs(abs % 1) > 0.009;
-  const formatted = abs.toLocaleString('fr-FR', {
+  const formatted = abs.toLocaleString(bcp47, {
     minimumFractionDigits: showDecimals ? 2 : 0,
     maximumFractionDigits: showDecimals ? 2 : 0,
-  // fr-FR uses \u00A0 (non-breaking space) — replace with narrow no-break space for consistency
   }).replace(/\u00A0/g, '\u202F');
   return `${formatted} ${currency}`;
 }
 
-function formatDelta(value, currency) {
+function formatDelta(value, currency, locale = 'en') {
   const amount = Number(value) || 0;
   const prefix = amount > 0 ? '+' : amount < 0 ? '−' : '';
-  return `${prefix}${formatAmount(Math.abs(amount), currency)}`;
+  return `${prefix}${formatAmount(Math.abs(amount), currency, locale)}`;
 }
 
 function pickToneColors(tone, Colors) {
@@ -196,7 +209,7 @@ function Accordion({ title, tag, meta, defaultOpen = true, children, Colors }) {
 export default function ReportsScreen() {
   const { state, activeSubscriptions } = useApp();
   const { Colors } = useTheme();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const categories = state.categories || [];
   const transactions = state.transactions || [];
   const currency = state.currency || 'EUR';
@@ -217,7 +230,7 @@ export default function ReportsScreen() {
 
   // Calculate date range for current period
   const { start: rangeStart, end: rangeEnd } = useMemo(() => periodRange(activePeriod, offset), [activePeriod, offset]);
-  const label = useMemo(() => periodLabel(activePeriod, offset), [activePeriod, offset]);
+  const label = useMemo(() => periodLabel(activePeriod, offset, locale, t), [activePeriod, offset, locale, t]);
   const isCurrentPeriod = offset === 0;
 
   // ── Filtered transactions for the selected period ──────────
@@ -251,11 +264,11 @@ export default function ReportsScreen() {
         spentByCategory[tx.category_id] = (spentByCategory[tx.category_id] || 0) + amount;
       }
       if (!largestExpense || amount > largestExpense.amount) {
-        largestExpense = { amount, label: tx.note || tx.description || tx.title || 'Dépense ponctuelle' };
+        largestExpense = { amount, label: tx.note || tx.description || tx.title || t('reports.largestExpenseFallback') };
       }
     });
     return { spentByCategory, totalSpent, largestExpense };
-  }, [filtered]);
+  }, [filtered, t]);
 
   const totalIncome = useMemo(
     () => filtered.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0),
@@ -302,7 +315,7 @@ export default function ReportsScreen() {
 
   // ── Evolution chart ────────────────────────────────────────
   const trendData = useMemo(() => {
-    const slots = buildSlots(activePeriod, offset);
+    const slots = buildSlots(activePeriod, offset, locale, t);
 
     transactions.forEach(tx => {
       if (tx.type !== 'expense') return;
@@ -334,7 +347,7 @@ export default function ReportsScreen() {
     const trendPct = prev > 0 ? ((curr - prev) / prev) * 100 : null;
 
     return { slots, maxSpend, averageSpend: avgSpend, currentTotal: curr, previousTotal: prev, trendPct };
-  }, [transactions, activePeriod, offset]);
+  }, [transactions, activePeriod, offset, locale, t]);
 
   // ── Derived values ─────────────────────────────────────────
   const totalSpent      = monthlyCategorySummary.totalSpent;
@@ -348,53 +361,54 @@ export default function ReportsScreen() {
   const hasTransactions = totalSpent > 0;
 
   const mainInsight = useMemo(() => {
-    if (totalBudget <= 0) return { tone: 'neutral', title: 'Ajoutez un budget', text: 'Définissez un budget par catégorie pour suivre vos dépenses.' };
-    if (!hasTransactions) return { tone: 'neutral', title: 'Aucune dépense', text: `Aucune dépense sur cette période. Tout votre budget est disponible.` };
-    if (isOverBudget) return { tone: 'alert', title: 'Budget dépassé', text: `${formatAmount(totalSpent - totalBudget, currency)} au-dessus du budget.` };
-    if (projectedSpend > totalBudget * 1.08) return { tone: 'warning', title: 'Rythme trop élevé', text: `À ce rythme, vous finirez la période à ${formatAmount(projectedSpend, currency)}.` };
-    if (focusCategory && focusCategory.usagePct >= 85) return { tone: 'warning', title: `${focusCategory.name} monte vite`, text: `${focusCategory.usagePct.toFixed(0)}% du budget de cette catégorie est déjà utilisé.` };
-    if (subscriptionsShare >= 30) return { tone: 'warning', title: 'Abonnements élevés', text: `${formatAmount(totalSubscriptions, currency)}/mois, soit ${subscriptionsShare.toFixed(0)}% du budget.` };
-    return { tone: 'good', title: 'Bon rythme', text: `${formatAmount(remaining, currency)} restants. Vous êtes dans le budget.` };
-  }, [currency, focusCategory, hasTransactions, isOverBudget, projectedSpend, remaining, subscriptionsShare, totalBudget, totalSpent, totalSubscriptions]);
+    if (totalBudget <= 0) return { tone: 'neutral', title: t('reports.noBudget'), text: t('reports.noBudgetText') };
+    if (!hasTransactions) return { tone: 'neutral', title: t('reports.noExpenses'), text: t('reports.noExpensesText') };
+    if (isOverBudget) return { tone: 'alert', title: t('reports.overBudget'), text: t('reports.overBudgetText', { amount: formatAmount(totalSpent - totalBudget, currency, locale) }) };
+    if (projectedSpend > totalBudget * 1.08) return { tone: 'warning', title: t('reports.highPace'), text: t('reports.highPaceText', { amount: formatAmount(projectedSpend, currency, locale) }) };
+    if (focusCategory && focusCategory.usagePct >= 85) return { tone: 'warning', title: t('reports.categoryRising', { category: focusCategory.name }), text: t('reports.categoryRisingText', { percent: focusCategory.usagePct.toFixed(0) }) };
+    if (subscriptionsShare >= 30) return { tone: 'warning', title: t('reports.highSubscriptions'), text: t('reports.highSubscriptionsText', { amount: formatAmount(totalSubscriptions, currency, locale), percent: subscriptionsShare.toFixed(0) }) };
+    return { tone: 'good', title: t('reports.goodPace'), text: t('reports.goodPaceText', { remaining: formatAmount(remaining, currency, locale) }) };
+  }, [currency, focusCategory, hasTransactions, isOverBudget, projectedSpend, remaining, subscriptionsShare, totalBudget, totalSpent, totalSubscriptions, locale, t]);
 
   const toneColors = pickToneColors(mainInsight.tone, Colors);
 
-  const scoreCards = [
+  const scoreCards = useMemo(() => [
     {
-      label: 'Rythme de dépense',
+      label: t('reports.spendingPace'),
       value: `${paceDelta >= 0 ? '+' : ''}${paceDelta.toFixed(0)}%`,
       hint: paceDelta > 10
-        ? 'Vous dépensez plus vite que la période ne s\'écoule'
+        ? t('reports.spendingFaster')
         : paceDelta > 0
-          ? 'Légèrement au-dessus du rythme normal'
-          : 'Vous êtes dans les clous',
+          ? t('reports.slightlyAbove')
+          : t('reports.onTrack'),
       tone: paceDelta > 10 ? 'alert' : paceDelta > 0 ? 'warning' : 'good',
     },
     {
-      label: 'Estimation fin de période',
-      value: hasTransactions ? formatAmount(projectedSpend, currency) : '—',
+      label: t('reports.projectedEnd'),
+      value: hasTransactions ? formatAmount(projectedSpend, currency, locale) : '—',
       hint: hasTransactions
         ? projectedGap > 0
-          ? `+${formatAmount(projectedGap, currency)} au-dessus du budget`
-          : `${formatAmount(Math.abs(projectedGap), currency)} sous le budget`
-        : 'Pas assez de données',
+          ? t('reports.aboveBudget', { amount: formatAmount(projectedGap, currency, locale) })
+          : t('reports.underBudget', { amount: formatAmount(Math.abs(projectedGap), currency, locale) })
+        : t('reports.notEnoughData'),
       tone: projectedGap > 0 ? 'warning' : 'good',
     },
     {
-      label: 'Abonnements actifs',
-      value: formatAmount(totalSubscriptions, currency),
+      label: t('reports.activeSubscriptions'),
+      value: formatAmount(totalSubscriptions, currency, locale),
       hint: totalBudget > 0
-        ? `${subscriptionsShare.toFixed(0)}% du budget total`
-        : 'Coût fixe mensuel',
+        ? t('reports.ofTotalBudget', { percent: subscriptionsShare.toFixed(0) })
+        : t('reports.fixedMonthlyCost'),
       tone: subscriptionsShare >= 30 ? 'warning' : 'neutral',
     },
-  ];
+  ], [t, paceDelta, hasTransactions, projectedSpend, currency, locale, projectedGap, totalSubscriptions, totalBudget, subscriptionsShare]);
 
-  const trendNarrative = useMemo(() => {    if (trendData.trendPct === null) return 'Pas assez de données pour comparer.';
-    if (trendData.trendPct > 0) return `Dépenses en hausse de ${trendData.trendPct.toFixed(0)}% vs période précédente.`;
-    if (trendData.trendPct < 0) return `Dépenses en baisse de ${Math.abs(trendData.trendPct).toFixed(0)}% vs période précédente.`;
-    return 'Dépenses stables par rapport à la période précédente.';
-  }, [trendData.trendPct]);
+  const trendNarrative = useMemo(() => {
+    if (trendData.trendPct === null) return t('reports.notEnoughDataCompare');
+    if (trendData.trendPct > 0) return t('reports.spendingUp', { percent: trendData.trendPct.toFixed(0) });
+    if (trendData.trendPct < 0) return t('reports.spendingDown', { percent: Math.abs(trendData.trendPct).toFixed(0) });
+    return t('reports.spendingStable');
+  }, [trendData.trendPct, t]);
 
   const styles = makeStyles(Colors);
 
@@ -409,7 +423,7 @@ export default function ReportsScreen() {
           </View>
           {totalIncome > 0 && (
             <View style={styles.incomeChip}>
-              <Text style={styles.incomeChipTxt}>+{formatAmount(totalIncome, currency)}</Text>
+              <Text style={styles.incomeChipTxt}>+{formatAmount(totalIncome, currency, locale)}</Text>
             </View>
           )}
         </View>
@@ -508,18 +522,18 @@ export default function ReportsScreen() {
           {isOverBudget && totalBudget > 0 ? (
             <>
               <Text style={styles.heroContextMsg}>
-                Vous avez dépensé {(totalSpent / totalBudget).toFixed(1)}× votre budget
+                {t('reports.youSpent', { ratio: (totalSpent / totalBudget).toFixed(1) })}
               </Text>
-              <Text style={styles.heroAmount}>{formatAmount(totalSpent, currency)}</Text>
+              <Text style={styles.heroAmount}>{formatAmount(totalSpent, currency, locale)}</Text>
             </>
           ) : (
-            <Text style={styles.heroAmount}>{formatAmount(totalSpent, currency)}</Text>
+            <Text style={styles.heroAmount}>{formatAmount(totalSpent, currency, locale)}</Text>
           )}
 
           <Text style={styles.heroSupport}>
             {totalBudget > 0
-              ? `${budgetPct.toFixed(0)}% du budget · ${elapsedPct.toFixed(0)}% de la période écoulée`
-              : 'Ajoutez un budget pour mieux suivre vos dépenses.'}
+              ? t('reports.ofBudgetUsed', { percent: budgetPct.toFixed(0), elapsed: elapsedPct.toFixed(0) })
+              : t('reports.addBudgetToTrack')}
           </Text>
 
           <View style={styles.heroMeterTrack}>
@@ -527,8 +541,8 @@ export default function ReportsScreen() {
             <View style={[styles.heroMeterMarker, { left: `${clamp(elapsedPct, 2, 98)}%` }]} />
           </View>
           <View style={styles.heroLegendRow}>
-            <Text style={styles.heroLegendText}>Budget utilisé</Text>
-            <Text style={styles.heroLegendText}>Période écoulée</Text>
+            <Text style={styles.heroLegendText}>{t('reports.budgetUsed')}</Text>
+            <Text style={styles.heroLegendText}>{t('reports.periodElapsed')}</Text>
           </View>
 
           <View style={styles.heroDivider} />
@@ -537,17 +551,17 @@ export default function ReportsScreen() {
           {/* État actuel */}
           <View style={styles.quickStats}>
             <View style={styles.quickStatItem}>
-              <Text style={styles.quickStatLabel}>Dépensé</Text>
-              <Text style={styles.quickStatValue}>{formatAmount(totalSpent, currency)}</Text>
+              <Text style={styles.quickStatLabel}>{t('reports.spent')}</Text>
+              <Text style={styles.quickStatValue}>{formatAmount(totalSpent, currency, locale)}</Text>
             </View>
             <View style={[styles.quickStatItem, styles.quickStatItemBorder]}>
-              <Text style={styles.quickStatLabel}>Budget</Text>
-              <Text style={styles.quickStatValue}>{totalBudget > 0 ? formatAmount(totalBudget, currency) : '—'}</Text>
+              <Text style={styles.quickStatLabel}>{t('reports.budget')}</Text>
+              <Text style={styles.quickStatValue}>{totalBudget > 0 ? formatAmount(totalBudget, currency, locale) : '—'}</Text>
             </View>
             <View style={[styles.quickStatItem, styles.quickStatItemBorder]}>
-              <Text style={styles.quickStatLabel}>Reste</Text>
+              <Text style={styles.quickStatLabel}>{t('reports.remaining')}</Text>
               <Text style={[styles.quickStatValue, { color: remaining >= 0 ? Colors.pureWhite : '#FF8A9B' }]}>
-                {totalBudget > 0 ? formatDelta(remaining, currency) : '—'}
+                {totalBudget > 0 ? formatDelta(remaining, currency, locale) : '—'}
               </Text>
             </View>
           </View>
@@ -555,7 +569,7 @@ export default function ReportsScreen() {
           {/* Projection — visuellement séparée */}
           {hasTransactions && totalBudget > 0 && (
             <View style={styles.heroProjectionRow}>
-              <Text style={styles.heroProjectionLabel}>Projection fin de période</Text>
+              <Text style={styles.heroProjectionLabel}>{t('reports.projectionEndPeriod')}</Text>
               <Text style={[
                 styles.heroProjectionValue,
                 { 
@@ -563,7 +577,7 @@ export default function ReportsScreen() {
                   opacity: 0.85 
                 },
               ]}>
-                {formatAmount(projectedSpend, currency)}
+                {formatAmount(projectedSpend, currency, locale)}
                 {projectedSpend > totalBudget ? '  ⚠' : '  ✓'}
               </Text>
             </View>
@@ -574,7 +588,7 @@ export default function ReportsScreen() {
         <Accordion
           title={t('reports.quickSummary')}
           meta={monthlyCategorySummary.largestExpense
-            ? t('reports.largestExpense', { amount: formatAmount(monthlyCategorySummary.largestExpense.amount, currency) })
+            ? t('reports.largestExpense', { amount: formatAmount(monthlyCategorySummary.largestExpense.amount, currency, locale) })
             : null}
           defaultOpen
           Colors={Colors}
@@ -620,12 +634,12 @@ export default function ReportsScreen() {
                   <View style={styles.categoryTopRow}>
                     {/* Icon + name */}
                     <View style={styles.categoryNameRow}>
-                      <View style={[styles.catIconBubble, { backgroundColor: `${category.color || Colors.accent}18` }]}>
+                      <View style={[styles.catIconBubble, { backgroundColor: category.color || Colors.accent }]}>
                         <Text style={styles.catIconEmoji}>{category.icon || '📦'}</Text>
                       </View>
                       <Text style={styles.categoryName}>{category.name}</Text>
                     </View>
-                    <Text style={styles.categoryAmount}>{formatAmount(category.spent, currency)}</Text>
+                    <Text style={styles.categoryAmount}>{formatAmount(category.spent, currency, locale)}</Text>
                   </View>
 
                   <View style={styles.categoryTrack}>
@@ -635,13 +649,13 @@ export default function ReportsScreen() {
                   <View style={styles.categoryBottomRow}>
                     <Text style={styles.categoryMeta}>
                       {category.monthlyBudget > 0
-                        ? `${category.usagePct.toFixed(0)}% du budget`
-                        : `${category.sharePct.toFixed(0)}% des dépenses`}
+                        ? t('reports.ofBudget', { percent: category.usagePct.toFixed(0) })
+                        : t('reports.ofExpenses', { percent: category.sharePct.toFixed(0) })}
                     </Text>
                     <Text style={[styles.categoryMeta, category.remaining < 0 && styles.categoryMetaAlert]}>
                       {category.monthlyBudget > 0
-                        ? `${category.remaining >= 0 ? 'reste' : 'dépassé'} ${formatAmount(Math.abs(category.remaining), currency)}`
-                        : 'pas de budget'}
+                        ? `${category.remaining >= 0 ? t('reports.remainingAmount', { amount: formatAmount(Math.abs(category.remaining), currency, locale) }) : t('reports.exceededAmount', { amount: formatAmount(Math.abs(category.remaining), currency, locale) })}`
+                        : t('reports.noBudgetSet')}
                     </Text>
                   </View>
                 </View>
@@ -695,19 +709,19 @@ export default function ReportsScreen() {
           {trendData.averageSpend > 0 && (
             <View style={styles.avgLegend}>
               <View style={styles.avgLegendDash} />
-              <Text style={styles.avgLegendTxt}>Moy. {formatAmount(trendData.averageSpend, currency)}</Text>
+              <Text style={styles.avgLegendTxt}>{t('reports.average', { amount: formatAmount(trendData.averageSpend, currency, locale) })}</Text>
             </View>
           )}
 
           <View style={styles.trendFooter}>
             <View style={styles.trendStat}>
-              <Text style={styles.trendStatLabel}>Période actuelle</Text>
-              <Text style={styles.trendStatValue}>{formatAmount(trendData.currentTotal, currency)}</Text>
+              <Text style={styles.trendStatLabel}>{t('reports.currentPeriod')}</Text>
+              <Text style={styles.trendStatValue}>{formatAmount(trendData.currentTotal, currency, locale)}</Text>
             </View>
             {trendData.previousTotal > 0 && (
               <View style={[styles.trendStat, { alignItems: 'flex-end' }]}>
-                <Text style={styles.trendStatLabel}>Période précédente</Text>
-                <Text style={styles.trendStatValue}>{formatAmount(trendData.previousTotal, currency)}</Text>
+                <Text style={styles.trendStatLabel}>{t('reports.previousPeriod')}</Text>
+                <Text style={styles.trendStatValue}>{formatAmount(trendData.previousTotal, currency, locale)}</Text>
               </View>
             )}
           </View>
@@ -955,25 +969,27 @@ function makeStyles(Colors) { return StyleSheet.create({
     ...Fonts.primary,
     fontSize: 11,
     color: Colors.pureWhite,
-    opacity: 0.45,
+    opacity: 0.7,
     lineHeight: 16,
   },
   heroMeterTrack: {
-    height: 6,
+    height: 8,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.pureWhite,
-    opacity: 0.12,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     overflow: 'hidden',
     position: 'relative',
   },
   heroMeterFill: { height: '100%', borderRadius: Radius.pill },
   heroMeterMarker: {
     position: 'absolute',
-    top: 0, bottom: 0,
-    width: 2, marginLeft: -1,
-    backgroundColor: Colors.pureWhite,
-    opacity: 0.8,
-    borderRadius: 1,
+    top: -2, bottom: -2,
+    width: 3, marginLeft: -1.5,
+    backgroundColor: '#FFFFFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    zIndex: 10,
   },
   heroLegendRow: {
     flexDirection: 'row',
@@ -984,7 +1000,7 @@ function makeStyles(Colors) { return StyleSheet.create({
     ...Fonts.primary,
     fontSize: 9,
     color: Colors.pureWhite,
-    opacity: 0.3,
+    opacity: 0.7,
   },
   heroDivider: {
     height: 1,
@@ -996,7 +1012,7 @@ function makeStyles(Colors) { return StyleSheet.create({
     fontSize: 12,
     lineHeight: 17,
     color: Colors.pureWhite,
-    opacity: 0.72,
+    opacity: 0.85,
   },
   quickStats: {
     flexDirection: 'row',
@@ -1019,7 +1035,7 @@ function makeStyles(Colors) { return StyleSheet.create({
     ...Fonts.primary,
     fontSize: 9,
     color: Colors.pureWhite,
-    opacity: 0.45,
+    opacity: 0.7,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 3,
@@ -1309,19 +1325,18 @@ function makeStyles(Colors) { return StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.pureWhite,
-    opacity: 0.07,
+    backgroundColor: 'rgba(255,255,255,0.1)',
     borderRadius: Radius.sm,
     paddingHorizontal: Spacing.smd,
     paddingVertical: Spacing.xs,
     borderWidth: 1,
-    borderColor: Colors.pureWhite,
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   heroProjectionLabel: {
     ...Fonts.primary,
     fontSize: 10,
     color: Colors.pureWhite,
-    opacity: 0.45,
+    opacity: 0.7,
   },
   heroProjectionValue: {
     ...Fonts.primary,

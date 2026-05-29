@@ -23,21 +23,35 @@ export default function AnimatedSplashScreen({ onFinish }) {
       lottieRef.current.play();
     }
 
-    // Auto finish after animation duration (approximately 10 seconds based on 294 frames at 30fps)
-    const timer = setTimeout(() => {
+    const handleFinish = () => {
       if (onFinish) {
         Animated.timing(fadeAnim, {
           toValue: 0,
-          duration: 500,
+          duration: 400,
           useNativeDriver: true,
         }).start(() => onFinish());
       }
-    }, 9800); // 9.8 seconds
+    };
+
+    // Fallback timer (reduced from 9.8s to 4s)
+    const timer = setTimeout(handleFinish, 4000);
 
     return () => clearTimeout(timer);
   }, []);
 
   const styles = makeStyles(Colors);
+
+  const handleAnimationFinish = () => {
+    // Only trigger if timer hasn't already (or just let it override)
+    // We start fade out immediately
+    if (onFinish) {
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }).start(() => onFinish());
+    }
+  };
 
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
@@ -48,6 +62,7 @@ export default function AnimatedSplashScreen({ onFinish }) {
           style={styles.animation}
           loop={false}
           autoPlay={false}
+          onAnimationFinish={handleAnimationFinish}
         />
       </View>
       

@@ -13,6 +13,7 @@ import AddCategoryModal from './AddCategoryModal';
 import { Fonts, Shadow } from '../../theme';
 import { PremiumHaptics } from '../../utils/haptics';
 import { useApp } from '../../context/AppContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 
 const addAlpha = (hex, opacity) => {
@@ -52,6 +53,7 @@ function ExpandableCategoryRow({
   onToggleExpanded,
   onUpdateField,
   currency = '€',
+  t,
 }) {
   const { Colors } = useTheme();
   const styles = makeStyles(Colors);
@@ -60,11 +62,11 @@ function ExpandableCategoryRow({
       <View style={styles.row}>
         <View style={styles.leftPart}>
           <View style={styles.iconWrap}>
-            <View style={[styles.iconCircle, { backgroundColor: addAlpha(category.color || Colors.accent, 0.12) }]}>
+            <View style={[styles.iconCircle, { backgroundColor: category.color || Colors.accent }]}>
               <Text style={styles.iconText}>{category.icon}</Text>
             </View>
             <Pressable style={styles.editBadge} onPress={() => onOpenEditor(category)}>
-              <Text style={styles.editBadgeText}>Ed</Text>
+              <Text style={styles.editBadgeText}>{t('common.edit').substring(0, 2)}</Text>
             </Pressable>
           </View>
 
@@ -102,8 +104,8 @@ function ExpandableCategoryRow({
             onToggleExpanded(category.id);
           }}
         >
-          <Text style={[styles.chevron, isExpanded && styles.chevronActive]}>
-            {isExpanded ? '⌃' : '⌄'}
+          <Text style={[styles.chevronText, isExpanded && styles.chevronTextActive]}>
+            {isExpanded ? '−' : '+'}
           </Text>
         </Pressable>
       </View>
@@ -112,7 +114,7 @@ function ExpandableCategoryRow({
         <View style={styles.inlinePanel}>
           <View style={styles.inlineFields}>
             <View style={styles.fieldBlock}>
-              <Text style={styles.inlineLabel}>Category type</Text>
+              <Text style={styles.inlineLabel}>{t('categoryManager.categoryType')}</Text>
               <Pressable
                 style={styles.inlineSelect}
                 onPress={() => {
@@ -123,14 +125,14 @@ function ExpandableCategoryRow({
                 }}
               >
                 <Text style={styles.inlineSelectText}>
-                  {category.type === 'savings' ? 'Savings' : 'Expense'}
+                  {category.type === 'savings' ? t('reports.savings') : t('home.expense')}
                 </Text>
                 <Text style={styles.inlineSelectArrow}>⌄</Text>
               </Pressable>
             </View>
 
             <View style={styles.fieldBlock}>
-              <Text style={styles.inlineLabel}>Frequency</Text>
+              <Text style={styles.inlineLabel}>{t('subscriptions.frequency')}</Text>
               <Pressable
                 style={styles.inlineSelect}
                 onPress={() => {
@@ -141,7 +143,7 @@ function ExpandableCategoryRow({
                 }}
               >
                 <Text style={styles.inlineSelectText}>
-                  {category.cycle === 'weekly' ? 'Weekly' : 'Monthly'}
+                  {category.cycle === 'weekly' ? t('subscriptions.weekly') : t('subscriptions.monthly')}
                 </Text>
                 <Text style={styles.inlineSelectArrow}>⌄</Text>
               </Pressable>
@@ -155,7 +157,10 @@ function ExpandableCategoryRow({
               onDelete(category.id);
             }}
           >
-            <Text style={styles.deleteActionIcon}>🗑</Text>
+            <View style={styles.trashIcon}>
+              <View style={styles.trashLid} />
+              <View style={styles.trashBody} />
+            </View>
           </Pressable>
         </View>
       ) : null}
@@ -174,6 +179,7 @@ export default function CategoryManagerModal({
 }) {
   const { Colors } = useTheme();
   const { state } = useApp();
+  const { t, locale } = useLanguage();
   const currency = state.currency || '€';
   const [editingBudgetId, setEditingBudgetId] = useState(null);
   const [budgetDraft, setBudgetDraft] = useState('');
@@ -193,20 +199,20 @@ export default function CategoryManagerModal({
     return [
       {
         key: 'weekly',
-        title: 'Weekly Categories',
-        total: `${weekly.reduce((sum, cat) => sum + (cat.budget || 0), 0).toFixed(0)} ${currency} / week`,
+        title: t('categoryManager.weeklyTitle'),
+        total: `${weekly.reduce((sum, cat) => sum + (cat.budget || 0), 0).toLocaleString(locale)} ${currency} / ${t('common.week').toLowerCase()}`,
         items: weekly,
       },
       {
         key: 'monthly',
-        title: 'Monthly Categories',
-        total: `${monthly.reduce((sum, cat) => sum + (cat.budget || 0), 0).toFixed(0)} ${currency} / month`,
+        title: t('categoryManager.monthlyTitle'),
+        total: `${monthly.reduce((sum, cat) => sum + (cat.budget || 0), 0).toLocaleString(locale)} ${currency} / ${t('common.month').toLowerCase()}`,
         items: monthly,
       },
       {
         key: 'savings',
-        title: 'Savings Categories',
-        total: `${savings.reduce((sum, cat) => sum + (cat.budget || 0), 0).toFixed(0)} ${currency} / month`,
+        title: t('categoryManager.savingsTitle'),
+        total: `${savings.reduce((sum, cat) => sum + (cat.budget || 0), 0).toLocaleString(locale)} ${currency} / ${t('common.month').toLowerCase()}`,
         items: savings,
       },
     ];
@@ -245,7 +251,7 @@ export default function CategoryManagerModal({
       <View style={styles.container}>
         <KeyboardAvoidingView style={styles.flex} behavior="padding">
           <View style={styles.header}>
-            <Text style={styles.title}>Bulk edit categories</Text>
+            <Text style={styles.title}>{t('categoryManager.title')}</Text>
             <Pressable
               style={styles.doneButton}
               onPress={() => {
@@ -254,14 +260,14 @@ export default function CategoryManagerModal({
               }}
             >
               <Text style={styles.doneIcon}>✓</Text>
-              <Text style={styles.doneText}>Done</Text>
+              <Text style={styles.doneText}>{t('common.done')}</Text>
             </Pressable>
           </View>
 
           <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
             <View style={styles.banner}>
               <Text style={styles.bannerText}>
-                Not sure how much to allocate? We can suggest some amounts based on your income.
+                {t('categoryManager.banner')}
               </Text>
               <Pressable
                 onPress={() => {
@@ -269,7 +275,7 @@ export default function CategoryManagerModal({
                   setShowSalarySheet(true);
                 }}
               >
-                <Text style={styles.bannerLink}>Suggest amounts for me</Text>
+                <Text style={styles.bannerLink}>{t('categoryManager.suggestLink')}</Text>
               </Pressable>
             </View>
 
@@ -278,7 +284,7 @@ export default function CategoryManagerModal({
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>{section.title}</Text>
                   <View style={styles.sectionSummary}>
-                    <Text style={styles.sectionSummaryLabel}>Total</Text>
+                    <Text style={styles.sectionSummaryLabel}>{t('common.total')}</Text>
                     <Text style={styles.sectionSummaryValue}>{section.total}</Text>
                   </View>
                 </View>
@@ -304,6 +310,7 @@ export default function CategoryManagerModal({
                     }}
                     onUpdateField={updateCategoryField}
                     currency={currency}
+                    t={t}
                   />
                 ))}
 
@@ -314,7 +321,7 @@ export default function CategoryManagerModal({
                   }}
                   style={styles.addButton}
                 >
-                  <Text style={styles.addButtonText}>Add new category</Text>
+                  <Text style={styles.addButtonText}>{t('categoryManager.addNew')}</Text>
                 </Pressable>
               </View>
             ))}
@@ -327,15 +334,15 @@ export default function CategoryManagerModal({
               <View style={styles.sheet}>
                 <KeyboardAvoidingView behavior="padding">
                   <View style={styles.sheetHandle} />
-                  <Text style={styles.sheetEmoji}>Budget</Text>
-                  <Text style={styles.sheetTitle}>Let us calculate for you</Text>
+                  <Text style={styles.sheetEmoji}>{t('reports.budget')}</Text>
+                  <Text style={styles.sheetTitle}>{t('categoryManager.salarySheet.title')}</Text>
                   <Text style={styles.sheetBody}>
-                    We can suggest some category amounts based on your income (post tax).
+                    {t('categoryManager.salarySheet.description')}
                   </Text>
                   <Text style={styles.sheetBody}>
-                    We will use the 50 30 20 rule to split needs, wants, and savings.
+                    {t('categoryManager.salarySheet.rule')}
                   </Text>
-                  <Text style={styles.sheetLabel}>Monthly income (after taxes)</Text>
+                  <Text style={styles.sheetLabel}>{t('categoryManager.salarySheet.incomeLabel')}</Text>
                   <TextInput
                     value={salary}
                     onChangeText={setSalary}
@@ -346,9 +353,9 @@ export default function CategoryManagerModal({
                   />
                   {salaryPlan ? (
                     <View style={styles.sheetResults}>
-                      <Text style={styles.sheetResult}>Needs: {formatBudget(salaryPlan.needs, currency)}</Text>
-                      <Text style={styles.sheetResult}>Wants: {formatBudget(salaryPlan.wants, currency)}</Text>
-                      <Text style={styles.sheetResult}>Savings: {formatBudget(salaryPlan.savings, currency)}</Text>
+                      <Text style={styles.sheetResult}>{t('categoryManager.salarySheet.results.needs', { amount: formatBudget(salaryPlan.needs, currency) })}</Text>
+                      <Text style={styles.sheetResult}>{t('categoryManager.salarySheet.results.wants', { amount: formatBudget(salaryPlan.wants, currency) })}</Text>
+                      <Text style={styles.sheetResult}>{t('categoryManager.salarySheet.results.savings', { amount: formatBudget(salaryPlan.savings, currency) })}</Text>
                     </View>
                   ) : null}
                   <Pressable
@@ -358,7 +365,7 @@ export default function CategoryManagerModal({
                     }}
                     style={styles.sheetCta}
                   >
-                    <Text style={styles.sheetCtaText}>Continue with suggestions</Text>
+                    <Text style={styles.sheetCtaText}>{t('categoryManager.salarySheet.cta')}</Text>
                   </Pressable>
                 </KeyboardAvoidingView>
               </View>
@@ -393,7 +400,7 @@ export default function CategoryManagerModal({
 
 function makeStyles(Colors) { return StyleSheet.create({
   flex: { flex: 1 },
-  container: { flex: 1, backgroundColor: Colors.white },
+  container: { flex: 1, backgroundColor: Colors.bg },
   header: {
     paddingHorizontal: 14,
     paddingTop: 20,
@@ -418,12 +425,10 @@ function makeStyles(Colors) { return StyleSheet.create({
   doneText: { ...Fonts.sans, fontSize: 15, ...Fonts.bold, color: Colors.income },
   scroll: { paddingHorizontal: 12, paddingBottom: 20 },
   banner: {
-    backgroundColor: Colors.surface,
-    borderRadius: 14,
-    padding: 14,
+    paddingVertical: 14,
     marginBottom: 18,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.border,
   },
   bannerText: { ...Fonts.sans, fontSize: 14, lineHeight: 20, color: Colors.text, marginBottom: 8 },
   bannerLink: { ...Fonts.sans, fontSize: 15, ...Fonts.bold, color: Colors.accent },
@@ -434,17 +439,17 @@ function makeStyles(Colors) { return StyleSheet.create({
   sectionSummaryLabel: { ...Fonts.sans, fontSize: 11, color: Colors.textSecondary },
   sectionSummaryValue: { ...Fonts.sans, fontSize: 13, ...Fonts.bold, color: Colors.text },
   categoryCard: {
-    backgroundColor: Colors.white,
+    backgroundColor: 'transparent',
     borderRadius: 18,
-    marginBottom: 10,
+    marginBottom: 4,
+    paddingVertical: 8,
   },
   categoryCardExpanded: {
-    borderWidth: 1,
-    borderColor: Colors.borderStrong,
-    paddingHorizontal: 10,
-    paddingTop: 10,
-    paddingBottom: 12,
-    ...Shadow.soft,
+    backgroundColor: addAlpha(Colors.accent, 0.03),
+    paddingHorizontal: 12,
+    paddingTop: 12,
+    paddingBottom: 16,
+    borderRadius: 20,
   },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   leftPart: { flex: 1, flexDirection: 'row', alignItems: 'center' },
@@ -465,34 +470,47 @@ function makeStyles(Colors) { return StyleSheet.create({
     ...Shadow.soft,
   },
   editBadgeText: { ...Fonts.sans, fontSize: 7, ...Fonts.bold, color: Colors.text },
-  rowTitle: { ...Fonts.sans, fontSize: 16, ...Fonts.medium, color: Colors.text, flex: 1 },
+  rowTitle: { 
+    ...Fonts.sans, 
+    fontSize: 16, 
+    ...Fonts.medium, 
+    color: Colors.text, 
+    flex: 1,
+    lineHeight: 42, // Aligné sur la hauteur du iconWrap
+  },
   amountBox: {
     minWidth: 92,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 15,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 14,
     backgroundColor: Colors.surface,
     borderWidth: 1,
     borderColor: Colors.border,
+    justifyContent: 'center',
+    alignItems: 'flex-end',
   },
   amountLabel: { ...Fonts.sans, fontSize: 16, color: Colors.text },
   amountInput: { ...Fonts.sans, fontSize: 16, color: Colors.text, padding: 0, margin: 0 },
   chevronWrap: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: Colors.border,
   },
   chevronWrapActive: {
-    backgroundColor: 'rgba(30, 41, 59, 0.08)',
-    borderColor: Colors.borderStrong,
+    backgroundColor: addAlpha(Colors.accent, 0.1),
   },
-  chevron: { ...Fonts.sans, fontSize: 18, ...Fonts.bold, color: Colors.textSecondary, marginTop: -1 },
-  chevronActive: { color: Colors.text },
+  chevronText: {
+    ...Fonts.sans,
+    fontSize: 20,
+    color: Colors.textMuted,
+    fontWeight: '300',
+  },
+  chevronTextActive: {
+    color: Colors.accent,
+    fontWeight: '600',
+  },
   inlinePanel: {
     marginTop: 12,
     paddingTop: 12,
@@ -539,16 +557,34 @@ function makeStyles(Colors) { return StyleSheet.create({
     color: Colors.textSecondary,
   },
   deleteAction: {
-    width: 46,
+    width: 42,
     height: 42,
-    borderRadius: 14,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: addAlpha(Colors.expense, 0.12),
-    borderWidth: 1,
-    borderColor: addAlpha(Colors.expense, 0.2),
+    backgroundColor: addAlpha(Colors.expense, 0.08),
   },
-  deleteActionIcon: { fontSize: 16, color: Colors.expense },
+  trashIcon: {
+    width: 16,
+    height: 18,
+    alignItems: 'center',
+  },
+  trashLid: {
+    width: 12,
+    height: 2,
+    backgroundColor: Colors.expense,
+    borderRadius: 1,
+    marginBottom: 1,
+  },
+  trashBody: {
+    width: 10,
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: Colors.expense,
+    borderTopWidth: 0,
+    borderBottomLeftRadius: 2,
+    borderBottomRightRadius: 2,
+  },
   addButton: {
     borderWidth: 1,
     borderColor: Colors.borderStrong,

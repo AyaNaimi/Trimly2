@@ -29,21 +29,48 @@ export default function AddTransactionModal({
   onSave,
   initialCategoryId: initial_category_id = '',
 }) {
-  const { Colors } = useTheme();
+  const { Colors, isDark } = useTheme();
   const { state } = useApp();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [type, setType] = useState('expense');
   const [amount, setAmount] = useState('');
   const [category_id, setCategoryId] = useState(categories[0]?.id || '');
   const [note, setNote] = useState('');
   const [date, setDate] = useState(todayISO());
   const [categoryQuery, setCategoryQuery] = useState('');
-  const [showCategorySearch, setShowCategorySearch] = useState(false);
-  const [showAllCategories, setShowAllCategories] = useState(false);
+  const [showCategorySheet, setShowCategorySheet] = useState(false);
+  const [renderSheet, setRenderSheet] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [isAmountFocused, setIsAmountFocused] = useState(false);
-  const searchAnim = useRef(new Animated.Value(0)).current;
-  const searchInputRef = useRef(null);
+
+  const sheetAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (showCategorySheet) {
+      setRenderSheet(true);
+      Animated.timing(sheetAnim, {
+        toValue: 1,
+        duration: 250,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(sheetAnim, {
+        toValue: 0,
+        duration: 200,
+        useNativeDriver: true,
+      }).start(() => setRenderSheet(false));
+    }
+  }, [showCategorySheet]);
+
+  const backdropOpacity = sheetAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [0, 0.4],
+  });
+
+  const sheetTranslateY = sheetAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [600, 0],
+  });
 
   useEffect(() => {
     if (!visible) return;
@@ -57,25 +84,8 @@ export default function AddTransactionModal({
   }, [visible, categories, category_id, initial_category_id]);
 
   useEffect(() => {
-    Animated.timing(searchAnim, {
-      toValue: showCategorySearch ? 1 : 0,
-      duration: 220,
-      useNativeDriver: false,
-    }).start();
-  }, [searchAnim, showCategorySearch]);
-
-  useEffect(() => {
-    if (!showCategorySearch) return undefined;
-    const timeoutId = setTimeout(() => {
-      searchInputRef.current?.focus();
-    }, 240);
-    return () => clearTimeout(timeoutId);
-  }, [showCategorySearch]);
-
-  useEffect(() => {
     if (!visible) return;
-    setShowCategorySearch(false);
-    setShowAllCategories(false);
+    setShowCategorySheet(false);
     setCategoryQuery('');
   }, [visible]);
 
@@ -98,34 +108,10 @@ export default function AddTransactionModal({
   }, [categories, category_id, categoryQuery]);
 
   const selectedCategory = categories.find(c => c.id === category_id) || sortedCategories[0];
-  const visibleCategories = categoryQuery ? sortedCategories : (
-    showAllCategories ? sortedCategories : sortedCategories.slice(0, 8)
-  );
-  const canExpandCategories = !categoryQuery && sortedCategories.length > 8;
-  const searchWidth = searchAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 170],
-  });
-  const searchOpacity = searchAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1],
-  });
-  const searchTranslateX = searchAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [16, 0],
-  });
 
   function selectCategory(id) {
     PremiumHaptics.selection();
     setCategoryId(id);
-  }
-
-  function toggleCategorySearch() {
-    PremiumHaptics.selection();
-    if (showCategorySearch) {
-      setCategoryQuery('');
-    }
-    setShowCategorySearch(prev => !prev);
   }
 
   function save() {
@@ -152,7 +138,7 @@ export default function AddTransactionModal({
     setCategoryQuery('');
   }
 
-  const styles = makeStyles(Colors);
+  const styles = makeStyles(Colors, isDark);
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -208,63 +194,24 @@ export default function AddTransactionModal({
             </View>
 
             <View style={styles.fieldGroup}>
-              <View style={styles.categoryHeader}>
-                <Text style={styles.label}>{t('transactions.category')}</Text>
-                <View style={styles.categorySearchRow}>
-                  <Animated.View
-                    style={[
-                      styles.searchInputWrap,
-                      {
-                        width: searchWidth,
-                        opacity: searchOpacity,
-                        transform: [{ translateX: searchTranslateX }],
-                      },
-                    ]}
-                  >
-                    <TextInput
-                      ref={searchInputRef}
-                      style={styles.searchInput}
-                      value={categoryQuery}
-                      onChangeText={setCategoryQuery}
-                      placeholder={t('transactions.searchCategories')}
-                      placeholderTextColor={Colors.textSecondary}
-                    />
-                  </Animated.View>
-                  <Pressable onPress={toggleCategorySearch} style={styles.searchIconButton}>
-                    <Text style={styles.searchIcon}>⌕</Text>
-                  </Pressable>
+              <Text style={styles.label}>{t('transactions.category')}</Text>
+              <Pressable
+                style={styles.categorySelector}
+                onPress={() => {
+                  PremiumHaptics.selection();
+                  setShowCategorySheet(true);
+                }}
+              >
+                <View style={styles.categorySelectorLeft}>
+                  <View style={[styles.categorySelectorIcon, { backgroundColor: addAlpha(selectedCategory?.color || Colors.accent, 0.12) }]}>
+                    <Text style={{ fontSize: 18 }}>{selectedCategory?.icon || '💳'}</Text>
+                  </View>
+                  <Text style={styles.categorySelectorName}>{selectedCategory?.name || t('transactions.selectCategory')}</Text>
                 </View>
-              </View>
-
-              <View style={styles.categoryGrid}>
-                {visibleCategories.map(cat => {
-                  return (
-                    <Pressable
-                      key={cat.id}
-                      onPress={() => selectCategory(cat.id)}
-                      style={[styles.categoryCard, category_id === cat.id && styles.categoryCardActive]}
-                    >
-                      {category_id === cat.id ? (
-                        <View style={styles.categoryCheck}>
-                          <Text style={styles.categoryCheckText}>✓</Text>
-                        </View>
-                      ) : null}
-                      <View style={[styles.categoryIcon, { backgroundColor: addAlpha(cat.color || Colors.accent, 0.12) }]}>
-                        <Text style={{ fontSize: 18 }}>{cat.icon}</Text>
-                      </View>
-                      <Text style={[styles.categoryName, category_id === cat.id && styles.categoryNameActive]} numberOfLines={1}>{cat.name}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-              {canExpandCategories ? (
-                <Pressable
-                  onPress={() => { PremiumHaptics.selection(); setShowAllCategories(prev => !prev); }}
-                  style={styles.moreDotsButton}
-                >
-                  <Text style={styles.moreDotsText}>...</Text>
-                </Pressable>
-              ) : null}
+                <View style={styles.categorySelectorRight}>
+                  <Text style={styles.categorySelectorChevron}>›</Text>
+                </View>
+              </Pressable>
             </View>
 
             <View style={styles.fieldGroup}>
@@ -287,7 +234,7 @@ export default function AddTransactionModal({
                   setShowDatePicker(true);
                 }}
               >
-                <Text style={styles.dateValue}>{formatDateFull(date)}</Text>
+                <Text style={styles.dateValue}>{formatDateFull(date, locale)}</Text>
                 <Text style={styles.dateIcon}>🗓</Text>
               </Pressable>
             </View>
@@ -303,11 +250,63 @@ export default function AddTransactionModal({
         onClose={() => setShowDatePicker(false)}
         title={t('modals.addTransaction.dateTitle')}
       />
+      {renderSheet && (
+        <View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+          <Animated.View style={[styles.sheetBackdropInline, { opacity: backdropOpacity }]}>
+            <Pressable style={{ flex: 1 }} onPress={() => setShowCategorySheet(false)} />
+          </Animated.View>
+          <Animated.View style={[styles.sheetInline, { transform: [{ translateY: sheetTranslateY }] }]}>
+            <View style={styles.sheetHandle} />
+            <Text style={styles.sheetTitle}>{t('transactions.category')}</Text>
+
+            {/* Search Input in Sheet */}
+            <View style={styles.sheetSearchContainer}>
+              <TextInput
+                style={styles.sheetSearchInput}
+                value={categoryQuery}
+                onChangeText={setCategoryQuery}
+                placeholder={t('transactions.searchCategories')}
+                placeholderTextColor={Colors.textSecondary}
+              />
+            </View>
+
+            <ScrollView contentContainerStyle={styles.sheetScroll} showsVerticalScrollIndicator={false}>
+              <View style={styles.categoryGrid}>
+                {sortedCategories.map(cat => {
+                  const isActive = category_id === cat.id;
+                  return (
+                    <Pressable
+                      key={cat.id}
+                      onPress={() => {
+                        selectCategory(cat.id);
+                        setShowCategorySheet(false);
+                      }}
+                      style={[styles.categoryCard, isActive && styles.categoryCardActive]}
+                    >
+                      {isActive ? (
+                        <View style={styles.categoryCheck}>
+                          <Text style={styles.categoryCheckText}>✓</Text>
+                        </View>
+                      ) : null}
+                      <View style={[styles.categoryIcon, { backgroundColor: addAlpha(cat.color || Colors.accent, 0.12) }]}>
+                        <Text style={{ fontSize: 18 }}>{cat.icon}</Text>
+                      </View>
+                      <Text style={[styles.categoryName, isActive && styles.categoryNameActive]} numberOfLines={1}>
+                        {cat.name}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          </Animated.View>
+        </View>
+      )}
     </Modal>
   );
 }
 
-function makeStyles(Colors) { return StyleSheet.create({
+function makeStyles(Colors, isDark) { return StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.bg },
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
@@ -343,7 +342,7 @@ function makeStyles(Colors) { return StyleSheet.create({
     borderRadius: 18, padding: 4, marginBottom: 24, borderWidth: 1, borderColor: Colors.border,
   },
   typeBtn: { flex: 1, paddingVertical: 12, borderRadius: 14, alignItems: 'center' },
-  typeBtnActive: { backgroundColor: Colors.surface, ...Shadow.sm },
+  typeBtnActive: { backgroundColor: isDark ? Colors.surfaceAlt : Colors.white, ...Shadow.sm },
   typeTxt: { ...Fonts.sans, fontSize: 14, ...Fonts.semiBold, color: Colors.textSecondary },
   typeTxtActive: { color: Colors.text, ...Fonts.bold },
 
@@ -354,31 +353,39 @@ function makeStyles(Colors) { return StyleSheet.create({
   fieldGroup: { marginBottom: 24 },
   amountInput: { flex: 1, ...Fonts.serif, fontSize: 24, color: Colors.text },
 
-  categoryHeader: {
+  categorySelector: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    minHeight: 52,
   },
-  categorySearchRow: { flexDirection: 'row', alignItems: 'center' },
-  searchInputWrap: { overflow: 'hidden', marginRight: 8 },
-  searchIconButton: {
+  categorySelectorLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  categorySelectorIcon: {
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: Colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  searchIcon: { ...Fonts.sans, fontSize: 16, ...Fonts.bold, color: Colors.text },
-  searchInput: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+  categorySelectorName: {
     ...Fonts.sans,
-    fontSize: 13,
+    fontSize: 15,
+    ...Fonts.medium,
     color: Colors.text,
+  },
+  categorySelectorChevron: {
+    fontSize: 20,
+    color: Colors.textMuted,
   },
   categoryGrid: {
     flexDirection: 'row',
@@ -389,7 +396,7 @@ function makeStyles(Colors) { return StyleSheet.create({
     width: '23%',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: Colors.surface,
+    backgroundColor: 'transparent',
     borderRadius: Radius.lg,
     paddingVertical: 10,
     paddingHorizontal: 4,
@@ -400,7 +407,7 @@ function makeStyles(Colors) { return StyleSheet.create({
   categoryCardActive: {
     borderWidth: 1,
     borderColor: Colors.accent,
-    backgroundColor: Colors.accentSoft,
+    backgroundColor: 'transparent',
   },
   categoryCheck: {
     position: 'absolute',
@@ -424,22 +431,56 @@ function makeStyles(Colors) { return StyleSheet.create({
   },
   categoryName: { ...Fonts.sans, fontSize: 10, ...Fonts.bold, color: Colors.text, textAlign: 'center' },
   categoryNameActive: { color: Colors.text },
-  moreDotsButton: {
-    alignSelf: 'center',
-    minWidth: 56,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-    borderRadius: Radius.pill,
-    backgroundColor: Colors.surface,
-    marginTop: 2,
+  sheetBackdropInline: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
-  moreDotsText: {
+  sheetInline: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: Colors.bg,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 34,
+    maxHeight: '75%',
+    ...Shadow.lg,
+  },
+  sheetHandle: {
+    alignSelf: 'center',
+    width: 42,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: Colors.borderStrong,
+    marginBottom: 16,
+  },
+  sheetTitle: {
     ...Fonts.sans,
-    fontSize: 18,
+    fontSize: 20,
     ...Fonts.bold,
-    color: Colors.textSecondary,
+    color: Colors.text,
     textAlign: 'center',
-    letterSpacing: 2,
+    marginBottom: 16,
+  },
+  sheetSearchContainer: {
+    marginBottom: 16,
+  },
+  sheetSearchInput: {
+    backgroundColor: Colors.surface,
+    borderRadius: Radius.lg,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    ...Fonts.sans,
+    fontSize: 15,
+    color: Colors.text,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  sheetScroll: {
+    paddingBottom: 20,
   },
 
   input: {

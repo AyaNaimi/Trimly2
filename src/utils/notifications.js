@@ -57,9 +57,13 @@ export async function requestNotificationPermissions() {
  * - Day of charge
  * Also handles trial end notifications
  */
-export async function scheduleAllSubscriptionNotifications(subscriptions) {
-  // Cancel all existing subscription notifications
-  await Notifications.cancelAllScheduledNotificationsAsync();
+export async function scheduleAllSubscriptionNotifications(subscriptions, locale = 'en', t) {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  for (const notif of scheduled) {
+    if (notif.identifier.startsWith('sub-')) {
+      await Notifications.cancelScheduledNotificationAsync(notif.identifier);
+    }
+  }
 
   const granted = await requestNotificationPermissions();
   if (!granted) return;
@@ -67,7 +71,7 @@ export async function scheduleAllSubscriptionNotifications(subscriptions) {
   for (const sub of subscriptions) {
     if (!sub.active) continue;
 
-    const billing = getNextBilling(sub);
+    const billing = getNextBilling(sub, locale, t);
 
     // Schedule for 2 days before
     if (billing.daysUntilCharge >= 2) {
@@ -76,7 +80,7 @@ export async function scheduleAllSubscriptionNotifications(subscriptions) {
       triggerDate.setHours(9, 0, 0, 0); // 9am
 
       if (triggerDate > new Date()) {
-        const msg = getNotificationMessage(sub, 2);
+        const msg = getNotificationMessage(sub, 2, locale, t);
         await Notifications.scheduleNotificationAsync({
           content: {
             title: msg.title,
@@ -101,7 +105,7 @@ export async function scheduleAllSubscriptionNotifications(subscriptions) {
       triggerDate.setHours(9, 0, 0, 0);
 
       if (triggerDate > new Date()) {
-        const msg = getNotificationMessage(sub, 1);
+        const msg = getNotificationMessage(sub, 1, locale, t);
         await Notifications.scheduleNotificationAsync({
           content: {
             title: msg.title,
@@ -124,7 +128,7 @@ export async function scheduleAllSubscriptionNotifications(subscriptions) {
       const triggerDate = new Date(billing.nextChargeDate);
       triggerDate.setHours(9, 0, 0, 0);
       if (triggerDate > new Date()) {
-        const msg = getNotificationMessage(sub, 0);
+        const msg = getNotificationMessage(sub, 0, locale, t);
         await Notifications.scheduleNotificationAsync({
           content: {
             title: msg.title,
@@ -151,8 +155,13 @@ export async function scheduleAllSubscriptionNotifications(subscriptions) {
       if (triggerDate > new Date()) {
         await Notifications.scheduleNotificationAsync({
           content: {
-            title: `${sub.name} passe bientot en payant`,
-            body: `Essai gratuit: plus que 3 jours. Ensuite ${sub.amount.toFixed(2)} EUR par ${cycleFr(sub.cycle)}.`,
+            title: t('notifications.trialEndingTitle', { name: sub.name }),
+            body: t('notifications.trialEndingBody', { 
+              days: 3, 
+              amount: sub.amount.toFixed(2), 
+              currency: sub.currency || '€',
+              cycle: t(`subscriptions.cycles.${sub.cycle}Full`).toLowerCase() 
+            }),
             data: { subscriptionId: sub.id, type: 'trial-ending' },
           },
           trigger: {
@@ -171,7 +180,7 @@ export async function scheduleAllSubscriptionNotifications(subscriptions) {
  * Schedule daily spending reminder based on user's notification level
  * 0 = off, 1 = gentle (1x/day), 2 = aggressive (3x/day), 3 = relentless (6x/day)
  */
-export async function scheduleDailyReminders(level) {
+export async function scheduleDailyReminders(level, t) {
   // Cancel existing reminders
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   for (const notif of scheduled) {
@@ -183,10 +192,10 @@ export async function scheduleDailyReminders(level) {
   if (level === 0) return;
 
   const messages = [
-    "Ajoutez vos depenses du jour pour garder un journal propre.",
-    "Un rapide point budget maintenant peut vous eviter un ecart ce soir.",
-    "Quelques secondes suffisent pour mettre vos mouvements a jour.",
-    "Votre journal attend peut-etre encore une ou deux depenses.",
+    t('notifications.reminders.journal'),
+    t('notifications.reminders.budgetPoint'),
+    t('notifications.reminders.updateMovements'),
+    t('notifications.reminders.pendingEntries'),
   ];
 
   const times = [
@@ -202,7 +211,7 @@ export async function scheduleDailyReminders(level) {
     const [hour, minute] = times[i];
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: 'Trimly',
+        title: t('common.appName'),
         body: messages[i % messages.length],
         data: { type: 'reminder' },
       },
@@ -217,8 +226,42 @@ export async function scheduleDailyReminders(level) {
   }
 }
 
-function cycleFr(cycle) {
-  return { weekly: 'semaine', monthly: 'mois', quarterly: 'trimestre', annual: 'an' }[cycle] || 'mois';
+export async function scheduleCancellationFollowUps(subscription, reminders = [], t) {
+  const granted = await requestNotificationPermissions();
+  if (!granted || !subscription?.id) return [];
+
+  const scheduledIds = [];
+
+  for (const reminder of reminders) {
+    let triggerDate = reminder.date ? new Date(reminder.date) : new Date();
+    if (!reminder.date) {
+      triggerDate.setDate(triggerDate.getDate() + (reminder.daysFromNow || 1));
+      triggerDate.setHours(10, 0, 0, 0);
+    }
+
+    if (Number.isNaN(triggerDate.getTime()) || triggerDate <= new Date()) {
+      continue;
+    }
+
+    const identifier = `cancel-${subscription.id}-${reminder.key}`;
+    await Notifications.cancelScheduledNotificationAsync(identifier).catch(() => {});
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: reminder.title || t('notifications.cancellation.title'),
+        body: reminder.body || t('notifications.cancellation.body', { name: subscription.name }),
+        data: { subscriptionId: subscription.id, type: 'cancellation-follow-up', key: reminder.key },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date: triggerDate,
+        channelId: 'reminders',
+      },
+      identifier,
+    });
+    scheduledIds.push(identifier);
+  }
+
+  return scheduledIds;
 }
 
 /**

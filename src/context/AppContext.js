@@ -2,9 +2,12 @@
 import React, { createContext, useContext, useReducer, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useLanguage } from './LanguageContext';
 import { supabase } from '../utils/supabase';
 import { DatabaseService } from '../services/databaseService';
 import { EmailService } from '../services/emailService';
+import { StripeBillingService } from '../services/stripeBillingService';
+import { triggerSubscriptionCancelled, triggerUpcomingCharge, isN8nConfigured } from '../services/n8nWebhookService';
 import {
   clearGoogleProviderTokens,
   getStoredGoogleProviderTokens,
@@ -32,10 +35,12 @@ const initialState = {
   emailScanPrompt: null,
   profile: null,
   session: null,
+  passwordRecoveryPending: false,
   guestMode: false,
   onboardingComplete: false,
   syncing: false,
   loaded: false,
+  isLocked: false,
 };
 
 function createFreshState(overrides = {}) {
@@ -49,6 +54,7 @@ function createFreshState(overrides = {}) {
     detectedSubscriptions: [],
     emailScanPrompt: null,
     session: null,
+    passwordRecoveryPending: false,
     loaded: true,
     ...overrides,
   };
@@ -62,6 +68,9 @@ function reducer(state, action) {
 
     case 'SET_SESSION':
       return { ...state, session: action.payload };
+
+    case 'SET_PASSWORD_RECOVERY_PENDING':
+      return { ...state, passwordRecoveryPending: action.payload };
 
     case 'SET_EMAIL_SCAN_PROMPT':
       return { ...state, emailScanPrompt: action.payload };
@@ -153,7 +162,7 @@ function reducer(state, action) {
       return {
         ...state,
         subscriptions: state.subscriptions.map(s =>
-          s.id === action.payload ? { ...s, active: false } : s
+          s.id === action.payload.id ? { ...s, active: false, cancelledAt: action.payload.cancelledAt } : s
         ),
       };
 
@@ -178,6 +187,25 @@ function reducer(state, action) {
     case 'SET_PROFILE':
       return { ...state, profile: action.payload };
 
+    case 'SET_BILLING_STATUS': {
+      const billing = action.payload || {};
+      const hasKnownStripeStatus = !!billing.status && billing.status !== 'none';
+      return {
+        ...state,
+        subscription: billing.plan || null,
+        trial: billing.plan || hasKnownStripeStatus ? { ...state.trial, active: false } : state.trial,
+        profile: {
+          ...state.profile,
+          subscription_plan: billing.plan || null,
+          stripe_customer_id: billing.stripeCustomerId || state.profile?.stripe_customer_id || null,
+          stripe_subscription_id: billing.stripeSubscriptionId || null,
+          stripe_subscription_status: billing.status || null,
+          stripe_price_id: billing.stripePriceId || null,
+          subscription_current_period_end: billing.currentPeriodEnd || null,
+        },
+      };
+    }
+
     case 'SET_TRANSACTIONS':
       return { ...state, transactions: action.payload };
 
@@ -190,6 +218,12 @@ function reducer(state, action) {
     case 'UPDATE_FEATURES':
       return { ...state, features: { ...state.features, ...action.payload } };
 
+
+    case 'SET_LOCKED':
+      return { ...state, isLocked: action.payload };
+
+    case 'UNLOCK_APP':
+      return { ...state, isLocked: false };
 
     case 'RESET_PERIOD':
       return {
@@ -216,6 +250,7 @@ function reducer(state, action) {
 // ── Provider ──
 export function AppProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState);
+  const { t, locale } = useLanguage();
   const autoScanInFlightRef = useRef(false);
 
   const getEmailPromptStorageKey = (userId) => `${EMAIL_SCAN_PROMPT_PREFIX}${userId}`;
@@ -310,6 +345,10 @@ export function AppProvider({ children }) {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (_event === 'PASSWORD_RECOVERY') {
+        dispatch({ type: 'SET_PASSWORD_RECOVERY_PENDING', payload: true });
+      }
+
       dispatch({ type: 'SET_SESSION', payload: session });
 
       if (session?.provider_token || session?.provider_refresh_token) {
@@ -327,8 +366,10 @@ export function AppProvider({ children }) {
       if (_event === 'SIGNED_OUT') {
         clearGoogleProviderTokens();
         dispatch({ type: 'CLEAR_EMAIL_SCAN_PROMPT' });
+        dispatch({ type: 'SET_PASSWORD_RECOVERY_PENDING', payload: false });
         dispatch({ type: 'LOG_OUT' });
       }
+
     });
 
     return () => subscription.unsubscribe();
@@ -370,10 +411,31 @@ export function AppProvider({ children }) {
       ]);
 
       if (profile) {
+        const activeStripeStatuses = ['active', 'trialing', 'past_due'];
+        const stripePlan = activeStripeStatuses.includes(profile.stripe_subscription_status)
+          ? profile.subscription_plan
+          : null;
+
+        dispatch({ type: 'SET_PROFILE', payload: profile });
         dispatch({ type: 'SET_INCOME', payload: profile.income || 0 });
         dispatch({ type: 'SET_CURRENCY', payload: profile.currency || '€' });
         dispatch({ type: 'SET_NOTIF_LEVEL', payload: profile.notif_level || 1 });
         dispatch({ type: 'SET_ONBOARDING_STATUS', payload: !!profile.onboarding_complete });
+        if (profile.stripe_subscription_status || stripePlan) {
+          dispatch({
+            type: 'SET_BILLING_STATUS',
+            payload: {
+              plan: stripePlan,
+              status: profile.stripe_subscription_status || 'none',
+              currentPeriodEnd: profile.subscription_current_period_end || null,
+              stripeCustomerId: profile.stripe_customer_id || null,
+              stripeSubscriptionId: profile.stripe_subscription_id || null,
+              stripePriceId: profile.stripe_price_id || null,
+            },
+          });
+        } else if (profile.subscription_plan) {
+          dispatch({ type: 'SET_SUBSCRIPTION_PLAN', payload: profile.subscription_plan });
+        }
       }
 
       // If new user (no categories), seed defaults
@@ -409,9 +471,9 @@ export function AppProvider({ children }) {
     const syncNotifications = async () => {
       try {
         if (state.notifLevel > 0 && state.subscriptions.length > 0) {
-          await scheduleAllSubscriptionNotifications(state.subscriptions);
+          await scheduleAllSubscriptionNotifications(state.subscriptions, locale, t);
         }
-        await scheduleDailyReminders(state.notifLevel);
+        await scheduleDailyReminders(state.notifLevel, t);
       } catch (error) {
         console.error('Notification scheduling failed:', error);
       }
@@ -433,6 +495,37 @@ export function AppProvider({ children }) {
 
     return () => subscription.remove();
   }, [state.loaded, state.session?.user?.id, state.session?.user?.email, state.emailConnections, state.subscriptions]);
+
+  // 5. App Locking Logic
+  useEffect(() => {
+    if (!state.loaded) return undefined;
+
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      // Si on revient du background et qu'on a la sécurité active
+      if (nextState === 'active') {
+        const securityEnabled = !!(state.features?.passcode || state.features?.faceId);
+        if (securityEnabled) {
+          dispatch({ type: 'SET_LOCKED', payload: true });
+        }
+      }
+    });
+
+    return () => subscription.remove();
+  }, [state.loaded, state.features?.passcode, state.features?.faceId]);
+
+  // Verrouiller au démarrage si nécessaire
+  useEffect(() => {
+    if (state.loaded && !state.isLocked) {
+      const securityEnabled = !!(state.features?.passcode || state.features?.faceId);
+      if (securityEnabled) {
+        dispatch({ type: 'SET_LOCKED', payload: true });
+      }
+    }
+  }, [state.loaded]);
+
+  const unlockApp = () => {
+    dispatch({ type: 'UNLOCK_APP' });
+  };
 
   const updateProfile = async (updates) => {
     try {
@@ -494,7 +587,7 @@ export function AppProvider({ children }) {
         await DatabaseService.updateProfile(state.session.user.id, { notif_level: level });
       }
       dispatch({ type: 'SET_NOTIF_LEVEL', payload: level });
-      scheduleDailyReminders(level);
+      scheduleDailyReminders(level, t);
       return true;
     } catch (error) {
       console.error('Error sharing notification level:', error);
@@ -537,6 +630,22 @@ export function AppProvider({ children }) {
         dispatch({ type: 'ADD_SUBSCRIPTION', payload: cloudSub });
       } else {
         dispatch({ type: 'ADD_SUBSCRIPTION', payload: { ...sub, id: `sub_${Date.now()}` } });
+      }
+      // Trigger N8N webhook si configuré
+      if (isN8nConfigured() && state.session?.user) {
+        const billing = require('../utils/dateUtils').getNextBilling(sub);
+        if (billing.daysUntilCharge <= 7) {
+          triggerUpcomingCharge({
+            userId: state.session.user.id,
+            userEmail: state.session.user.email || '',
+            subscription: {
+              name: sub.name,
+              amount: sub.amount,
+              nextChargeDate: billing.nextChargeDate?.toISOString() || '',
+              daysUntil: billing.daysUntilCharge
+            }
+          });
+        }
       }
       return true;
     } catch (error) {
@@ -772,11 +881,22 @@ export function AppProvider({ children }) {
 
   const cancelSubscription = async (id) => {
     try {
-      const updates = { active: false };
+      const cancelledAt = new Date().toISOString();
+      const updates = { active: false, cancelledAt };
       if (state.session) {
         await DatabaseService.updateSubscription(id, updates);
       }
-      dispatch({ type: 'CANCEL_SUBSCRIPTION', payload: id });
+      dispatch({ type: 'CANCEL_SUBSCRIPTION', payload: { id, cancelledAt } });
+      // Trigger N8N webhook si configuré
+      if (isN8nConfigured() && state.session?.user) {
+        const sub = state.subscriptions.find(s => s.id === id);
+        if (sub) {
+          triggerSubscriptionCancelled({
+            userId: state.session.user.id,
+            subscription: { name: sub.name, amount: sub.amount, cycle: sub.cycle }
+          });
+        }
+      }
       return true;
     } catch (error) {
       console.error('Error cancelling subscription:', error);
@@ -852,6 +972,47 @@ export function AppProvider({ children }) {
     }
   };
 
+  const refreshBillingStatus = async () => {
+    try {
+      if (!state.session) return null;
+      const billing = await StripeBillingService.getBillingStatus();
+      dispatch({ type: 'SET_BILLING_STATUS', payload: billing });
+      return billing;
+    } catch (error) {
+      console.error('Error refreshing billing status:', error);
+      return null;
+    }
+  };
+
+  const startStripeCheckout = async (plan) => {
+    try {
+      if (!state.session) {
+        throw new Error('Session utilisateur requise.');
+      }
+      const checkout = await StripeBillingService.startCheckout(plan);
+      if (checkout?.browserResult?.type && checkout.browserResult.type !== 'success') {
+        return { cancelled: true, plan: null };
+      }
+      return refreshBillingStatus();
+    } catch (error) {
+      console.error('Error starting Stripe checkout:', error);
+      throw error;
+    }
+  };
+
+  const openStripePortal = async () => {
+    try {
+      if (!state.session) {
+        throw new Error('Session utilisateur requise.');
+      }
+      await StripeBillingService.openCustomerPortal();
+      return refreshBillingStatus();
+    } catch (error) {
+      console.error('Error opening Stripe portal:', error);
+      throw error;
+    }
+  };
+
   const deleteCategory = async (id) => {
     try {
       if (state.session) {
@@ -920,10 +1081,14 @@ export function AppProvider({ children }) {
         updateProfile,
         updateFeatures,
         setSubscriptionPlan,
+        refreshBillingStatus,
+        startStripeCheckout,
+        openStripePortal,
         dismissAuthEmailScanPrompt,
         saveEmailScanResult,
         dismissDetectedSubscription,
         importDetectedSubscription,
+        unlockApp,
       }}
     >
       {children}

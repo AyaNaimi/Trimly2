@@ -205,5 +205,7 @@ export const DEFAULT_APP_STATE = {
     reports: true,
     rounding: false,
     faceId: false,
+    passcode: false,
+    pin: null,
   },
 };

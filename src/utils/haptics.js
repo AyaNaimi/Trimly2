@@ -31,5 +31,22 @@ export const PremiumHaptics = {
   nav: async () => {
     Haptics.selectionAsync();
     setTimeout(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light), 35);
+  },
+
+  // Standard impact feedback (light/medium blend)
+  impact: () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  },
+
+  // For errors (triple vibration)
+  error: () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+  },
+
+  // Legacy/Compatibility support
+  notification: (success = true) => {
+    Haptics.notificationAsync(
+      success ? Haptics.NotificationFeedbackType.Success : Haptics.NotificationFeedbackType.Error
+    );
   }
 };

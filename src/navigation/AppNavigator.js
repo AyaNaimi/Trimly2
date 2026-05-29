@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { createStackNavigator } from '@react-navigation/stack';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import HomeScreen from '../screens/Home/HomeScreen';
@@ -15,6 +15,7 @@ import OnboardingScreen from '../screens/Onboarding/OnboardingScreen';
 import LoginScreen from '../screens/Auth/LoginScreen';
 import AnimatedSplashScreen from '../screens/Splash/AnimatedSplashScreen';
 import EmailScannerModal from '../screens/Subscriptions/EmailScannerModal';
+import LockScreen from '../screens/Auth/LockScreen';
 
 import { useApp } from '../context/AppContext';
 import { useTheme } from '../context/ThemeContext';
@@ -22,7 +23,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { Shadow, Fonts, Radius } from '../theme';
 
 const Tab = createBottomTabNavigator();
-const Stack = createStackNavigator();
+const Stack = createNativeStackNavigator();
 import { PremiumHaptics } from '../utils/haptics';
 
 // Custom tab bar - Premium Floating Glass
@@ -173,6 +174,10 @@ export default function AppNavigator() {
     return <AnimatedSplashScreen onFinish={() => setShowSplash(false)} />;
   }
 
+  if (state.isLocked) {
+    return <LockScreen />;
+  }
+
   return (
     <NavigationContainer>
       <Stack.Navigator screenOptions={{
@@ -181,7 +186,7 @@ export default function AppNavigator() {
         animationTypeForReplace: 'push',
         gestureEnabled: true,
       }}>
-        {(!state.session && !state.guestMode) ? (
+        {((!state.session && !state.guestMode) || state.passwordRecoveryPending) ? (
           <Stack.Screen name="Login" component={LoginScreen} />
         ) : !state.onboardingComplete ? (
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />

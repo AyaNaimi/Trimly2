@@ -1,12 +1,17 @@
 // src/components/WalletCard.js
 import React, { useRef, useState } from 'react';
-import { View, Text, StyleSheet, Animated, Pressable } from 'react-native';
+import { View, Text, StyleSheet, Animated, Pressable, Platform } from 'react-native';
 import { Fonts, Radius, Spacing } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { PremiumHaptics } from '../utils/haptics';
+import { useLanguage } from '../context/LanguageContext';
 
-export default function WalletCard({ balance, currency = '€', totalIncome = 0, totalExpenses = 0, userName = 'Utilisateur' }) {
+const TRIAL_SOLID = '#4B0A60';
+
+export default function WalletCard({ balance, currency = '€', totalIncome = 0, totalExpenses = 0, userName }) {
   const { Colors } = useTheme();
+  const { t, locale } = useLanguage();
+  const displayUserName = userName || t('settings.user');
   const [isExpanded, setIsExpanded] = useState(false);
   
   // Animations pour les cartes
@@ -139,8 +144,8 @@ export default function WalletCard({ balance, currency = '€', totalIncome = 0,
             </View>
             <View style={styles.cardBottom}>
               <View>
-                <Text style={styles.cardLabel}>Holder</Text>
-                <Text style={styles.cardValue}>{userName.toUpperCase()}</Text>
+                <Text style={styles.cardLabel}>HOLDER</Text>
+                <Text style={styles.cardValue}>{displayUserName.toUpperCase()}</Text>
               </View>
               <View style={styles.cardNumberWrapper}>
                 <Text style={styles.cardNumber}>
@@ -172,8 +177,8 @@ export default function WalletCard({ balance, currency = '€', totalIncome = 0,
             </View>
             <View style={styles.cardBottom}>
               <View>
-                <Text style={[styles.cardLabel, { color: 'rgba(30, 58, 30, 0.7)' }]}>Business</Text>
-                <Text style={[styles.cardValue, { color: '#1e3a1e' }]}>{userName.toUpperCase()}</Text>
+                <Text style={[styles.cardLabel, { color: 'rgba(30, 58, 30, 0.7)' }]}>BUSINESS</Text>
+                <Text style={[styles.cardValue, { color: '#1e3a1e' }]}>{displayUserName.toUpperCase()}</Text>
               </View>
               <View style={styles.cardNumberWrapper}>
                 <Text style={[styles.cardNumber, { color: '#1e3a1e' }]}>
@@ -206,9 +211,9 @@ export default function WalletCard({ balance, currency = '€', totalIncome = 0,
             </View>
             <View style={styles.cardBottom}>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.cardLabel, { color: '#8c979d' }]}>Account</Text>
+                <Text style={[styles.cardLabel, { color: '#8c979d' }]}>ACCOUNT</Text>
                 <Text style={[styles.cardValue, { color: '#003087' }]} numberOfLines={1}>
-                  {userName}
+                  {displayUserName}
                 </Text>
               </View>
               <View style={styles.cardNumberWrapper}>
@@ -229,24 +234,24 @@ export default function WalletCard({ balance, currency = '€', totalIncome = 0,
                 ******
               </Animated.Text>
               <Animated.Text style={[styles.balanceReal, { opacity: balanceOpacity }]}>
-                {balance.toLocaleString()} {currency}
+                {balance.toLocaleString(locale)} {currency}
               </Animated.Text>
             </View>
-            <Text style={styles.balanceLabel}>Solde Net</Text>
+            <Text style={styles.balanceLabel}>{t('home.netBalance')}</Text>
             
             {/* Stats Row - Visible when expanded */}
             <Animated.View style={[styles.statsRow, { opacity: balanceOpacity }]}>
               <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Entrées</Text>
+                <Text style={styles.statLabel}>{t('home.income')}</Text>
                 <Text style={styles.statValueIncome}>
-                  +{totalIncome.toLocaleString()} {currency}
+                  +{totalIncome.toLocaleString(locale)} {currency}
                 </Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
-                <Text style={styles.statLabel}>Sorties</Text>
+                <Text style={styles.statLabel}>{t('home.expense')}</Text>
                 <Text style={styles.statValueExpense}>
-                  -{totalExpenses.toLocaleString()} {currency}
+                  -{totalExpenses.toLocaleString(locale)} {currency}
                 </Text>
               </View>
             </Animated.View>
@@ -256,7 +261,7 @@ export default function WalletCard({ balance, currency = '€', totalIncome = 0,
       </Animated.View>
 
       <Text style={styles.hint}>
-        {isExpanded ? 'Appuyez pour ranger les cartes' : 'Appuyez pour sortir vos cartes'}
+        {isExpanded ? t('subscriptions.wallet.hintExpanded') : t('subscriptions.wallet.hintCollapsed')}
       </Text>
     </Pressable>
   );
@@ -267,7 +272,7 @@ function makeStyles(Colors) {
     container: {
       alignItems: 'center',
       marginVertical: Spacing.lg,
-      paddingTop: 40, // Espace pour les cartes qui sortent
+      paddingTop: 40, 
     },
     wallet: {
       width: 280,
@@ -281,37 +286,37 @@ function makeStyles(Colors) {
       bottom: 0,
       width: 280,
       height: 180,
-      backgroundColor: '#0f1e0f',
+      backgroundColor: '#3A064A',
       borderRadius: 22,
       borderBottomLeftRadius: 50,
       borderBottomRightRadius: 50,
       zIndex: 1,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.3,
-      shadowRadius: 20,
-      elevation: 8,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.05,
+      shadowRadius: 10,
+      elevation: 2,
     },
     walletFront: {
       position: 'absolute',
       bottom: 0,
       width: 280,
       height: 180,
-      backgroundColor: '#1e341e',
+      backgroundColor: TRIAL_SOLID,
       borderRadius: 22,
       borderBottomLeftRadius: 50,
       borderBottomRightRadius: 50,
-      zIndex: 100, // Au-dessus des cartes
+      zIndex: 100, 
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 15 },
-      shadowOpacity: 0.4,
-      shadowRadius: 25,
-      elevation: 15,
-      // Couture pointillée à l'intérieur - avec padding interne
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.15,
+      shadowRadius: 15,
+      elevation: 5,
+      // On remet les traits (coutures) de façon plus visible
       borderWidth: 1.5,
       borderStyle: 'dashed',
-      borderColor: '#4a6642',
-      padding: 8, // Espace intérieur pour la bordure
+      borderColor: 'rgba(255,255,255,0.3)',
+      padding: 8,
       alignSelf: 'center',
     },
     pocketContent: {
@@ -321,7 +326,7 @@ function makeStyles(Colors) {
       right: 0,
       alignItems: 'center',
       gap: 8,
-      zIndex: 101, // Au-dessus du front
+      zIndex: 101,
       paddingHorizontal: 10,
     },
     balanceContainer: {
@@ -332,19 +337,20 @@ function makeStyles(Colors) {
       position: 'relative',
     },
     balanceStars: {
-      color: '#839e7b',
+      color: 'rgba(255,255,255,0.2)',
       fontSize: 24,
       letterSpacing: 4,
       fontWeight: 'bold',
     },
     balanceReal: {
-      color: '#a7c59e',
+      color: '#FFFFFF',
       fontSize: 22,
       fontWeight: '600',
       position: 'absolute',
     },
     balanceLabel: {
-      color: '#698263',
+      color: '#FFFFFF',
+      opacity: 0.7,
       fontSize: 12,
       fontWeight: '500',
     },
@@ -361,7 +367,8 @@ function makeStyles(Colors) {
       flex: 1,
     },
     statLabel: {
-      color: '#698263',
+      color: '#FFFFFF',
+      opacity: 0.7,
       fontSize: 9,
       fontWeight: '600',
       textTransform: 'uppercase',
@@ -383,8 +390,8 @@ function makeStyles(Colors) {
     statDivider: {
       width: 1,
       height: 24,
-      backgroundColor: '#3d5635',
-      opacity: 0.5,
+      backgroundColor: 'rgba(255,255,255,0.2)',
+      opacity: 0.4,
     },
     card: {
       position: 'absolute',
@@ -400,8 +407,8 @@ function makeStyles(Colors) {
       alignSelf: 'center',
     },
     cardStripe: {
-      backgroundColor: '#635bff',
-      bottom: 50, // Position de départ dans la poche
+      backgroundColor: TRIAL_SOLID,
+      bottom: 50,
       zIndex: 50,
     },
     cardWise: {
@@ -460,13 +467,15 @@ function makeStyles(Colors) {
       fontSize: 14,
       color: '#ffffff',
       letterSpacing: 1,
-      fontFamily: 'monospace',
+      fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
     },
     hint: {
       marginTop: 16,
       fontSize: 12,
-      color: Colors.textMuted,
+      color: Colors.textSecondary,
       fontStyle: 'italic',
+      opacity: 0.8,
+      letterSpacing: 0.2,
     },
   });
 }

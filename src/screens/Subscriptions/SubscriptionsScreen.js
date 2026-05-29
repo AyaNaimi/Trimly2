@@ -1,6 +1,6 @@
 // src/screens/Subscriptions/SubscriptionsScreen.js
 import React, { useState } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, SafeAreaView, Alert } from 'react-native';
+import { View, Text, ScrollView, Pressable, StyleSheet, SafeAreaView, Alert, TextInput, Modal } from 'react-native';
 import { Video, ResizeMode } from 'expo-av';
 import { PremiumHaptics } from '../../utils/haptics';
 import { Shadow, Fonts, Radius, Spacing, Metrics } from '../../theme';
@@ -13,6 +13,16 @@ import AddSubscriptionModal from './AddSubscriptionModal';
 import SubDetailModal from './SubDetailModal';
 import EmailScannerModal from './EmailScannerModal';
 
+const addAlpha = (hex, opacity) => {
+  if (!hex) return 'transparent';
+  let normalized = hex.replace('#', '');
+  if (normalized.length === 3) {
+    normalized = normalized.split('').map(c => c + c).join('');
+  }
+  const op = Math.round(opacity * 255).toString(16).padStart(2, '0');
+  return `#${normalized}${op}`;
+};
+
 const emptyIllustrationAsset = require('../../../assets/68749257952.mp4');
 
 export default function SubscriptionsScreen() {
@@ -21,28 +31,37 @@ export default function SubscriptionsScreen() {
     dispatch, 
     activeSubscriptions,
     addSubscription,
+    updateSubscription,
     cancelSubscription
   } = useApp();
   const { Colors } = useTheme();
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
 
   const [filter, setFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [showAdd, setShowAdd] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [selectedSub, setSelectedSub] = useState(null);
+  const [longPressedSub, setLongPressedSub] = useState(null);
+  const [showActionMenu, setShowActionMenu] = useState(false);
 
   const allSubs = state.subscriptions;
   const existingSubscriptionNames = (allSubs || []).map(sub => sub?.name).filter(Boolean);
 
   const filtered = (allSubs || []).filter(s => {
     if (!s) return false;
-    if (filter === 'active') return s.active && !getNextBilling(s).isTrial;
-    if (filter === 'trial') return s.active && getNextBilling(s).isTrial;
+    
+    if (searchQuery && !s.name.toLowerCase().includes(searchQuery.toLowerCase())) {
+      return false;
+    }
+
+    if (filter === 'active') return s.active && !getNextBilling(s, locale, t).isTrial;
+    if (filter === 'trial') return s.active && getNextBilling(s, locale, t).isTrial;
     if (filter === 'cancelled') return !s.active;
-    return true;
+    return s.active; // 'all' filter now only shows active subs
   });
 
-  const projection = generate12MonthProjection(activeSubscriptions);
+  const projection = generate12MonthProjection(activeSubscriptions, locale, t);
   const total12 = projection.reduce((a, v) => a + v.total, 0);
   const totalMonthly = activeSubscriptions.reduce((a, s) => a + monthlyEquivalent(s.amount, s.cycle), 0);
 
@@ -96,6 +115,20 @@ export default function SubscriptionsScreen() {
           </View>
         </View>
 
+        <View style={styles.searchBarWrap}>
+          <View style={styles.searchBar}>
+            <Text style={styles.searchIcon}>🔍</Text>
+            <TextInput
+              style={styles.searchInput}
+              placeholder={t('common.search')}
+              placeholderTextColor={Colors.textMuted}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              clearButtonMode="while-editing"
+            />
+          </View>
+        </View>
+
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterWrap}>
           {filters.map(f => (
             <Pressable
@@ -135,10 +168,32 @@ export default function SubscriptionsScreen() {
               <SubCard
                 key={sub.id}
                 sub={sub}
-                billing={getNextBilling(sub)}
+                billing={getNextBilling(sub, locale, t)}
                 onPress={() => {
                   PremiumHaptics.open();
                   setSelectedSub(sub);
+                }}
+                onLongPress={async () => {
+                  const newActiveStatus = !sub.active;
+                  await updateSubscription(sub.id, { 
+                    active: newActiveStatus,
+                    cancelledAt: newActiveStatus ? null : new Date().toISOString() 
+                  });
+                  PremiumHaptics.success();
+                }}
+                onDelete={() => {
+                  Alert.alert(
+                    t('common.delete'),
+                    t('subscriptions.cancel.message', { name: sub.name }),
+                    [
+                      { text: t('common.cancel'), style: 'cancel' },
+                      { 
+                        text: t('common.delete'), 
+                        style: 'destructive',
+                        onPress: () => dispatch({ type: 'DELETE_SUBSCRIPTION', payload: sub.id })
+                      }
+                    ]
+                  );
                 }}
               />
             ))
@@ -146,12 +201,14 @@ export default function SubscriptionsScreen() {
         </View>
       </ScrollView>
 
-      <Pressable
-        style={styles.fab}
-        onPress={() => setShowAdd(true)}
-      >
-        <Text style={styles.fabText}>+</Text>
-      </Pressable>
+      {state.subscriptions?.length > 0 && (
+        <Pressable
+          style={styles.fab}
+          onPress={() => setShowAdd(true)}
+        >
+          <Text style={styles.fabPlus}>+</Text>
+        </Pressable>
+      )}
 
       <AddSubscriptionModal
         visible={showAdd}
@@ -170,7 +227,7 @@ export default function SubscriptionsScreen() {
       {selectedSub && (
         <SubDetailModal
           sub={selectedSub}
-          billing={getNextBilling(selectedSub)}
+          billing={getNextBilling(selectedSub, locale, t)}
           onClose={() => setSelectedSub(null)}
           onCancel={() => {
             Alert.alert(
@@ -184,7 +241,9 @@ export default function SubscriptionsScreen() {
                     const ok = await cancelSubscription(selectedSub.id);
                     if (ok) {
                       setSelectedSub(null);
-                      PremiumHaptics.impact();
+                      PremiumHaptics.selection();
+                    } else {
+                      Alert.alert(t('common.error'), t('subscriptions.errors.syncError'));
                     }
                   },
                 },
@@ -193,7 +252,6 @@ export default function SubscriptionsScreen() {
           }}
           onGenerateLetter={() => {
             PremiumHaptics.click();
-            Alert.alert(t('common.success'), t('subscriptions.success.letterPrepared'));
           }}
         />
       )}
@@ -207,6 +265,7 @@ export default function SubscriptionsScreen() {
           return await addSubscription(sub);
         }}
       />
+
     </SafeAreaView>
   );
 }
@@ -292,7 +351,26 @@ function makeStyles(Colors) { return StyleSheet.create({
     letterSpacing: -0.3,
   },
 
-  filterWrap: { gap: 8, marginBottom: Spacing.lg, paddingBottom: 4 },
+  filterWrap: { gap: 8, marginBottom: Spacing.md, paddingBottom: 4 },
+  searchBarWrap: { marginBottom: 12 },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    height: 44,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  searchIcon: { fontSize: 14, marginRight: 8, opacity: 0.6 },
+  searchInput: {
+    flex: 1,
+    ...Fonts.primary,
+    fontSize: 15,
+    color: Colors.text,
+  },
+
   filterBtn: {
     paddingHorizontal: 14, 
     paddingVertical: 8, 
@@ -326,22 +404,24 @@ function makeStyles(Colors) { return StyleSheet.create({
   },
   emptyVideo: { width: 164, height: 200, borderRadius: 42 },
   emptyTxt: { ...Fonts.primary, fontSize: 13, color: Colors.textMuted, textAlign: 'center', marginTop: 0, maxWidth: 260, lineHeight: 18 },
-  fab: {
-    position: 'absolute', 
-    right: Metrics.screenPadding, 
+   fab: {
+    position: 'absolute',
+    right: Metrics.screenPadding,
     bottom: Metrics.fabBottom,
-    width: 56, 
-    height: 56, 
+    width: 56,
+    height: 56,
     borderRadius: 28,
-    backgroundColor: Colors.accent, 
-    alignItems: 'center', 
+    alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: Colors.accent,
     ...Shadow.medium,
   },
-  fabText: { 
-    color: '#FFFFFF', 
-    fontSize: 28, 
-    fontWeight: '300', 
+  fabPlus: {
+    ...Fonts.primary,
+    ...Fonts.light,
+    fontSize: 32,
+    color: Colors.pureWhite,
+    lineHeight: 34,
     marginTop: -2,
   },
   
@@ -358,4 +438,59 @@ function makeStyles(Colors) { return StyleSheet.create({
     borderWidth: 1, borderColor: Colors.border,
   },
   emptyScanBtnTxt: { ...Fonts.primary, fontSize: 12, ...Fonts.bold, color: Colors.text },
+
+  actionMenuBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'center',
+    padding: 24,
+  },
+  iosMenuContainer: {
+    width: '100%',
+    maxWidth: 280,
+    alignSelf: 'center',
+  },
+  iosMenuWrapper: {
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    ...Shadow.medium,
+  },
+  iosMenuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  iosMenuText: {
+    ...Fonts.primary,
+    fontSize: 17,
+    color: Colors.text,
+  },
+  iosMenuIcon: {
+    fontSize: 18,
+    color: Colors.text,
+  },
+  iosSeparator: {
+    height: 1,
+    backgroundColor: Colors.border,
+  },
+  iosCancelBtn: {
+    marginTop: 12,
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  iosCancelTxt: {
+    ...Fonts.primary,
+    ...Fonts.bold,
+    fontSize: 17,
+    color: Colors.accent,
+  },
 }); }

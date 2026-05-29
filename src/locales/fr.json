@@ -22,7 +22,18 @@
     "more": "Voir {{count}} de plus",
     "close": "Fermer",
     "details": "Détails",
-    "test": "Test"
+    "test": "Test",
+    "today": "Aujourd'hui",
+    "yesterday": "Hier",
+    "tomorrow": "Demain",
+    "total": "Total",
+    "activate": "Activer",
+    "budget": "Budget",
+    "left": "Restant {{amount}}{{currency}}",
+    "overspent": "Dépassement",
+    "daysRemaining": "{{count}} jours restants",
+    "leftLabel": "Restant",
+    "later": "Plus tard"
   },
   "navigation": {
     "home": "Bord",
@@ -40,6 +51,9 @@
     "monthlyBudget": "Budget mensuel",
     "thisMonth": "ce mois-ci",
     "thisWeek": "cette semaine",
+    "balanceTotal": "Balance Totale",
+    "syncedStatus": "Comptes synchronisés",
+    "fullMonth": "Tout le mois",
     "insight": {
       "overview": "Aperçu",
       "start": "Commencer",
@@ -57,9 +71,22 @@
     "trial": {
       "title": "Essai gratuit",
       "daysLeft": "{{days}} jours restants",
+      "daysLeftFull": "Il vous reste {{days}} jours d'essai gratuit",
+      "proTitle": "Pro · Essai gratuit",
       "message": "Profitez de toutes les fonctionnalités premium gratuitement.",
-      "upgrade": "Passer à Premium"
-    }
+      "upgrade": "Passer à Premium",
+      "endingSoonWarning": "Votre essai se termine bientôt. Passez à Pro pour garder toutes vos fonctionnalités.",
+      "enjoyTrial": "Profitez pleinement de votre essai, puis passez à Pro sans interruption.",
+      "freeTrial": "Essai gratuit",
+      "discoverPro": "Découvrir Pro"
+    },
+    "syncing": "Sync Cloud...",
+    "synced": "Sync terminé",
+    "netBalance": "Solde net",
+    "income": "Revenus",
+    "expense": "Dépenses",
+    "totalSpentLabel": "Total dépensé",
+    "remaining": "Reste"
   },
   "transactions": {
     "title": "Flux",
@@ -67,8 +94,9 @@
     "allTransactions": "Toutes les transactions",
     "income": "Revenus",
     "expense": "Dépenses",
+    "all": "Tous",
     "date": "Date",
-    "amount": "Montant",
+    "amountLabel": "Montant",
     "type": "Type",
     "category": "Catégorie",
     "note": "Note",
@@ -90,7 +118,9 @@
     "selectCategory": "Sélectionner une catégorie",
     "searchCategories": "Rechercher des catégories",
     "showMore": "Afficher plus",
-    "showLess": "Afficher moins"
+    "showLess": "Afficher moins",
+    "other": "Autre",
+    "categories": "Catégories"
   },
   "subscriptions": {
     "title": "Mes Abonnements",
@@ -117,7 +147,7 @@
     "monthlyTotal": "Mensuel",
     "activeCount": "Actifs",
     "filters": {
-      "all": "Projets",
+      "all": "Tous",
       "active": "Actifs",
       "cancelled": "Archives",
       "trial": "Essais"
@@ -162,6 +192,10 @@
       "monthlyFull": "Mensuel",
       "quarterlyFull": "Trimestriel",
       "annualFull": "Annuel"
+    },
+    "wallet": {
+      "hintExpanded": "Appuyer pour ranger les cartes",
+      "hintCollapsed": "Appuyer pour sortir les cartes"
     }
   },
   "reports": {
@@ -207,6 +241,7 @@
     "remaining": "Reste",
     "projectionEndPeriod": "Projection fin de période",
     "largestExpense": "Plus grosse dépense : {{amount}}",
+    "largestExpenseFallback": "Dépense ponctuelle",
     "activeCategories": "{{count}} actives",
     "noExpenseOrBudget": "Aucune dépense ou budget sur cette période.",
     "ofBudget": "{{percent}}% du budget",
@@ -224,7 +259,9 @@
     "youSpent": "Vous avez dépensé {{ratio}}× votre budget",
     "ofBudgetUsed": "{{percent}}% du budget · {{elapsed}}% de la période écoulée",
     "addBudgetToTrack": "Ajoutez un budget pour mieux suivre vos dépenses.",
-    "ofTotalBudget": "{{percent}}% du budget total"
+    "ofTotalBudget": "{{percent}}% du budget total",
+    "quarterShort": "T",
+    "weekShort": "S"
   },
   "settings": {
     "title": "Paramètres",
@@ -277,6 +314,9 @@
     "proActive": "Trimly Pro actif",
     "trialRemaining": "Essai : {{days}}j restants",
     "welcomePro": "Bienvenue dans votre nouvel espace.",
+    "loginRequired": "Connectez-vous avant de vous abonner.",
+    "paymentPending": "Paiement reçu. Votre accès Pro sera activé dès que Stripe le confirme.",
+    "redirectingToStripe": "Ouverture de Stripe...",
     "subscriptionError": "Impossible de mettre à jour votre abonnement.",
     "logoutConfirm": "Souhaitez-vous vraiment vous déconnecter ?",
     "passcodeActive": "Le code d'accès est actuellement actif.",
@@ -352,6 +392,123 @@
       "startDateTitle": "Date de début",
       "freeTrial": "Essai gratuit (jours)",
       "leapDayInfo": "Commence le 29 fév. Les années non bissextiles, le prélèvement sera le 28 février."
+    },
+    "addCategory": {
+      "editTitle": "Modifier",
+      "newTitle": "Nouvelle catégorie",
+      "save": "Enregistrer",
+      "create": "Créer",
+      "namePlaceholder": "Nom de la catégorie...",
+      "expenseSub": "Dépense mensuelle",
+      "savingsSub": "Objectif d'épargne",
+      "config": "Configuration",
+      "expense": "Dépense",
+      "savings": "Épargne",
+      "perWeek": "Par semaine",
+      "perMonth": "Par mois",
+      "iconHeader": "Icône & Identité",
+      "searchEmoji": "Rechercher un emoji...",
+      "colorHeader": "Couleur de la catégorie",
+      "simplePalette": "Palette simple",
+      "colorWheel": "Roue chromatique",
+      "delete": "Supprimer cette catégorie",
+      "emojiCategories": {
+        "recent": "Récents",
+        "smileys": "Smileys",
+        "finance": "Finance",
+        "food": "Alimentation",
+        "transport": "Transport",
+        "leisure": "Loisirs",
+        "home": "Vie Quotidienne"
+      }
+    }
+  },
+  "scanner": {
+    "stages": {
+      "connecting": "Connexion à la boîte mail",
+      "searching": "Recherche de factures & reçus",
+      "analyzing": "Analyse IA des montants",
+      "preparing": "Préparation des alternatives"
+    },
+    "choose": {
+      "title": "Détecter vos abonnements",
+      "titleAuto": "Connectez votre boîte mail",
+      "subtitle": "Flux Hybride",
+      "description": "Trimly peut scanner Gmail via Google OAuth ou utiliser un scan manuel local pour trouver vos abonnements avant l'import.",
+      "pendingTitle": "Detections en attente",
+      "pendingDescription": "{{count}} abonnements attendent votre validation."
+    },
+    "manual": {
+      "title": "Scan Manuel Gmail",
+      "subtitle": "Configuration IMAP",
+      "description": "Utilisez un \"Mot de passe d'application\" Google pour permettre à Trimly de lire vos emails de facturation en toute sécurité.",
+      "emailLabel": "Adresse Email",
+      "passwordLabel": "Mot de passe d'application Gmail",
+      "startButton": "Lancer le scan manuel"
+    },
+    "scanning": {
+      "title": "Scan en cours...",
+      "logs": {
+        "start": "Scan avec {{provider}}...",
+        "mailbox": "Boîte : {{email}}",
+        "reading": "Lecture des emails via API...",
+        "foundEmails": "{{count}} emails pertinents trouvés",
+        "analyzed": "{{count}} emails analysés en détail",
+        "foundSubs": "{{count}} abonnements trouvés",
+        "error": "Erreur : {{message}}"
+      }
+    },
+    "review": {
+      "detected": "Détectés",
+      "monthlyTotal": "Total mensuel",
+      "emptyTitle": "Rien trouvé",
+      "emptyDescription": "Aucun abonnement n'a été détecté dans les emails analysés. Essayez une autre période ou un autre compte.",
+      "retry": "Réessayer",
+      "actions": "Actions",
+      "close": "Fermer",
+      "aiAlternatives": "Alternatives suggérées par l'IA",
+      "noAlternatives": "Aucune alternative fiable pour ce service.",
+      "import": "Importer",
+      "ignore": "Ignorer",
+      "successTitle": "Succès",
+      "successMessage": "{{count}} abonnements importés dans Trimly."
+    },
+    "errors": {
+      "loginRequired": "Veuillez vous connecter à votre compte d'abord.",
+      "gmailOnly": "Seul le scan Gmail via Google est configuré pour l'instant.",
+      "noTokens": "Aucun jeton Gmail trouvé. Connectez-vous avec Google et réessayez.",
+      "emailRequired": "Veuillez fournir une adresse email.",
+      "passwordRequired": "Veuillez fournir un mot de passe d'application Gmail.",
+      "importFailed": "Impossible d'importer cet abonnement.",
+      "dismissFailed": "Impossible d'ignorer cet abonnement.",
+      "networkReach": "Impossible de joindre le service de scan. Vérifiez votre URL backend ou votre adresse IP.",
+      "timeout": "Le scan a démarré mais a expiré. Vérifiez les logs backend ou essayez moins d'emails."
+    }
+  },
+  "categoryManager": {
+    "title": "Gestion groupée des catégories",
+    "done": "Terminé",
+    "banner": "Pas sûr de combien allouer ? Nous pouvons suggérer des montants basés sur vos revenus.",
+    "suggestLink": "Suggérer des montants",
+    "weeklyTitle": "Catégories Hebdomadaires",
+    "monthlyTitle": "Catégories Mensuelles",
+    "savingsTitle": "Épargne",
+    "totalPerWeek": "{{amount}} / semaine",
+    "totalPerMonth": "{{amount}} / mois",
+    "addNew": "Ajouter une catégorie",
+    "categoryType": "Type de catégorie",
+    "frequency": "Fréquence",
+    "salarySheet": {
+      "title": "Calculons pour vous",
+      "description": "Nous pouvons suggérer des montants basés sur vos revenus nets.",
+      "rule": "Nous utiliserons la règle 50/30/20 pour répartir Besoins, Envies et Épargne.",
+      "incomeLabel": "Revenu mensuel net",
+      "results": {
+        "needs": "Besoins : {{amount}}",
+        "wants": "Envies : {{amount}}",
+        "savings": "Épargne : {{amount}}"
+      },
+      "cta": "Appliquer les suggestions"
     }
   }
 }

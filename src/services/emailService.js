@@ -80,6 +80,16 @@ const SERVICE_ALTERNATIVES = {
   Zoom: ['Google Meet', 'Microsoft Teams', 'Whereby'],
 };
 
+const CATEGORY_ALTERNATIVES = {
+  Streaming: ['Prime Video', 'Canal+', 'Apple TV+'],
+  Musique: ['Deezer', 'YouTube Music', 'Apple Music'],
+  IA: ['Claude Pro', 'Gemini Advanced', 'Perplexity Pro'],
+  Productivite: ['Notion', 'Google Workspace', 'Microsoft 365'],
+  Cloud: ['Google One', 'iCloud+', 'OneDrive'],
+  Communication: ['Microsoft Teams', 'Google Meet', 'Discord'],
+  Autre: ['Comparer les offres', 'Plan annuel moins cher', 'Formule familiale'],
+};
+
 function getBestMatchIcon(name = '') {
   const lower = name.toLowerCase();
 
@@ -108,6 +118,103 @@ export function getSuggestedAlternatives(name = '') {
   }
 
   return [];
+}
+
+function getFallbackAlternatives(item = {}) {
+  const serviceAlternatives = getSuggestedAlternatives(item.name || item.serviceName);
+  if (serviceAlternatives.length) return serviceAlternatives;
+
+  const normalizedCategory = String(item.category || '').toLowerCase();
+  if (normalizedCategory.includes('stream')) return CATEGORY_ALTERNATIVES.Streaming;
+  if (normalizedCategory.includes('mus')) return CATEGORY_ALTERNATIVES.Musique;
+  if (normalizedCategory.includes('ia') || normalizedCategory.includes('ai')) return CATEGORY_ALTERNATIVES.IA;
+  if (normalizedCategory.includes('product')) return CATEGORY_ALTERNATIVES.Productivite;
+  if (normalizedCategory.includes('cloud') || normalizedCategory.includes('stock')) return CATEGORY_ALTERNATIVES.Cloud;
+  if (normalizedCategory.includes('commun')) return CATEGORY_ALTERNATIVES.Communication;
+
+  return CATEGORY_ALTERNATIVES.Autre;
+}
+
+function normalizeAlternativeList(value) {
+  if (!Array.isArray(value)) return [];
+
+  return Array.from(
+    new Set(
+      value
+        .map((item) => String(item || '').trim())
+        .filter(Boolean)
+    )
+  ).slice(0, 3);
+}
+
+async function requestAiAlternativesForSubscriptions(items = []) {
+  const apiKey = process.env.EXPO_PUBLIC_GROQ_API_KEY;
+  if (!apiKey || !items.length) return {};
+
+  try {
+    const compactItems = items.map((item) => ({
+      name: item.name,
+      category: item.category,
+      amount: item.amount,
+      cycle: item.cycle,
+    }));
+
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: 'llama3-70b-8192',
+        messages: [
+          {
+            role: 'system',
+            content:
+              'Tu suggeres des alternatives economiques et pertinentes pour des abonnements. Retourne uniquement du JSON valide: {"alternatives":{"Netflix":["Prime Video","Disney+","Canal+"]}}. Donne exactement 3 alternatives par abonnement, sans phrase.',
+          },
+          {
+            role: 'user',
+            content: JSON.stringify({ subscriptions: compactItems }),
+          },
+        ],
+        temperature: 0.25,
+        max_tokens: 900,
+      }),
+    });
+
+    if (!response.ok) return {};
+
+    const data = await response.json();
+    const content = data.choices?.[0]?.message?.content || '';
+    const match = content.match(/\{[\s\S]*\}/);
+    if (!match) return {};
+
+    const parsed = JSON.parse(match[0]);
+    return parsed.alternatives && typeof parsed.alternatives === 'object' ? parsed.alternatives : {};
+  } catch (error) {
+    console.warn('[EmailService] AI alternatives unavailable:', error);
+    return {};
+  }
+}
+
+async function enrichSubscriptionsWithAlternatives(items = []) {
+  if (!items.length) return items;
+
+  const aiAlternativesByName = await requestAiAlternativesForSubscriptions(items);
+
+  return items.map((item) => {
+    const existing = normalizeAlternativeList(item.alternatives);
+    const aiAlternatives = normalizeAlternativeList(aiAlternativesByName[item.name]);
+    const fallback = normalizeAlternativeList(getFallbackAlternatives(item));
+    const alternatives = existing.length ? existing : aiAlternatives.length ? aiAlternatives : fallback;
+
+    return {
+      ...item,
+      alternatives,
+      alternativesSource: aiAlternatives.length && !existing.length ? 'ai' : existing.length ? 'scan' : 'fallback',
+    };
+  });
 }
 
 function normalizeCycle(value = '') {
@@ -363,7 +470,7 @@ export const EmailService = {
       headers: {
         'Content-Type': 'application/json',
         apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+        Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify({
         email,
@@ -372,7 +479,6 @@ export const EmailService = {
         refreshToken: providerRefreshToken,
         providerAccessToken,
         providerRefreshToken,
-        sessionAccessToken: session.access_token,
       }),
     });
 
@@ -424,9 +530,10 @@ export const EmailService = {
       providerAccessToken: accessToken,
       providerRefreshToken: refreshToken,
     });
+    const subscriptions = prepareDetectedSubscriptions(result.subscriptions || [], existingNames);
 
     return {
-      subscriptions: prepareDetectedSubscriptions(result.subscriptions || [], existingNames),
+      subscriptions: await enrichSubscriptionsWithAlternatives(subscriptions),
       emailCount: result.emailCount || 0,
       raw: result,
     };
@@ -434,8 +541,10 @@ export const EmailService = {
 
   async runManualScan({ email, appPassword, existingNames = [] }) {
     const result = await this.scanMailbox(email, appPassword);
+    const subscriptions = prepareDetectedSubscriptions(result.subscriptions || [], existingNames);
+
     return {
-      subscriptions: prepareDetectedSubscriptions(result.subscriptions || [], existingNames),
+      subscriptions: await enrichSubscriptionsWithAlternatives(subscriptions),
       emailCount: result.emailCount || 0,
       raw: result,
     };
@@ -518,8 +627,10 @@ export const EmailService = {
     }
 
     const result = await response.json();
+    const subscriptions = prepareDetectedSubscriptions(result.subscriptions || [], existingNames);
+
     return {
-      subscriptions: prepareDetectedSubscriptions(result.subscriptions || [], existingNames),
+      subscriptions: await enrichSubscriptionsWithAlternatives(subscriptions),
       emailCount: result.emailCount || 0,
       raw: result,
     };

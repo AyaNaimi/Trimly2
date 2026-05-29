@@ -4,6 +4,7 @@ import * as Linking from 'expo-linking';
 import { Platform } from 'react-native';
 
 const GOOGLE_PROVIDER_STORAGE_KEY = '@trimly_google_provider_tokens';
+const NATIVE_AUTH_REDIRECT_URI = 'trimly://auth/callback';
 
 export const GOOGLE_GMAIL_SCOPES = [
   'openid',
@@ -13,22 +14,20 @@ export const GOOGLE_GMAIL_SCOPES = [
 ];
 
 export function getGoogleRedirectUri() {
-  // Ne pas modifier en local (__DEV__)
-  if (!__DEV__) {
-    if (Platform.OS === 'web') {
-      // En production web, l'URL de redirection est le domaine actuel
-      return window.location.origin;
-    }
-    // En production mobile (APK/AAB/IPA), la redirection stricte
-    return 'trimly://auth/callback';
+  if (Platform.OS !== 'web') {
+    console.log('Generated Redirect URI:', NATIVE_AUTH_REDIRECT_URI);
+    return NATIVE_AUTH_REDIRECT_URI;
   }
 
-  // Comportement local (Expo Go / Dev) conservé
+  if (!__DEV__) {
+    return window.location.origin;
+  }
+
   const redirectUri = makeRedirectUri({
     scheme: 'trimly',
     path: 'auth/callback',
   });
-  console.log('📍 Generated Redirect URI:', redirectUri);
+  console.log('Generated Redirect URI:', redirectUri);
   return redirectUri;
 }
 
@@ -46,16 +45,61 @@ export function getGoogleQueryParams() {
 
 export function parseOAuthRedirectUrl(url) {
   if (!url) return {};
-  
+
   const parsed = Linking.parse(url);
-  const params = parsed.queryParams || {};
+  const params = {
+    ...parseParamsFromUrlPart(url, '?'),
+    ...parseParamsFromUrlPart(url, '#'),
+    ...(parsed.queryParams || {}),
+  };
 
   return {
+    code: params.code || null,
+    type: params.type || null,
     accessToken: params.access_token || params.accessToken || null,
     refreshToken: params.refresh_token || params.refreshToken || null,
     providerAccessToken: params.provider_token || params.providerToken || null,
     providerRefreshToken: params.provider_refresh_token || params.providerRefreshToken || null,
+    error: params.error || null,
+    errorDescription: params.error_description || params.errorDescription || null,
   };
+}
+
+function parseParamsFromUrlPart(url, marker) {
+  const markerIndex = url.indexOf(marker);
+  if (markerIndex === -1) return {};
+
+  const endMarkers = marker === '?' ? ['#'] : [];
+  let paramsText = url.slice(markerIndex + 1);
+
+  for (const endMarker of endMarkers) {
+    const endIndex = paramsText.indexOf(endMarker);
+    if (endIndex !== -1) {
+      paramsText = paramsText.slice(0, endIndex);
+    }
+  }
+
+  const queryStart = paramsText.indexOf('?');
+  if (queryStart !== -1) {
+    paramsText = paramsText.slice(queryStart + 1);
+  }
+
+  return paramsText.split('&').reduce((acc, part) => {
+    if (!part) return acc;
+    const [rawKey, ...rawValueParts] = part.split('=');
+    const key = decodeUrlValue(rawKey);
+    if (!key) return acc;
+    acc[key] = decodeUrlValue(rawValueParts.join('='));
+    return acc;
+  }, {});
+}
+
+function decodeUrlValue(value = '') {
+  try {
+    return decodeURIComponent(value.replace(/\+/g, ' '));
+  } catch {
+    return value;
+  }
 }
 
 export async function getStoredGoogleProviderTokens() {
