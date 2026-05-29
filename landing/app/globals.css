@@ -1,141 +1,130 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
   --background: 255 255 255;
-  --foreground: 15 23 42;
-  --primary: 59 130 246;
-  --primary-foreground: 255 255 255;
-  --secondary: 34 197 94;
-  --secondary-foreground: 255 255 255;
-  --accent: 249 115 22;
-  --accent-foreground: 255 255 255;
-  --muted: 148 163 184;
-  --muted-foreground: 100 116 139;
-  --card: 248 250 252;
-  --card-foreground: 15 23 42;
-  --border: 226 232 240;
+  --foreground: 17 17 17;
+  --accent: 16 185 129;
+  --accent-dark: 5 150 105;
+  --muted: 107 114 128;
+  --border: 229 231 235;
+  --card-bg: 249 250 251;
 }
 
 [data-theme="dark"] {
-  --background: 15 23 42;
-  --foreground: 248 250 252;
-  --primary: 59 130 246;
-  --primary-foreground: 15 23 42;
-  --secondary: 34 197 94;
-  --secondary-foreground: 15 23 42;
-  --accent: 249 115 22;
-  --accent-foreground: 15 23 42;
-  --muted: 100 116 139;
-  --muted-foreground: 148 163 184;
-  --card: 30 41 59;
-  --card-foreground: 248 250 252;
-  --border: 51 65 85;
+  --background: 10 10 10;
+  --foreground: 245 245 245;
+  --card-bg: 25 25 25;
+  --border: 40 40 40;
 }
 
 body {
   background-color: hsl(var(--background));
   color: hsl(var(--foreground));
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 html {
   scroll-behavior: smooth;
 }
 
-/* Custom utility classes */
-.btn-primary {
-  padding: 0.75rem 1.5rem;
+/* Headings - Premium serif */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+h1 {
+  font-size: 3.5rem;
+  font-weight: 800;
+}
+
+h2 {
+  font-size: 2.5rem;
+  margin-bottom: 1.5rem;
+}
+
+h3 {
+  font-size: 1.5rem;
+}
+
+/* Premium buttons */
+.btn {
+  padding: 1rem 2rem;
   border-radius: 0.5rem;
   font-weight: 600;
-  transition: all 300ms;
-  background-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
+  transition: all 0.3s ease;
   border: none;
   cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-primary {
+  background-color: hsl(var(--foreground));
+  color: hsl(var(--background));
 }
 
 .btn-primary:hover {
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-  transform: scale(1.05);
-}
-
-.btn-primary:active {
-  transform: scale(0.95);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
 }
 
 .btn-secondary {
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.5rem;
-  border: 1px solid hsl(var(--primary));
-  color: hsl(var(--primary));
   background-color: transparent;
-  font-weight: 600;
-  transition: background-color 300ms;
-  cursor: pointer;
+  color: hsl(var(--foreground));
+  border: 1.5px solid hsl(var(--foreground));
 }
 
 .btn-secondary:hover {
-  background-color: hsl(var(--primary) / 0.05);
+  background-color: hsl(var(--foreground));
+  color: hsl(var(--background));
 }
 
-.gradient-text {
-  background: linear-gradient(to right, hsl(var(--primary)), hsl(var(--accent)));
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
+.accent {
+  color: hsl(var(--accent));
 }
 
 .card {
-  background-color: hsl(var(--card));
-  color: hsl(var(--card-foreground));
+  background-color: hsl(var(--card-bg));
   border: 1px solid hsl(var(--border));
   border-radius: 0.5rem;
-  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  transition: all 300ms;
+  padding: 2rem;
+  transition: all 0.3s ease;
 }
 
 .card:hover {
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-color: hsl(var(--accent));
+  box-shadow: 0 20px 40px rgba(16, 185, 129, 0.1);
 }
 
-.section-padding {
-  padding-top: 6rem;
-  padding-bottom: 6rem;
-  padding-left: 1rem;
-  padding-right: 1rem;
+.section {
+  padding: 5rem 2rem;
 }
 
-@media (min-width: 768px) {
-  .section-padding {
-    padding-left: 2rem;
-    padding-right: 2rem;
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2.5rem;
+  }
+  h2 {
+    font-size: 1.75rem;
+  }
+  .section {
+    padding: 3rem 1.5rem;
   }
 }
 
 /* Animations */
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-20px);
-  }
-}
-
-@keyframes pulse-glow {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-
-@keyframes slide-in {
+@keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(30px);
   }
   to {
     opacity: 1;
@@ -143,19 +132,39 @@ html {
   }
 }
 
-.animate-float {
-  animation: float 6s ease-in-out infinite;
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
-.animate-pulse-glow {
-  animation: pulse-glow 3s ease-in-out infinite;
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
-.animate-slide-in {
-  animation: slide-in 0.6s ease-out forwards;
+.fade-in-up {
+  animation: fadeInUp 0.6s ease-out forwards;
+}
+
+.fade-in {
+  animation: fadeIn 0.6s ease-out forwards;
+}
+
+.slide-in-right {
+  animation: slideInRight 0.6s ease-out forwards;
 }
 
 ::selection {
-  background-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
+  background-color: hsl(var(--accent));
+  color: hsl(var(--background));
 }

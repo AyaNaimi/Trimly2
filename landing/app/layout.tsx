@@ -1,18 +1,16 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Playfair_Display } from 'next/font/google'
 import './globals.css'
-import { ThemeProvider } from '@/components/theme-provider'
-import { LanguageProvider } from '@/context/language-context'
-import Navigation from '@/components/navigation'
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+const playfair = Playfair_Display({ subsets: ['latin'], variable: '--font-playfair' })
 
 export const metadata: Metadata = {
-  title: 'Trimly - Budget Smart, Live Better',
-  description: 'Master your finances with intelligent budget tracking, subscription management, and email-based financial discovery.',
+  title: 'Trimly - Take Control of Your Subscriptions',
+  description: 'Automatically discover, track, and manage all your subscriptions. Save thousands annually with smart recommendations.',
   openGraph: {
-    title: 'Trimly - Budget Smart, Live Better',
-    description: 'Master your finances with intelligent budget tracking, subscription management, and email-based financial discovery.',
+    title: 'Trimly - Take Control of Your Subscriptions',
+    description: 'Automatically discover, track, and manage all your subscriptions. Save thousands annually with smart recommendations.',
     type: 'website',
   },
 }
@@ -23,14 +21,9 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className} antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <LanguageProvider>
-            <Navigation />
-            {children}
-          </LanguageProvider>
-        </ThemeProvider>
+    <html lang="en" suppressHydrationWarning style={{ colorScheme: 'light dark' }}>
+      <body className={`${inter.className} ${playfair.variable} antialiased`}>
+        {children}
       </body>
     </html>
   )

@@ -1,21 +1,21 @@
-import Hero from '@/components/sections/hero'
-import Features from '@/components/sections/features'
-import About from '@/components/sections/about'
-import Showcase from '@/components/sections/showcase'
-import Pricing from '@/components/sections/pricing'
-import CTA from '@/components/sections/cta'
+import Header from '@/components/header'
+import Hero from '@/components/hero'
+import Features from '@/components/features'
+import Pricing from '@/components/pricing'
+import CTA from '@/components/cta'
 import Footer from '@/components/footer'
 
 export default function Home() {
   return (
-    <main className="overflow-hidden">
-      <Hero />
-      <Features />
-      <Showcase />
-      <About />
-      <Pricing />
-      <CTA />
-      <Footer />
-    </main>
+    <>
+      <Header />
+      <main className="overflow-hidden pt-16">
+        <Hero />
+        <Features />
+        <Pricing />
+        <CTA />
+        <Footer />
+      </main>
+    </>
   )
 }
