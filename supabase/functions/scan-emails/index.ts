@@ -12,7 +12,7 @@ const GLOBAL_TIMEOUT_MS = 45_000;
 const GROQ_RETRY_DELAY_MS = 2_000;
 const MAX_MESSAGES = 600;
 const MAX_MESSAGES_PER_QUERY = 180;
-const DETAIL_BATCH_SIZE = 20;
+const DETAIL_BATCH_SIZE = 10;
 const MAX_AI_EMAILS = 120;
 const AI_CHUNK_SIZE = 6;
 
@@ -306,11 +306,17 @@ async function refreshGoogleAccessToken(refreshToken: string, signal: AbortSigna
   return String(data.access_token);
 }
 
-function gmailFetch(path: string, accessToken: string, signal: AbortSignal) {
-  return fetch(`https://gmail.googleapis.com/gmail/v1/users/me${path}`, {
+async function gmailFetch(path: string, accessToken: string, signal: AbortSignal, retryCount = 0): Promise<Response> {
+  const response = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me${path}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
     signal,
   });
+  if (response.status === 429 && retryCount < 3) {
+    const waitTime = Math.pow(2, retryCount) * 1000 + Math.random() * 500;
+    await delay(waitTime);
+    return gmailFetch(path, accessToken, signal, retryCount + 1);
+  }
+  return response;
 }
 
 async function listMatchingMessageIds(accessToken: string, signal: AbortSignal) {
@@ -326,7 +332,7 @@ async function listMatchingMessageIds(accessToken: string, signal: AbortSignal) 
   return ids;
 }
 
-async function listMessageIdsForQuery(query: string, accessToken: string, signal: AbortSignal) {
+async function listMessageIdsForQuery(query: string, accessToken: string, signal: AbortSignal, retryCount = 0): Promise<any[]> {
   const messages: any[] = [];
   let pageToken: string | undefined;
 
@@ -341,6 +347,12 @@ async function listMessageIdsForQuery(query: string, accessToken: string, signal
         headers: { Authorization: `Bearer ${accessToken}` },
         signal,
       });
+
+      if (response.status === 429 && retryCount < 3) {
+        const waitTime = Math.pow(2, retryCount) * 1000 + Math.random() * 500;
+        await delay(waitTime);
+        return listMessageIdsForQuery(query, accessToken, signal, retryCount + 1);
+      }
 
       if (!response.ok) {
         console.error('Gmail list failed:', query, await response.text());
@@ -376,23 +388,24 @@ async function fetchEmailDetails(ids: string[], accessToken: string, signal: Abo
   return emails;
 }
 
-async function fetchSingleEmailDetail(id: string, accessToken: string, signal: AbortSignal) {
+async function fetchSingleEmailDetail(id: string, accessToken: string, signal: AbortSignal, retryCount = 0): Promise<any> {
   try {
-    const metadataUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=metadata&metadataHeaders=From&metadataHeaders=Subject&metadataHeaders=Date`;
     const fullUrl = `https://gmail.googleapis.com/gmail/v1/users/me/messages/${id}?format=full`;
-    const [metadataResponse, fullResponse] = await Promise.all([
-      fetch(metadataUrl, { headers: { Authorization: `Bearer ${accessToken}` }, signal }),
-      fetch(fullUrl, { headers: { Authorization: `Bearer ${accessToken}` }, signal }),
-    ]);
+    const response = await fetch(fullUrl, { headers: { Authorization: `Bearer ${accessToken}` }, signal });
 
-    if (!metadataResponse.ok || !fullResponse.ok) {
-      console.error('Gmail detail failed:', id, metadataResponse.status, fullResponse.status);
+    if (response.status === 429 && retryCount < 3) {
+      const waitTime = Math.pow(2, retryCount) * 1000 + Math.random() * 500;
+      await delay(waitTime);
+      return fetchSingleEmailDetail(id, accessToken, signal, retryCount + 1);
+    }
+
+    if (!response.ok) {
+      console.error('Gmail detail failed:', id, response.status);
       return null;
     }
 
-    const metadata = await metadataResponse.json();
-    const full = await fullResponse.json();
-    const headers = metadata?.payload?.headers || full?.payload?.headers || [];
+    const full = await response.json();
+    const headers = full?.payload?.headers || [];
 
     return {
       id,

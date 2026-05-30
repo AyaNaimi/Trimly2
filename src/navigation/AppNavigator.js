@@ -38,11 +38,11 @@ function LunaTabBar({ state, navigation }) {
   const activeTextColor = Colors.pureWhite;
   const inactiveIconColor = isDark ? Colors.textSecondary : '#64748B'; // Gris adapté
 
-  const tabBarBg = isDark ? 'rgba(5, 11, 24, 0.92)' : 'rgba(252, 251, 248, 0.95)'; // Bleu nuit en dark, blanc cassé en light
-  const tabBarBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.08)';
+  const tabBarBg = isDark ? 'rgba(5, 11, 24, 0.65)' : 'rgba(255, 255, 255, 0.24)';
+  const tabBarBorder = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(15,23,42,0.12)';
 
   return (
-    <BlurView intensity={isDark ? 40 : 60} tint={isDark ? 'dark' : 'light'} style={[styles.tabBar, {
+    <BlurView intensity={isDark ? 60 : 100} tint={isDark ? 'dark' : 'light'} style={[styles.tabBar, {
       bottom: Math.max(insets.bottom, 16),
       backgroundColor: tabBarBg,
       borderWidth: 1,

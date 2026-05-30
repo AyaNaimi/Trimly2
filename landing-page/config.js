@@ -30,7 +30,7 @@ const CONFIG = {
     
     // Contact Information
     contact: {
-        email: "support@trimly.app",
+        email: "ayanaimi.trimly@gmail.com",
         phone: "+1 (555) 123-4567",
         address: "123 Finance Street, Money City, FC 12345"
     },

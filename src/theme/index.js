@@ -30,13 +30,13 @@ export const LightColors = {
   accentSoft: 'rgba(30, 41, 59, 0.05)',
 
   // ── Semantic ─────────────────────────────────────────────
-  income: '#10B981',       // Emerald 500
-  incomeSoft: 'rgba(16, 185, 129, 0.10)',
+  income: '#34D399',       // Emerald 400 (softer)
+  incomeSoft: 'rgba(52, 211, 153, 0.15)',
   expense: '#E11D48',      // Rose 600
-  expenseSoft: 'rgba(225, 29, 72, 0.10)',
+  expenseSoft: 'rgba(225, 29, 72, 0.20)',
 
   // Legacy aliases
-  success: '#10B981',
+  success: '#34D399',
   error: '#E11D48',
   warning: '#F59E0B',
   warningSoft: 'rgba(245, 158, 11, 0.10)',
@@ -46,7 +46,7 @@ export const LightColors = {
   borderStrong: '#E2E8F0', // Slate 200
   borderSoft: '#F8FAFC',   // Slate 50
   errorSoft: 'rgba(225, 29, 72, 0.08)',
-  backdrop: 'rgba(0,0,0,0.18)',
+  backdrop: 'rgba(0,0,0,0.45)',
   shimmer: 'rgba(255, 255, 255, 0.65)',
   shimmerBg: '#F1F5F9',
 
@@ -75,25 +75,25 @@ export const DarkColors = {
   accentDeep: '#3C096C',   // Deep Purple
   accentSecondary: '#FF9100', // Logo Orange (Vibrant Contrast)
   accentMuted: '#0A1128',
-  accentSoft: 'rgba(91, 59, 245, 0.12)',
+  accentSoft: 'rgba(91, 59, 245, 0.28)',
 
   // ── Semantic (Neon/Vibrant Palette) ───────────────────────
-  income: '#00F5D4',       // Neon Teal
-  incomeSoft: 'rgba(0, 245, 212, 0.12)',
+  income: '#34D399',       // Emerald 400 (softer teal)
+  incomeSoft: 'rgba(52, 211, 153, 0.15)',
   expense: '#F15BB5',      // Neon Magenta
-  expenseSoft: 'rgba(241, 91, 181, 0.12)',
+  expenseSoft: 'rgba(241, 91, 181, 0.28)',
 
   // Legacy aliases
-  success: '#00F5D4',
+  success: '#34D399',
   error: '#F15BB5',
   warning: '#FF9E00',
-  warningSoft: 'rgba(255, 158, 0, 0.12)',
+  warningSoft: 'rgba(255, 158, 0, 0.28)',
 
   // ── Structural ───────────────────────────────────────────
   border: '#0D1B2A',       // Deep Blue Border
   borderStrong: '#1B263B', // Mid Blue Border
   borderSoft: '#050B18',
-  errorSoft: 'rgba(241, 91, 181, 0.10)',
+  errorSoft: 'rgba(241, 91, 181, 0.28)',
   backdrop: 'rgba(0,0,0,0.85)',
   shimmer: 'rgba(255, 255, 255, 0.04)',
   shimmerBg: '#050B18',

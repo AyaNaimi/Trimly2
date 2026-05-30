@@ -1011,7 +1011,7 @@ function makeStyles(Colors) { return StyleSheet.create({
   },
   periodMenuContainer: {
     position: 'absolute',
-    top: Metrics.headerTop + 45, 
+    top: Metrics.headerTop + 100, 
     right: Metrics.screenPadding - 10, 
     alignItems: 'flex-end',
   },
@@ -1039,8 +1039,8 @@ function makeStyles(Colors) { return StyleSheet.create({
   menuTitle: {
     ...Fonts.primary,
     ...Fonts.bold,
-    fontSize: 10,
-    color: Colors.textMuted,
+    fontSize: 11,
+    color: Colors.text,
     textTransform: 'uppercase',
     letterSpacing: 1.5,
     paddingHorizontal: 10,
@@ -1060,8 +1060,7 @@ function makeStyles(Colors) { return StyleSheet.create({
     ...Fonts.primary,
     ...Fonts.bold,
     fontSize: 9,
-    color: Colors.textMuted,
-    opacity: 0.5,
+    color: Colors.textSecondary,
   },
   weekRow: {
     flexDirection: 'row',

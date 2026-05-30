@@ -34,7 +34,7 @@ export default function SubscriptionsScreen() {
     updateSubscription,
     cancelSubscription
   } = useApp();
-  const { Colors } = useTheme();
+  const { Colors, isDark } = useTheme();
   const { t, locale } = useLanguage();
 
   const [filter, setFilter] = useState('all');
@@ -66,9 +66,9 @@ export default function SubscriptionsScreen() {
   const totalMonthly = activeSubscriptions.reduce((a, s) => a + monthlyEquivalent(s.amount, s.cycle), 0);
 
   const filters = [
-    { key: 'all', label: t('subscriptions.filters.all') },
-    { key: 'active', label: t('subscriptions.filters.active') },
-    { key: 'cancelled', label: t('subscriptions.filters.cancelled') },
+    { key: 'all', label: t('subscriptions.filters.all'), activeColor: '#6366F1' },
+    { key: 'active', label: t('subscriptions.filters.active'), activeColor: '#10B981' },
+    { key: 'cancelled', label: t('subscriptions.filters.cancelled'), activeColor: '#F59E0B' },
   ];
 
   const styles = makeStyles(Colors);
@@ -94,9 +94,16 @@ export default function SubscriptionsScreen() {
             {projection.map((m, i) => {
               const maxVal = Math.max(...projection.map(p => p.total), 1);
               const h = Math.max((m.total / maxVal) * 60, 4);
+              const intensity = m.total > 0 ? Math.min(m.total / maxVal, 1) : 0;
+              let barColor = Colors.border;
+              if (m.total > 0) {
+                if (intensity < 0.33) barColor = '#10B981';
+                else if (intensity < 0.66) barColor = '#F59E0B';
+                else barColor = '#EF4444';
+              }
               return (
                 <View key={i} style={styles.chartCol}>
-                  <View style={[styles.bar, { height: h, backgroundColor: m.total > 0 ? Colors.accent : Colors.border }]} />
+                  <View style={[styles.bar, { height: h, backgroundColor: barColor }]} />
                   <Text style={styles.barLbl}>{m.label}</Text>
                 </View>
               );
@@ -134,14 +141,20 @@ export default function SubscriptionsScreen() {
             <Pressable
               key={f.key}
               onPress={() => { PremiumHaptics.selection(); setFilter(f.key); }}
-              style={[styles.filterBtn, filter === f.key && styles.filterBtnActive]}
+              style={[
+                styles.filterBtn,
+                filter === f.key && { backgroundColor: f.activeColor, borderColor: f.activeColor },
+              ]}
             >
-              <Text style={[styles.filterTxt, filter === f.key && styles.filterTxtActive]}>{f.label}</Text>
+              <Text style={[
+                styles.filterTxt,
+                filter === f.key && { color: '#FFFFFF' },
+              ]}>{f.label}</Text>
             </Pressable>
           ))}
         </ScrollView>
 
-        <View style={{ gap: 12 }}>
+        <View style={{ gap: 0 }}>
           {filtered.length === 0 ? (
             <View style={styles.emptyState}>
               <View style={styles.emptyIllustration}>
@@ -292,10 +305,10 @@ function makeStyles(Colors) { return StyleSheet.create({
   scrollContent: { paddingHorizontal: Metrics.screenPadding, paddingBottom: Metrics.fabBottomElevated },
 
   projectionCard: {
-    backgroundColor: Colors.surface, 
+    backgroundColor: Colors.white, 
     borderRadius: Radius.xl,
-    padding: Spacing.lg, 
-    marginBottom: Spacing.lg, 
+    padding: Spacing.md, 
+    marginBottom: Spacing.md, 
     marginTop: Spacing.sm, 
     borderWidth: 1, 
     borderColor: Colors.borderStrong,
@@ -356,12 +369,13 @@ function makeStyles(Colors) { return StyleSheet.create({
   searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderRadius: 12,
-    paddingHorizontal: 12,
+    backgroundColor: Colors.white,
+    borderRadius: Radius.xl,
+    paddingHorizontal: 14,
     height: 44,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.borderStrong,
+    ...Shadow.soft,
   },
   searchIcon: { fontSize: 14, marginRight: 8, opacity: 0.6 },
   searchInput: {
@@ -377,21 +391,14 @@ function makeStyles(Colors) { return StyleSheet.create({
     borderRadius: Radius.pill, 
     minHeight: 36,
     backgroundColor: Colors.surface, 
-    borderWidth: 1, 
+    borderWidth: 1.5, 
     borderColor: Colors.borderStrong,
-  },
-  filterBtnActive: { 
-    backgroundColor: Colors.accent, 
-    borderColor: Colors.accent,
   },
   filterTxt: { 
     ...Fonts.primary, 
     fontSize: 12, 
     ...Fonts.semiBold, 
     color: Colors.textSecondary,
-  },
-  filterTxtActive: { 
-    color: '#FFFFFF',
   },
 
   emptyState: { alignItems: 'center', paddingTop: 28, paddingBottom: 8 },
@@ -405,9 +412,9 @@ function makeStyles(Colors) { return StyleSheet.create({
   emptyVideo: { width: 164, height: 200, borderRadius: 42 },
   emptyTxt: { ...Fonts.primary, fontSize: 13, color: Colors.textMuted, textAlign: 'center', marginTop: 0, maxWidth: 260, lineHeight: 18 },
    fab: {
-    position: 'absolute',
+     position: 'absolute',
     right: 16,
-    bottom: 108,
+    bottom: 140,
     width: 56,
     height: 56,
     borderRadius: 28,

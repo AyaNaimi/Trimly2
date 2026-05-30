@@ -3,7 +3,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  View, Text, StyleSheet, Animated, Pressable,
+  View, Text, StyleSheet, Animated, Pressable, Image,
 } from 'react-native';
 import {
   LightColors, Fonts, Radius, Shadow, Spacing, Metrics,
@@ -16,7 +16,6 @@ import { useLanguage } from '../context/LanguageContext';
 
 const addAlpha = (hex, opacity) => {
   if (!hex) return 'transparent';
-  // Handle 3-digit hex
   let normalized = hex.replace('#', '');
   if (normalized.length === 3) {
     normalized = normalized.split('').map(c => c + c).join('');
@@ -24,7 +23,57 @@ const addAlpha = (hex, opacity) => {
   const op = Math.round(opacity * 255).toString(16).padStart(2, '0');
   return `#${normalized}${op}`;
 };
+
+const lightenForDark = (hex) => {
+  if (!hex) return '#A78BFA';
+  let normalized = hex.replace('#', '');
+  if (normalized.length === 3) {
+    normalized = normalized.split('').map(c => c + c).join('');
+  }
+  const r = parseInt(normalized.substring(0, 2), 16);
+  const g = parseInt(normalized.substring(2, 4), 16);
+  const b = parseInt(normalized.substring(4, 6), 16);
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  if (lum > 0.5) return hex;
+  const factor = 3.0;
+  const nr = Math.min(255, Math.round(r * factor + (255 - r * factor) * 0.4));
+  const ng = Math.min(255, Math.round(g * factor + (255 - g * factor) * 0.4));
+  const nb = Math.min(255, Math.round(b * factor + (255 - b * factor) * 0.4));
+  return `#${nr.toString(16).padStart(2, '0')}${ng.toString(16).padStart(2, '0')}${nb.toString(16).padStart(2, '0')}`;
+};
 import { usePressScale } from '../hooks/usePressScale';
+
+export function ServiceLogo({ logo, icon, color, size = 32, borderRadius = null, style }) {
+  const [logoError, setLogoError] = useState(false);
+  const showLogo = logo && !logoError;
+  const r = borderRadius != null ? borderRadius : size / 2;
+
+  return (
+    <View style={[
+      {
+        width: size,
+        height: size,
+        borderRadius: r,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: color ? addAlpha(color, 0.15) : 'transparent',
+        overflow: 'hidden',
+      },
+      style,
+    ]}>
+      {showLogo ? (
+        <Image
+          source={{ uri: logo }}
+          style={{ width: size, height: size, borderRadius: r }}
+          resizeMode="cover"
+          onError={() => setLogoError(true)}
+        />
+      ) : (
+        <Text style={{ fontSize: size * 0.47, color: '#FFFFFF' }}>{icon || '📦'}</Text>
+      )}
+    </View>
+  );
+}
 
 
 export function AnimatedProgressBar({ pct, color, style }) {
@@ -224,14 +273,14 @@ export function CategorySection({ label, daysLeft, budgeted, left, children }) {
   );
 }
 
-export function PrimaryButton({ onPress, label, style }) {
+export function PrimaryButton({ onPress, label, style, color }) {
   const { Colors } = useTheme();
   const { scale, onPressIn, onPressOut } = usePressScale();
 
   return (
     <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
       <Animated.View style={[{
-        backgroundColor: Colors.accent, borderRadius: Radius.md,
+        backgroundColor: color || Colors.accent, borderRadius: Radius.md,
         paddingVertical: 16, paddingHorizontal: 24,
         alignItems: 'center', justifyContent: 'center', minHeight: 52,
       }, style, { transform: [{ scale }] }]}>
@@ -300,9 +349,16 @@ export function SubCard({ sub, billing, onPress, onLongPress, onDelete }) {
       <View style={{
         flexDirection: 'row', 
         alignItems: 'center', 
-        paddingVertical: 8,
+        paddingVertical: 10,
         paddingHorizontal: 14,
-        backgroundColor: 'transparent',
+        backgroundColor: Colors.white,
+        borderRadius: 18,
+        marginBottom: 2,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 8,
+        elevation: 2,
         minHeight: 52,
         width: '100%',
         overflow: 'hidden',
@@ -323,21 +379,12 @@ export function SubCard({ sub, billing, onPress, onLongPress, onDelete }) {
         }}>
           {/* Left Column: Icon & Subscription Name */}
           <View style={{ flex: 1.2, flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ 
-              width: 32, 
-              height: 32, 
-              borderRadius: 16, 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              backgroundColor: sub.color || Colors.accent,
-              shadowColor: sub.color || '#000',
-              shadowOffset: { width: 0, height: 1 },
-              shadowOpacity: 0.08,
-              shadowRadius: 2,
-              elevation: 1,
-            }}>
-              <Text style={{ fontSize: 15, color: '#FFFFFF' }}>{sub.icon}</Text>
-            </View>
+            <ServiceLogo
+              logo={sub.logo}
+              icon={sub.icon}
+              color={sub.color || Colors.accent}
+              size={32}
+            />
             
             <Text 
               style={{ 
@@ -372,17 +419,12 @@ export function SubCard({ sub, billing, onPress, onLongPress, onDelete }) {
             })
           }}>
             <View style={{
-              backgroundColor: sub.active 
-                ? addAlpha(sub.color || Colors.accent, isDark ? 0.22 : 0.09)
-                : (isDark ? 'rgba(255, 255, 255, 0.06)' : '#F2F2F7'),
               borderRadius: 10,
               paddingHorizontal: 10,
               paddingVertical: 4,
               minWidth: 62,
               alignItems: 'center',
               justifyContent: 'center',
-              borderWidth: sub.active ? 1 : 0,
-              borderColor: sub.active ? addAlpha(sub.color || Colors.accent, 0.2) : 'transparent',
             }}>
               <Text 
                 style={[
@@ -391,7 +433,7 @@ export function SubCard({ sub, billing, onPress, onLongPress, onDelete }) {
                     ...Fonts.semiBold, 
                     fontSize: 12, 
                     color: sub.active 
-                      ? (sub.color || Colors.accent)
+                      ? (isDark ? lightenForDark(sub.color || Colors.accent) : (sub.color || Colors.accent))
                       : (isDark ? Colors.textSecondary : '#555558') 
                   }, 
                   isUrgent && sub.active && { color: Colors.error }
@@ -503,17 +545,21 @@ export function SecondaryButton({ onPress, label = '←', style }) {
 }
 
 export function PeriodPill({ label, onPress }) {
-  const { Colors } = useTheme();
+  const { Colors, isDark } = useTheme();
   const { scale, onPressIn, onPressOut } = usePressScale();
+
+  const pillBg = isDark ? 'rgba(91, 59, 245, 0.18)' : Colors.accentMuted;
+  const pillText = isDark ? '#A78BFA' : Colors.accent;
+  const pillChevron = isDark ? '#A78BFA' : Colors.accent;
 
   return (
     <Pressable
-      style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.accentMuted, paddingHorizontal: 16, paddingVertical: 10, borderRadius: Radius.pill, minHeight: Metrics.minTouch }}
+      style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: pillBg, paddingHorizontal: 16, paddingVertical: 10, borderRadius: Radius.pill, minHeight: Metrics.minTouch }}
       onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}
     >
       <Animated.View style={{ flexDirection: 'row', alignItems: 'center', transform: [{ scale }] }}>
-        <Text style={{ ...Fonts.primary, ...Fonts.bold, fontSize: 13, color: Colors.accent }}>{label}</Text>
-        <Text style={{ color: Colors.accent, marginLeft: 6, fontSize: 12 }}>▼</Text>
+        <Text style={{ ...Fonts.primary, ...Fonts.bold, fontSize: 13, color: pillText }}>{label}</Text>
+        <Text style={{ color: pillChevron, marginLeft: 6, fontSize: 12 }}>▼</Text>
       </Animated.View>
     </Pressable>
   );

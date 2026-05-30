@@ -3,7 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trimly - Smart Expense Tracker</title>
+    <title>Trimly - Smart Expense Tracker | Manage Your Finances</title>
+    <meta name="description" content="Track your expenses effortlessly with Trimly. Smart budgeting, real-time tracking, and insightful reports. Scan your Gmail for subscriptions automatically.">
+    <meta name="keywords" content="expense tracker, budget app, finance management, money tracker, subscription tracker">
+    <meta name="author" content="Trimly Team">
+    <meta property="og:title" content="Trimly - Smart Expense Tracker">
+    <meta property="og:description" content="Take control of your finances with smart budgeting, real-time tracking, and insightful reports.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://trimly.app/">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Trimly - Smart Expense Tracker">
+    <meta name="twitter:description" content="Take control of your finances with smart budgeting, real-time tracking, and insightful reports.">
+    <link rel="canonical" href="https://trimly.app/">
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
@@ -12,7 +23,7 @@
     <nav class="navbar" id="navbar">
         <div class="container nav-container">
             <div class="logo">
-                <i class="fas fa-wallet"></i>
+                <img src="assets/icon.png" alt="Trimly" class="logo-img">
                 <span data-i18n="appName">Trimly</span>
             </div>
             
@@ -20,6 +31,7 @@
                 <a href="#features" data-i18n="nav.features">Features</a>
                 <a href="#how-it-works" data-i18n="nav.howItWorks">How It Works</a>
                 <a href="#pricing" data-i18n="nav.pricing">Pricing</a>
+                <a href="#data-privacy">Privacy</a>
                 <a href="#why-choose" data-i18n="nav.whyChoose">Why Choose Us</a>
             </div>
             
@@ -115,7 +127,7 @@
                     <div class="phone-frame">
                         <div class="phone-notch"></div>
                         <div class="phone-screen">
-                            <img src="assets/app-screenshot.png" alt="App Screenshot" class="app-screenshot">
+                            <img src="assets/image-copy-5.png" alt="App Screenshot" class="app-screenshot">
                         </div>
                     </div>
                     <div class="floating-card card-1">
@@ -401,6 +413,50 @@
         </div>
     </section>
 
+    <!-- Data Usage & Privacy Section -->
+    <section class="data-privacy" id="data-privacy">
+        <div class="container">
+            <div class="section-header" data-reveal>
+                <span class="section-badge"><i class="fas fa-shield-alt"></i> Privacy & Data</span>
+                <h2 class="section-title">How We Use Your Data</h2>
+                <p class="section-description">
+                    Transparency is core to our mission. Here's exactly why and how we request access to your data.
+                </p>
+            </div>
+
+            <div class="privacy-grid">
+                <div class="privacy-card" data-reveal data-reveal-delay="100">
+                    <div class="privacy-icon">
+                        <i class="fas fa-envelope-open-text"></i>
+                    </div>
+                    <h3>Why We Access Your Gmail</h3>
+                    <p>Trimly requests read-only access to your Gmail to <strong>automatically scan for subscription receipts and invoices</strong>. This allows us to identify your active subscriptions, track recurring payments, and alert you before renewals — saving you time and money.</p>
+                </div>
+
+                <div class="privacy-card" data-reveal data-reveal-delay="200">
+                    <div class="privacy-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <h3>Your Data Stays Private</h3>
+                    <p>We <strong>never read your personal emails</strong>, store email content on our servers, or share your data with third parties. Access is strictly limited to detecting subscription-related receipts. You can revoke access at any time from your Google account settings.</p>
+                </div>
+
+                <div class="privacy-card" data-reveal data-reveal-delay="300">
+                    <div class="privacy-icon">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <h3>Google API Compliance</h3>
+                    <p>Trimly complies with the <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API Services User Data Policy</a>, including the Limited Use requirements. Your data is handled with the highest security standards.</p>
+                </div>
+            </div>
+
+            <div class="privacy-links-bar" data-reveal data-reveal-delay="400">
+                <a href="privacy.html" class="privacy-link"><i class="fas fa-file-alt"></i> Read Our Full Privacy Policy</a>
+                <a href="terms.html" class="privacy-link"><i class="fas fa-file-contract"></i> Read Our Terms of Service</a>
+            </div>
+        </div>
+    </section>
+
     <!-- CTA Section -->
     <section class="cta-section">
         <div class="container">
@@ -427,7 +483,7 @@
             <div class="footer-content">
                 <div class="footer-section">
                     <div class="footer-logo">
-                        <i class="fas fa-wallet"></i>
+                        <img src="assets/icon.png" alt="Trimly" class="logo-img">
                         <span>Trimly</span>
                     </div>
                     <p data-i18n="footer.description">Your smart companion for better financial management</p>
@@ -463,15 +519,21 @@
                     <h4 data-i18n="footer.support">Support</h4>
                     <ul>
                         <li><a href="#" data-i18n="footer.help">Help Center</a></li>
-                        <li><a href="#" data-i18n="footer.contact">Contact Us</a></li>
-                        <li><a href="privacy.html" data-i18n="footer.privacy">Privacy Policy</a></li>
-                        <li><a href="terms.html" data-i18n="footer.terms">Terms of Service</a></li>
+                        <li><a href="mailto:ayanaimi.trimly@gmail.com" data-i18n="footer.contact">Contact Us</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Legal</h4>
+                    <ul>
+                        <li><a href="privacy.html">Privacy Policy</a></li>
+                        <li><a href="terms.html">Terms of Service</a></li>
                     </ul>
                 </div>
             </div>
             
             <div class="footer-bottom">
-                <p>&copy; 2024 Trimly. <span data-i18n="footer.rights">All rights reserved.</span></p>
+                <p>&copy; 2025 Trimly. <span data-i18n="footer.rights">All rights reserved.</span> <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p>
             </div>
         </div>
     </footer>

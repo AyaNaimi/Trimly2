@@ -1,5 +1,7 @@
 import React, { useMemo } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   Linking,
   Modal,
   Platform,
@@ -14,11 +16,14 @@ import { Fonts, Radius, Shadow, Spacing } from '../../theme';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
 import { PremiumHaptics } from '../../utils/haptics';
+import { ServiceLogo } from '../../components';
 import {
   generateCancellationLetter,
   getCancellationGuide,
 } from '../../services/cancellationService';
 import { getSuggestedAlternatives } from '../../services/emailService';
+import { triggerCancellationRequest, isN8nConfigured } from '../../services/n8nWebhookService';
+import { getNextBilling } from '../../utils/dateUtils';
 
 type CancellationStep = {
   order: number;
@@ -62,6 +67,11 @@ const addAlpha = (hex: string, opacity: number) => {
   return `#${normalized}${op}`;
 };
 
+const extractEmailAddress = (value?: string | null) => {
+  const match = String(value || '').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  return match ? match[0].toLowerCase() : null;
+};
+
 export default function CancellationModal({
   visible,
   subscription,
@@ -69,11 +79,15 @@ export default function CancellationModal({
   onConfirmCancel,
 }: CancellationModalProps) {
   const { Colors } = useTheme();
-  const { state } = useApp();
+  const { state, updateSubscription } = useApp();
   const styles = useMemo(() => makeStyles(Colors), [Colors]);
   const guide = useMemo<CancellationGuide | null>(
     () => getCancellationGuide(subscription?.name || ''),
     [subscription?.name],
+  );
+  const billing = useMemo(
+    () => (subscription ? getNextBilling(subscription, 'fr') : null),
+    [subscription],
   );
   const alternatives = useMemo(
     () => getSuggestedAlternatives(subscription?.name || ''),
@@ -93,6 +107,90 @@ export default function CancellationModal({
   );
   const difficulty = guide?.difficulty || 'medium';
   const difficultyMeta = DIFFICULTY_META[difficulty];
+  const [automationLoading, setAutomationLoading] = React.useState(false);
+  const n8nAvailable = isN8nConfigured();
+  const supportEmail =
+    subscription?.supportEmail ||
+    subscription?.support_email ||
+    extractEmailAddress(subscription?.sourceFrom || subscription?.source_from);
+
+  const handleAutomatedCancellation = async (type: 'lre' | 'email') => {
+    if (!state.session?.user) {
+      Alert.alert('Connexion requise', 'Connectez-vous pour utiliser la résiliation automatisée.');
+      return;
+    }
+
+    setAutomationLoading(true);
+    try {
+      const result = await triggerCancellationRequest({
+        userId: state.session.user.id,
+        userEmail: state.session.user.email || '',
+        userName: state.profile?.name || 'Client Trimly',
+        userAddress: {
+          line1: state.profile?.address_line1,
+          line2: state.profile?.address_line2,
+          postalCode: state.profile?.postal_code,
+          city: state.profile?.city,
+          country: state.profile?.country || 'FR',
+        },
+        cancellationType: type,
+        subscription: {
+          id: subscription.id,
+          name: subscription.name,
+          amount: Number(subscription.amount) || 0,
+          cycle: subscription.cycle || 'monthly',
+          category: subscription.category,
+          provider: subscription.provider || null,
+          sourceEmail: subscription.sourceEmail || subscription.source_email || null,
+          sourceFrom: subscription.sourceFrom || subscription.source_from || null,
+          supportEmail,
+          nextChargeDate: billing?.nextChargeDate ? new Date(billing.nextChargeDate).toISOString() : null,
+        },
+        billing: {
+          nextChargeDate: billing?.nextChargeDate ? new Date(billing.nextChargeDate).toISOString() : null,
+          trialEndsAt: billing?.trialEndsAt ? new Date(billing.trialEndsAt).toISOString() : null,
+          daysUntilCharge: billing?.daysUntilCharge ?? null,
+        },
+        method: {
+          key: 'email_letter',
+          title: type === 'lre' ? 'Lettre recommandee electronique' : 'Email de resiliation',
+          description: type === 'lre'
+            ? 'Demande formelle preparee pour un envoi recommande electronique.'
+            : 'Demande formelle preparee pour un envoi email.',
+        },
+        letterContent: letter,
+      });
+
+      if (result.ok) {
+        const responseData = result.data as { data?: { emailTo?: string; copyTo?: string } } | null;
+        const emailTo = responseData?.data?.emailTo;
+        const copyTo = responseData?.data?.copyTo;
+
+        await updateSubscription?.(subscription.id, {
+          cancellation_status: 'pending',
+          cancellation_method: type,
+          cancellation_requested_at: new Date().toISOString(),
+          cancellation_letter: letter,
+        });
+
+        Alert.alert(
+          'Demande envoyee',
+          emailTo
+            ? `n8n indique que l'email a ete envoye a ${emailTo}${copyTo ? `, copie ${copyTo}` : ''}.`
+            : type === 'lre'
+              ? "La demande LRE a ete transmise au workflow. Gardez l'abonnement actif dans Trimly jusqu'a confirmation."
+              : "La demande email a ete transmise au workflow. Gardez l'abonnement actif dans Trimly jusqu'a confirmation.",
+        );
+        onClose();
+      } else {
+        Alert.alert('Erreur', result.message || 'Impossible de lancer la résiliation automatisée.');
+      }
+    } catch (error) {
+      Alert.alert('Erreur', "Une erreur est survenue lors de l'envoi.");
+    } finally {
+      setAutomationLoading(false);
+    }
+  };
 
   if (!subscription) return null;
 
@@ -148,9 +246,13 @@ export default function CancellationModal({
             <Text style={styles.closeText}>x</Text>
           </Pressable>
           <View style={styles.headerCenter}>
-            <View style={[styles.iconWrap, { backgroundColor: addAlpha(subscription.color || Colors.accent, 0.12) }]}>
-              <Text style={styles.icon}>{subscription.icon || 'S'}</Text>
-            </View>
+            <ServiceLogo
+              logo={(subscription as any).logo}
+              icon={subscription.icon || 'S'}
+              color={subscription.color || Colors.accent}
+              size={48}
+              style={{ marginRight: 12 }}
+            />
             <View style={styles.headerTextWrap}>
               <Text style={styles.title} numberOfLines={1}>{subscription.name}</Text>
               <Text style={styles.subtitle}>{guide?.estimatedTime || '5-10 minutes'}</Text>
@@ -236,6 +338,35 @@ export default function CancellationModal({
               <Text style={styles.secondaryButtonText}>Générer lettre de résiliation</Text>
             </Pressable>
           </View>
+
+          {n8nAvailable ? (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Résiliation automatisée</Text>
+              <Text style={styles.paragraph}>
+                {supportEmail
+                  ? `Trimly enverra la demande a ${supportEmail} et gardera une copie pour vous.`
+                  : "Trimly peut preparer la demande, mais aucune adresse de support n'a ete detectee pour ce service."}
+              </Text>
+              {automationLoading ? (
+                <ActivityIndicator style={{ marginTop: 16 }} color={Colors.accent} />
+              ) : (
+                <View style={{ gap: 10, marginTop: 14 }}>
+                  <Pressable
+                    style={[styles.secondaryButton, { borderColor: Colors.accent, backgroundColor: addAlpha(Colors.accent || '#06b6d4', 0.08) }]}
+                    onPress={() => handleAutomatedCancellation('lre')}
+                  >
+                    <Text style={[styles.secondaryButtonText, { color: Colors.accent }]}>📮 Envoyer une LRE (recommandé électronique)</Text>
+                  </Pressable>
+                  <Pressable
+                    style={styles.secondaryButton}
+                    onPress={() => handleAutomatedCancellation('email')}
+                  >
+                    <Text style={styles.secondaryButtonText}>✉️ Envoyer par email automatique</Text>
+                  </Pressable>
+                </View>
+              )}
+            </View>
+          ) : null}
         </ScrollView>
 
         <View style={styles.footer}>

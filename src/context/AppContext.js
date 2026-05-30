@@ -835,6 +835,10 @@ export function AppProvider({ children }) {
         category: detectedSub.category,
         startDate: detectedSub.startDate,
         trialDays: detectedSub.trialDays || 0,
+        provider: detectedSub.provider || null,
+        sourceEmail: detectedSub.sourceEmail || null,
+        sourceFrom: detectedSub.sourceFrom || detectedSub.rawPayload?.sourceFrom || null,
+        supportEmail: detectedSub.supportEmail || null,
         active: true,
       });
 

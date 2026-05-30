@@ -434,7 +434,7 @@
       "title": "Détecter vos abonnements",
       "titleAuto": "Connectez votre boîte mail",
       "subtitle": "Flux Hybride",
-      "description": "Trimly peut scanner Gmail via Google OAuth ou utiliser un scan manuel local pour trouver vos abonnements avant l'import.",
+      "description": "Trimly scan votre Gmail pour trouver vos emails d'abonnement et les importer automatiquement.",
       "pendingTitle": "Detections en attente",
       "pendingDescription": "{{count}} abonnements attendent votre validation."
     },

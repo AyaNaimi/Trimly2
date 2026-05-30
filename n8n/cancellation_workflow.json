@@ -1,0 +1,209 @@
+{
+  "name": "Trimly - Subscription Cancellation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "subscription-cancellation",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "trimly-webhook",
+      "name": "Webhook Trimly",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 420],
+      "webhookId": "trimly-subscription-cancellation"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\nconst body = input.body || input;\nconst sub = body.subscription || {};\nconst billing = body.billing || {};\nconst method = body.method || {};\nconst extractEmail = (value) => {\n  const match = String(value || '').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,}/i);\n  return match ? match[0].toLowerCase() : null;\n};\n\nconst errors = [];\nif (!body.userId) errors.push('userId is required');\nif (!sub.id) errors.push('subscription.id is required');\nif (!sub.name) errors.push('subscription.name is required');\nif (!body.userEmail) errors.push('userEmail is required');\n\nconst targetEmail = sub.supportEmail || body.targetEmail || extractEmail(sub.sourceFrom) || null;\nconst copyEmail = body.userEmail || null;\nconst amount = Number.parseFloat(sub.amount) || 0;\nconst currency = body.currency || sub.currency || 'EUR';\nconst cycle = sub.cycle || 'monthly';\nconst cycleMultiplier = { weekly: 52 / 12, monthly: 1, quarterly: 1 / 3, annual: 1 / 12 };\nconst monthlyAmount = amount * (cycleMultiplier[cycle] || 1);\nconst annualSavings = monthlyAmount * 12;\nconst now = new Date();\nconst formatDate = (value) => {\n  if (!value) return 'Non defini';\n  const date = new Date(value);\n  if (Number.isNaN(date.getTime())) return 'Non defini';\n  return date.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });\n};\nlet daysUntilCharge = billing.daysUntilCharge;\nif ((daysUntilCharge === undefined || daysUntilCharge === null) && billing.nextChargeDate) {\n  const next = new Date(billing.nextChargeDate);\n  if (!Number.isNaN(next.getTime())) {\n    const today = new Date();\n    today.setHours(0, 0, 0, 0);\n    next.setHours(0, 0, 0, 0);\n    daysUntilCharge = Math.ceil((next - today) / 86400000);\n  }\n}\nconst methodKey = method.key || body.methodKey || (body.cancellationType === 'email' || body.cancellationType === 'lre' ? 'email_letter' : 'direct');\nconst methodTitle = method.title || body.methodTitle || (body.cancellationType === 'lre' ? 'Lettre recommandee electronique' : 'Email de resiliation');\nconst isUrgent = typeof daysUntilCharge === 'number' && daysUntilCharge <= 3;\nconst urgencyLabel = typeof daysUntilCharge !== 'number'\n  ? 'OK'\n  : daysUntilCharge <= 0 ? 'AUJOURD HUI'\n  : daysUntilCharge <= 3 ? 'URGENT'\n  : daysUntilCharge <= 7 ? 'BIENTOT'\n  : 'OK';\n\nreturn [{ json: {\n  ok: errors.length === 0,\n  statusCode: errors.length ? 400 : 200,\n  errors,\n  event: body.event || 'cancellation_request',\n  requestedAt: body.requestedAt || body.timestamp || now.toISOString(),\n  userId: body.userId || null,\n  userEmail: body.userEmail || null,\n  targetEmail,\n  copyEmail,\n  userName: body.userName || 'Client Trimly',\n  userAddress: body.userAddress || {},\n  callbackUrl: body.callbackUrl || null,\n  cancellationType: body.cancellationType || 'email',\n  subId: sub.id || null,\n  subName: sub.name || 'Abonnement',\n  subAmount: amount,\n  subCycle: cycle,\n  subCategory: sub.category || 'Autre',\n  subProvider: sub.provider || null,\n  sourceFrom: sub.sourceFrom || null,\n  sourceEmail: sub.sourceEmail || null,\n  currency,\n  monthlyAmount: monthlyAmount.toFixed(2),\n  annualSavings: annualSavings.toFixed(2),\n  nextChargeDate: formatDate(billing.nextChargeDate || sub.nextChargeDate),\n  rawNextChargeDate: billing.nextChargeDate || sub.nextChargeDate || null,\n  daysUntilCharge: daysUntilCharge ?? null,\n  methodKey,\n  methodTitle,\n  methodDescription: method.description || '',\n  originalMessage: body.message || body.letterContent || '',\n  isUrgent,\n  urgencyLabel,\n  today: formatDate(now)\n} }];"
+      },
+      "id": "trimly-normalize",
+      "name": "Validate and normalize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [500, 420]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "id": "payload-ok",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "trimly-is-valid",
+      "name": "Payload valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [740, 420]
+    },
+    {
+      "parameters": {
+        "jsCode": "const d = $input.first().json;\nconst escapeHtml = (value) => String(value || '').replace(/[&<>\"']/g, (char) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '\"': '&quot;', \"'\": '&#39;' }[char]));\nconst cycleLabel = { weekly: 'hebdomadaire', monthly: 'mensuel', quarterly: 'trimestriel', annual: 'annuel' }[d.subCycle] || 'mensuel';\n\nfunction formalLetter() {\n  return `${d.userName}\\n${d.userEmail}\\n\\nLe ${d.today}\\n\\nObjet : Demande de resiliation - ${d.subName}\\n\\nMadame, Monsieur,\\n\\nJe vous informe par la presente de ma decision de resilier mon abonnement ${d.subName} a compter de la reception de cette demande.\\n\\nDetails de mon abonnement :\\n- Service : ${d.subName}\\n- Montant : ${d.subAmount} ${d.currency} (${cycleLabel})\\n- Prochaine echeance estimee : ${d.nextChargeDate}\\n\\nJe vous demande de cesser tout prelevement automatique futur et de me confirmer par ecrit la date effective de resiliation.\\n\\nJe conserve une copie de cette demande comme preuve.\\n\\nCordialement,\\n\\n${d.userName}`;\n}\n\nfunction phoneScript() {\n  return `SCRIPT DE RESILIATION - ${d.subName.toUpperCase()}\\n\\nBonjour, je souhaite resilier mon abonnement ${d.subName}.\\n\\nInformations a donner :\\n- Nom : ${d.userName}\\n- Email du compte : ${d.userEmail}\\n- Montant actuel : ${d.subAmount} ${d.currency} (${cycleLabel})\\n\\nPhrase principale :\\nJe souhaite que vous annuliez mon abonnement et que vous cessiez tout prelevement automatique a partir d'aujourd'hui.\\n\\nSi on propose une reduction :\\nJe comprends votre offre, mais ma decision est prise. Je souhaite resilier definitivement.\\n\\nConfirmation a demander :\\nPouvez-vous m'envoyer une confirmation ecrite par email avec un numero de dossier ?\\n\\nA noter :\\n- Nom de l'agent :\\n- Numero de dossier :\\n- Date effective :\\n- Dernier prelevement :`;\n}\n\nfunction bankNote() {\n  return `DOSSIER BANCAIRE - ${d.subName.toUpperCase()}\\n\\nMarchand : ${d.subName}\\nMontant habituel : ${d.subAmount} ${d.currency} (${cycleLabel})\\nProchain debit estime : ${d.nextChargeDate}\\n\\nAction demandee : revoquer l'autorisation de prelevement recurrent et contester tout debit posterieur a ma demande de resiliation.\\n\\nPreuves a joindre :\\n- Demande de resiliation envoyee au service\\n- Captures d'ecran du compte ou du chat\\n- Releves bancaires montrant les debits\\n- Reponse ou absence de reponse du service\\n\\nImportant : cette demarche ne remplace pas la resiliation contractuelle chez le service.`;\n}\n\nfunction directGuide() {\n  return d.originalMessage || `Connectez-vous au site officiel de ${d.subName}, ouvrez Compte / Billing / Abonnement, puis choisissez Cancel, Resilier ou Turn off auto-renew. Gardez une preuve de confirmation.`;\n}\n\nconst contentByMethod = {\n  email_letter: formalLetter,\n  phone_chat: phoneScript,\n  bank_stop: bankNote,\n  direct: directGuide,\n};\nconst letter = (contentByMethod[d.methodKey] || directGuide)();\nconst titleByMethod = {\n  email_letter: `Lettre de resiliation - ${d.subName}`,\n  phone_chat: `Script de resiliation - ${d.subName}`,\n  bank_stop: `Dossier bancaire - ${d.subName}`,\n  direct: `Guide de resiliation - ${d.subName}`,\n};\nconst emailSubject = `${d.isUrgent ? 'URGENT - ' : ''}${titleByMethod[d.methodKey] || titleByMethod.direct}`;\nconst alertBlock = d.isUrgent\n  ? `<div style=\"background:#FEF2F2;border-left:4px solid #DC2626;padding:12px;border-radius:6px;margin-bottom:16px;\"><strong>Urgent :</strong> prochaine echeance ${escapeHtml(d.nextChargeDate)}.</div>`\n  : `<div style=\"background:#F0FDF4;border-left:4px solid #16A34A;padding:12px;border-radius:6px;margin-bottom:16px;\"><strong>Suivi :</strong> conservez une preuve et attendez la confirmation officielle.</div>`;\nconst htmlLetter = `<div style=\"font-family:Arial,sans-serif;max-width:640px;margin:0 auto;padding:20px;color:#0F172A;\"><div style=\"background:#0F172A;color:white;padding:20px;border-radius:10px 10px 0 0;\"><h2 style=\"margin:0;font-size:20px;\">${escapeHtml(titleByMethod[d.methodKey] || titleByMethod.direct)}</h2><p style=\"margin:6px 0 0;opacity:.75;\">Genere par Trimly le ${escapeHtml(d.today)}</p></div><div style=\"border:1px solid #E2E8F0;border-top:none;padding:22px;border-radius:0 0 10px 10px;\">${alertBlock}<pre style=\"background:#F8FAFC;padding:18px;border-radius:8px;white-space:pre-wrap;font-family:Arial,sans-serif;line-height:1.6;\">${escapeHtml(letter)}</pre><p style=\"font-size:12px;color:#64748B;text-align:center;margin-top:18px;\">Economie potentielle : <strong>${escapeHtml(d.annualSavings)} ${escapeHtml(d.currency)}/an</strong></p></div></div>`;\nconst reminders = [\n  { type: 'followup_48h', triggerAt: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), message: `Avez-vous recu la confirmation de resiliation de ${d.subName} ?` },\n  { type: 'check_5d', triggerAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(), message: `Verifiez que ${d.subName} ne vous a pas debite apres la demande.` },\n];\nif (typeof d.daysUntilCharge === 'number' && d.daysUntilCharge > 3) {\n  reminders.push({ type: 'before_charge', triggerAt: new Date(Date.now() + Math.max(d.daysUntilCharge - 2, 1) * 24 * 60 * 60 * 1000).toISOString(), message: `Confirmez la resiliation de ${d.subName} avant la prochaine echeance.` });\n}\n\nreturn [{ json: { ...d, letter, htmlLetter, emailSubject, messageType: d.methodKey, reminders, totalReminders: reminders.length } }];"
+      },
+      "id": "trimly-generate",
+      "name": "Generate cancellation pack",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1010, 300]
+    },
+    {
+      "parameters": {
+        "fromEmail": "noreply@trimly.app",
+        "toEmail": "={{ $json.targetEmail || $json.userEmail }}",
+        "subject": "={{ $json.emailSubject }}",
+        "emailType": "html",
+        "html": "={{ $json.htmlLetter }}",
+        "message": "={{ $json.htmlLetter }}",
+        "options": {
+          "ccEmail": "={{ $json.targetEmail ? $json.userEmail : '' }}",
+          "replyTo": "={{ $json.userEmail || '' }}"
+        }
+      },
+      "id": "trimly-email",
+      "name": "Email user",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [1290, 160],
+      "credentials": {
+        "smtp": {
+          "id": "SMTP_CREDENTIALS_ID",
+          "name": "Trimly SMTP"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.callbackUrl }}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" },
+            { "name": "x-n8n-secret", "value": "={{ $env.N8N_CALLBACK_SECRET || 'CHANGE_ME' }}" }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "subscriptionId", "value": "={{ $json.subId }}" },
+            { "name": "userId", "value": "={{ $json.userId }}" },
+            { "name": "status", "value": "sent" },
+            { "name": "message", "value": "={{ $json.emailSubject }}" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "trimly-callback",
+      "name": "Update Supabase status",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1290, 320],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": true,\n  \"message\": \"Cancellation request processed\",\n  \"data\": {\n    \"subscriptionId\": \"{{ $json.subId }}\",\n    \"subscriptionName\": \"{{ $json.subName }}\",\n    \"methodUsed\": \"{{ $json.methodTitle }}\",\n    \"emailTo\": \"{{ $json.targetEmail || $json.userEmail }}\",\n    \"copyTo\": \"{{ $json.targetEmail ? $json.userEmail : '' }}\",\n    \"annualSavings\": \"{{ $json.annualSavings }} {{ $json.currency }}\",\n    \"remindersScheduled\": {{ $json.totalReminders }},\n    \"urgent\": {{ $json.isUrgent }},\n    \"processedAt\": \"{{ $now.toISO() }}\"\n  }\n}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" }
+            ]
+          }
+        }
+      },
+      "id": "trimly-respond-success",
+      "name": "API success response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1290, 500]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={\n  \"success\": false,\n  \"message\": \"Invalid cancellation request\",\n  \"errors\": {{ JSON.stringify($json.errors || []) }},\n  \"processedAt\": \"{{ $now.toISO() }}\"\n}",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              { "name": "Content-Type", "value": "application/json" }
+            ]
+          }
+        }
+      },
+      "id": "trimly-respond-error",
+      "name": "API error response",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1010, 580]
+    }
+  ],
+  "connections": {
+    "Webhook Trimly": {
+      "main": [
+        [
+          { "node": "Validate and normalize", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Validate and normalize": {
+      "main": [
+        [
+          { "node": "Payload valid?", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Payload valid?": {
+      "main": [
+        [
+          { "node": "Generate cancellation pack", "type": "main", "index": 0 }
+        ],
+        [
+          { "node": "API error response", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Generate cancellation pack": {
+      "main": [
+        [
+          { "node": "Email user", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Email user": {
+      "main": [
+        [
+          { "node": "Update Supabase status", "type": "main", "index": 0 },
+          { "node": "API success response", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true
+  },
+  "staticData": null,
+  "tags": ["trimly", "subscriptions", "cancellation"],
+  "triggerCount": 0,
+  "versionId": "2"
+}

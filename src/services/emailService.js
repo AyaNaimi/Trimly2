@@ -247,6 +247,11 @@ function getRawPayloadValue(item = {}, key) {
   return item?.rawPayload?.[key] ?? item?.raw_payload?.[key] ?? null;
 }
 
+function extractEmailAddress(value = '') {
+  const match = String(value || '').match(/[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+  return match ? match[0].toLowerCase() : null;
+}
+
 function cycleLabel(cycle = 'monthly') {
   return {
     weekly: 'hebdo',
@@ -336,6 +341,8 @@ export function mapDetectedSubscriptionToApp(item = {}) {
     active: item.active ?? true,
     provider: item.provider,
     sourceEmail: item.sourceEmail,
+    sourceFrom: item.sourceFrom || getRawPayloadValue(item, 'sourceFrom') || null,
+    supportEmail: extractEmailAddress(item.supportEmail || item.sourceFrom || getRawPayloadValue(item, 'sourceFrom')),
     confidence: item.confidence,
     trialEndsAt,
     nextChargeDate: insights.nextChargeDate,

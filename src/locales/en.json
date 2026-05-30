@@ -434,7 +434,7 @@
       "title": "Detect your subscriptions",
       "titleAuto": "Connect your mailbox",
       "subtitle": "Hybrid Flow",
-      "description": "Trimly can scan Gmail via Google OAuth or use a local manual scan to find your subscriptions before import.",
+      "description": "Trimly scans your Gmail to find subscription emails and import them automatically.",
       "pendingTitle": "Pending detections",
       "pendingDescription": "{{count}} subscriptions are waiting for your validation."
     },

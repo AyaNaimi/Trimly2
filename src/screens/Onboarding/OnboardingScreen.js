@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -8,7 +8,10 @@ import {
   Pressable,
   TextInput,
   Dimensions,
+  Modal,
 } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
+import LottieView from 'lottie-react-native';
 import { Fonts, Layout, Radius, Shadow } from '../../theme';
 import { PremiumHaptics } from '../../utils/haptics';
 import { useApp } from '../../context/AppContext';
@@ -134,6 +137,49 @@ const BudgetRow = ({ name, value, onValueChange, icon, Colors, styles }) => {
   );
 };
 
+const CURRENCY_OPTIONS = [
+  { label: 'Dirham Marocain (MAD)', value: 'MAD' },
+  { label: 'Euro (€)', value: '€' },
+  { label: 'Dollar ($)', value: '$' },
+  { label: 'Livre (£)', value: '£' },
+];
+
+const CurrencyPicker = ({ currency, setCurrency, Colors, styles }) => {
+  const [visible, setVisible] = useState(false);
+  const selected = CURRENCY_OPTIONS.find(c => c.value === currency);
+
+  return (
+    <>
+      <Pressable onPress={() => setVisible(true)} style={styles.currencyPicker}>
+        <Text style={[styles.currencyPickerText, { color: currency ? Colors.text : Colors.textSecondary }]}>
+          {selected ? selected.label : 'Sélectionnez une devise'}
+        </Text>
+        <Text style={{ color: Colors.textSecondary, fontSize: 12 }}>▼</Text>
+      </Pressable>
+
+      <Modal visible={visible} transparent animationType="slide">
+        <Pressable style={styles.modalOverlay} onPress={() => setVisible(false)}>
+          <View style={styles.modalContent}>
+            <Text style={[styles.h1, { fontSize: 20, marginTop: 0, marginBottom: 16 }]}>Choisir la devise</Text>
+            {CURRENCY_OPTIONS.map(opt => (
+              <Pressable
+                key={opt.value}
+                onPress={() => { PremiumHaptics.selection(); setCurrency(opt.value); setVisible(false); }}
+                style={[styles.modalOption, currency === opt.value && { backgroundColor: Colors.accent + '20', borderColor: Colors.accent }]}
+              >
+                <Text style={[styles.modalOptionText, currency === opt.value && { color: Colors.accent, ...Fonts.bold }]}>
+                  {opt.label}
+                </Text>
+                {currency === opt.value && <Text style={{ color: Colors.accent }}>✓</Text>}
+              </Pressable>
+            ))}
+          </View>
+        </Pressable>
+      </Modal>
+    </>
+  );
+};
+
 const StepBudgets = ({ income, setIncome, currency, setCurrency, selectedCats, budgets, setBudgets, Colors, styles }) => {
   const [isIncomeFocused, setIsIncomeFocused] = useState(false);
   const totalAllocated = Object.values(budgets).reduce((sum, val) => sum + (parseFloat(val) || 0), 0);
@@ -141,59 +187,55 @@ const StepBudgets = ({ income, setIncome, currency, setCurrency, selectedCats, b
   const allocationPercent = incomeNum > 0 ? Math.min((totalAllocated / incomeNum) * 100, 100) : 0;
 
   return (
-    <View style={[styles.unifiedCard, { margin: 10 }]}>
-      <Text style={[styles.h1, { ...Fonts.serif, marginBottom: 8 }]}>Précision budgétaire</Text>
-      <Text style={[styles.sub, { marginBottom: 12 }]}>Définissez vos plafonds pour une gestion sans surprise.</Text>
-      
-      {/* Allocation Insights (Transparent) */}
-      <View style={{ marginBottom: 24, paddingVertical: 12 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
-          <Text style={{ ...Fonts.sans, fontSize: 13, color: Colors.textSecondary }}>Allocation totale</Text>
-          <Text style={{ ...Fonts.sans, fontSize: 13, ...Fonts.bold, color: Colors.text }}>{totalAllocated} {currency} / {incomeNum} {currency}</Text>
-        </View>
-        <View style={{ height: 6, backgroundColor: Colors.border, borderRadius: 3, overflow: 'hidden' }}>
-          <View style={{ height: '100%', width: `${allocationPercent}%`, backgroundColor: Colors.accent }} />
-        </View>
-      </View>
-
-      <Text style={[styles.groupLbl, { marginBottom: 8 }]}>Revenu & Devise</Text>
-      <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24 }}>
-        <View style={{ 
-          flex: 2,
-          borderBottomWidth: 2, 
-          borderBottomColor: isIncomeFocused ? Colors.accent : Colors.borderStrong, 
-          paddingBottom: 4
-        }}>
-          <TextInput
-            style={[styles.input, { ...Fonts.serif, fontSize: 18, height: 44, paddingHorizontal: 0 }]}
-            value={income}
-            onChangeText={(v) => { PremiumHaptics.selection(); setIncome(v); }}
-            onFocus={() => setIsIncomeFocused(true)}
-            onBlur={() => setIsIncomeFocused(false)}
-            keyboardType="numeric"
-            placeholder={`Montant (${currency})`}
-            placeholderTextColor={Colors.textSecondary}
-          />
-        </View>
+    <View style={{ flex: 1, margin: 10 }}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 20 }}>
+        {/* Header */}
+        <Text style={[styles.h1, { ...Fonts.serif, marginBottom: 8 }]}>Précision budgétaire</Text>
+        <Text style={[styles.sub, { marginBottom: 12 }]}>Définissez vos plafonds pour une gestion sans surprise.</Text>
         
-        <View style={{ flex: 1, flexDirection: 'row', gap: 4, flexWrap: 'wrap' }}>
-          {['MAD', '€', '$', '£'].map(c => (
-            <Pressable 
-              key={c} 
-              onPress={() => { PremiumHaptics.selection(); setCurrency(c); }}
-              style={[
-                styles.currencyBtn, 
-                currency === c && { backgroundColor: Colors.accent, borderColor: Colors.accent }
-              ]}
-            >
-              <Text style={[styles.currencyBtnText, currency === c && { color: Colors.white }]}>{c}</Text>
-            </Pressable>
-          ))}
+        {/* Allocation Insights */}
+        <View style={{ marginBottom: 24, paddingVertical: 12 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 8 }}>
+            <Text style={{ ...Fonts.sans, fontSize: 13, color: Colors.textSecondary }}>Allocation totale</Text>
+            <Text style={{ ...Fonts.sans, fontSize: 13, ...Fonts.bold, color: Colors.text }}>{totalAllocated} {currency} / {incomeNum} {currency}</Text>
+          </View>
+          <View style={{ height: 6, backgroundColor: Colors.border, borderRadius: 3, overflow: 'hidden' }}>
+            <View style={{ height: '100%', width: `${allocationPercent}%`, backgroundColor: Colors.accent }} />
+          </View>
         </View>
-      </View>
 
-      <Text style={[styles.groupLbl, { marginTop: 12, marginBottom: 12 }]}>Détails par flux</Text>
-      <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
+        {/* Revenu & Devise */}
+        <Text style={[styles.groupLbl, { marginBottom: 8 }]}>Revenu & Devise</Text>
+        
+        {/* Currency Picker */}
+        <View style={{ marginBottom: 16 }}>
+          <Text style={{ ...Fonts.sans, fontSize: 12, color: Colors.textSecondary, marginBottom: 6 }}>Devise</Text>
+          <CurrencyPicker currency={currency} setCurrency={setCurrency} Colors={Colors} styles={styles} />
+        </View>
+
+        {/* Income Input */}
+        <View style={{ marginBottom: 24 }}>
+          <Text style={{ ...Fonts.sans, fontSize: 12, color: Colors.textSecondary, marginBottom: 6 }}>Revenu mensuel</Text>
+          <View style={{ 
+            borderBottomWidth: 2, 
+            borderBottomColor: isIncomeFocused ? Colors.accent : Colors.borderStrong, 
+            paddingBottom: 4
+          }}>
+            <TextInput
+              style={[styles.input, { ...Fonts.serif, fontSize: 18, height: 44, paddingHorizontal: 0 }]}
+              value={income}
+              onChangeText={(v) => { PremiumHaptics.selection(); setIncome(v); }}
+              onFocus={() => setIsIncomeFocused(true)}
+              onBlur={() => setIsIncomeFocused(false)}
+              keyboardType="numeric"
+              placeholder={`0 ${currency}`}
+              placeholderTextColor={Colors.textSecondary}
+            />
+          </View>
+        </View>
+
+        {/* Détails par flux */}
+        <Text style={[styles.groupLbl, { marginTop: 12, marginBottom: 12 }]}>Détails par flux</Text>
         {selectedCats.map(name => {
           const item = ONBOARDING_CAT_GROUPS.flatMap(g => g.items).find(i => i.name === name);
           return (
@@ -208,6 +250,16 @@ const StepBudgets = ({ income, setIncome, currency, setCurrency, selectedCats, b
             />
           );
         })}
+
+        {/* Empty state */}
+        {selectedCats.length === 0 && (
+          <View style={{ alignItems: 'center', paddingVertical: 40 }}>
+            <Text style={{ fontSize: 40, marginBottom: 12 }}>📂</Text>
+            <Text style={{ ...Fonts.sans, fontSize: 14, color: Colors.textSecondary, textAlign: 'center' }}>
+              Sélectionnez des catégories à l'étape précédente pour définir vos budgets.
+            </Text>
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -223,8 +275,8 @@ const StepNotifications = ({ notifLevel, setNotifLevel, Colors, styles }) => {
 
   return (
     <View style={[styles.unifiedCard, { margin: 10 }]}>
-      <Text style={[styles.h1, { ...Fonts.serif, marginBottom: 8 }]}>Ton & Vigilance</Text>
-      <Text style={[styles.sub, { marginBottom: 28 }]}>Personnalisez la voix de Luna pour vos rapports et alertes.</Text>
+      <Text style={[styles.h1, { ...Fonts.serif, marginBottom: 8 }]}>Notifications</Text>
+      <Text style={[styles.sub, { marginBottom: 28 }]}>Choisissez le style d'accompagnement qui vous convient.</Text>
       
       <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
         <View style={{ gap: 14 }}>
@@ -260,15 +312,116 @@ const StepNotifications = ({ notifLevel, setNotifLevel, Colors, styles }) => {
   );
 };
 
-const StepWelcome = ({ Colors, styles }) => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-    <View style={{ width: 100, height: 100, borderRadius: 50, backgroundColor: Colors.accent, alignItems: 'center', justifyContent: 'center', marginBottom: 40 }}>
-      <Text style={{ fontSize: 50 }}>🌱</Text>
+const RocketIllustration = () => {
+  const lottieRef = useRef(null);
+
+  useEffect(() => {
+    if (lottieRef.current) {
+      lottieRef.current.play();
+    }
+  }, []);
+
+  return (
+    <View style={{ alignItems: 'center', marginTop: 10, marginBottom: 8 }}>
+      <LottieView
+        ref={lottieRef}
+        source={require('../../../assets/rocket.json')}
+        style={{ width: 320, height: 240 }}
+        loop={true}
+        autoPlay={false}
+      />
     </View>
-    <Text style={[styles.h1, { textAlign: 'center', fontSize: 32 }]}>Bienvenue chez Trimly</Text>
-    <Text style={[styles.sub, { textAlign: 'center', maxWidth: '85%' }]}>
-      Votre écosystème est prêt. Commencez à piloter vos finances avec sérénité.
-    </Text>
+  );
+};
+
+const CARDS_DATA = [
+  {
+    icon: '🔒',
+    iconBg: ['#7C3AED', '#6D28D9'],
+    title: 'Vos données sont protégées',
+    description: 'Chiffrement bancaire. Zéro partage avec des tiers.',
+    link: 'privacy.html',
+    accentColor: '#7C3AED',
+  },
+  {
+    icon: '📋',
+    iconBg: ['#2563EB', '#1D4ED8'],
+    title: 'Politiques & Conditions',
+    description: 'Vous acceptez nos conditions et gardez le contrôle.',
+    link: 'terms.html',
+    accentColor: '#2563EB',
+  },
+  {
+    icon: '💡',
+    iconBg: ['#0891B2', '#0E7490'],
+    title: 'Google API Compliance',
+    description: 'Accès aux emails limité à la détection de reçus.',
+    link: 'https://developers.google.com/terms/api-services-user-data-policy',
+    accentColor: '#0891B2',
+  },
+];
+
+const PrivacyCard = ({ icon, iconBg, title, description, link, accentColor, Colors, styles }) => {
+  const [pressed, setPressed] = useState(false);
+
+  return (
+    <Pressable
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      onPress={async () => {
+        PremiumHaptics.selection();
+        const url = link.startsWith('http') ? link : `${BASE_URL}/${link}`;
+        await WebBrowser.openBrowserAsync(url);
+      }}
+      style={[styles.privacyCard, pressed && styles.privacyCardPressed]}
+    >
+      <View style={[styles.privacyIconCircle, { backgroundColor: iconBg[0] }]}>
+        <Text style={{ fontSize: 20 }}>{icon}</Text>
+      </View>
+
+      <View style={{ flex: 1 }}>
+        <Text style={styles.privacyCardTitle}>{title}</Text>
+        <Text style={styles.privacyCardDesc}>{description}</Text>
+      </View>
+
+      <View style={[styles.privacyChevron, { backgroundColor: accentColor + '15' }]}>
+        <Text style={[styles.privacyChevronIcon, { color: accentColor }]}>›</Text>
+      </View>
+    </Pressable>
+  );
+};
+
+const StepWelcome = ({ Colors, styles }) => (
+  <View style={{ flex: 1 }}>
+    <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
+      {/* Lottie Rocket Illustration */}
+      <RocketIllustration />
+
+      {/* Title & Subtitle */}
+      <View style={{ alignItems: 'center', marginTop: 20, marginBottom: 28, paddingHorizontal: 20 }}>
+        <Text style={[styles.h1, { textAlign: 'center', fontSize: 28, marginBottom: 12 }]}>C'est parti !</Text>
+        <Text style={[styles.sub, { textAlign: 'center', maxWidth: '90%', lineHeight: 22 }]}>
+          Votre écosystème financier est prêt. Commencez à piloter vos finances avec sérénité et confiance.
+        </Text>
+      </View>
+
+      {/* Privacy Cards */}
+      <View style={{ paddingHorizontal: 20, gap: 14 }}>
+        {CARDS_DATA.map((card, i) => (
+          <PrivacyCard
+            key={i}
+            icon={card.icon}
+            iconBg={card.iconBg}
+            title={card.title}
+            description={card.description}
+            link={card.link}
+            accentColor={card.accentColor}
+            Colors={Colors}
+            styles={styles}
+          />
+        ))}
+      </View>
+    </ScrollView>
   </View>
 );
 
@@ -285,10 +438,10 @@ export default function OnboardingScreen({ navigation }) {
   const { Colors } = useTheme();
 
   const [step, setStep] = useState(0);
-  const [selectedCats, setSelectedCats] = useState(['Loyer', 'Courses']);
-  const [income, setIncome] = useState('2500');
+  const [selectedCats, setSelectedCats] = useState([]);
+  const [income, setIncome] = useState('');
   const [currency, setCurrency] = useState('MAD');
-  const [budgets, setBudgets] = useState({ Loyer: '800', Courses: '400' });
+  const [budgets, setBudgets] = useState({});
   const [notifLevel, setNotifLevel] = useState(1);
 
   const toggleCat = (name) => {
@@ -468,5 +621,101 @@ function makeStyles(Colors) { return StyleSheet.create({
     fontSize: 12,
     ...Fonts.bold,
     color: Colors.textSecondary
-  }
+  },
+
+  // Currency Picker
+  currencyPicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.borderStrong,
+    backgroundColor: Colors.surface,
+  },
+  currencyPickerText: {
+    ...Fonts.sans,
+    fontSize: 14,
+  },
+
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: Colors.bg,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: Colors.borderStrong,
+    marginBottom: 10,
+  },
+  modalOptionText: {
+    ...Fonts.sans,
+    fontSize: 15,
+    color: Colors.text,
+  },
+
+  // Privacy Cards
+  privacyCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: Colors.surface,
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: Colors.borderStrong,
+    minHeight: 80,
+  },
+  privacyCardPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.98 }],
+  },
+  privacyIconCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  privacyCardTitle: {
+    ...Fonts.sans,
+    fontSize: 15,
+    ...Fonts.bold,
+    color: Colors.text,
+    marginBottom: 3,
+    letterSpacing: -0.2,
+  },
+  privacyCardDesc: {
+    ...Fonts.sans,
+    fontSize: 12,
+    color: Colors.textSecondary,
+    lineHeight: 17,
+  },
+  privacyChevron: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  privacyChevronIcon: {
+    fontSize: 22,
+    fontWeight: '600',
+  },
 }); }

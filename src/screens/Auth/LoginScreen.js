@@ -1634,7 +1634,7 @@ export default function LoginScreen() {
                       <Text style={styles.alertStartText}>Activer les notifications</Text>
                       <View style={styles.alertBellCircle}>
                         <Animated.View style={{ transform: [{ rotate: bellRotation }] }}>
-                          <Bell size={20} color={Colors.accent} />
+                          <Bell size={20} color={'#10B981'} />
                         </Animated.View>
                       </View>
                     </TouchableOpacity>
@@ -1824,7 +1824,7 @@ export default function LoginScreen() {
                     <Text style={styles.submitButtonText}>{submitLabel}</Text>
                     <View style={styles.submitButtonCircle}>
                       <Animated.View style={{ transform: [{ translateX: arrowWiggleAnim }] }}>
-                        <ArrowRight size={20} color={Colors.accent} />
+                      <ArrowRight size={20} color={'#10B981'} />
                       </Animated.View>
                     </View>
                   </>
@@ -3187,7 +3187,7 @@ function makeStyles(Colors, isDark) {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      backgroundColor: Colors.accent,
+      backgroundColor: '#10B981',
       borderRadius: 32,
       height: 64,
       paddingLeft: 28,
@@ -3350,7 +3350,7 @@ function makeStyles(Colors, isDark) {
       justifyContent: 'space-between',
       width: '84%',
       alignSelf: 'center',
-      backgroundColor: Colors.accent,
+      backgroundColor: '#10B981',
       borderRadius: 32,
       height: 66,
       paddingLeft: 28,

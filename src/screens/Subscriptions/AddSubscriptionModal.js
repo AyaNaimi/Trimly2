@@ -11,6 +11,7 @@ import DatePickerModal from '../../components/DatePickerModal';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { ServiceLogo } from '../../components';
 
 export default function AddSubscriptionModal({ visible, onClose, onSave }) {
   const { Colors } = useTheme();
@@ -165,7 +166,7 @@ export default function AddSubscriptionModal({ visible, onClose, onSave }) {
                   onPress={() => prefill(qs)}
                   style={[styles.quickChip, name === qs.name && styles.quickChipActive]}
                 >
-                  <Text>{qs.icon}</Text>
+                  <ServiceLogo logo={qs.logo} icon={qs.icon} color={qs.color} size={22} />
                   <Text style={[styles.quickTxt, name === qs.name && styles.quickTxtActive]}>{qs.name}</Text>
                 </Pressable>
               ))}
@@ -322,12 +323,12 @@ function makeStyles(Colors) { return StyleSheet.create({
   header: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: Spacing.xl, paddingVertical: 20,
-    borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: Colors.white,
+    borderBottomWidth: 1, borderBottomColor: Colors.border, backgroundColor: Colors.surface,
   },
   title: { ...Fonts.serif, fontSize: 18, color: Colors.text },
   closeBtn: { padding: 4 },
   closeTxt: { fontSize: 18, color: Colors.textSecondary },
-  saveBtn: { backgroundColor: Colors.text, paddingHorizontal: 16, paddingVertical: 8, borderRadius: Radius.md },
+  saveBtn: { backgroundColor: '#10B981', paddingHorizontal: 16, paddingVertical: 8, borderRadius: Radius.md },
   saveTxt: { ...Fonts.sans, fontSize: 13, ...Fonts.bold, color: Colors.pureWhite },
 
   scroll: { padding: Spacing.xl },
@@ -338,19 +339,19 @@ function makeStyles(Colors) { return StyleSheet.create({
   quickScroll: { marginBottom: 24 },
   quickChip: {
     flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14,
-    paddingVertical: 10, borderRadius: Radius.pill, backgroundColor: Colors.white,
+    paddingVertical: 10, borderRadius: Radius.pill, backgroundColor: Colors.surfaceAlt,
     marginRight: 8, borderWidth: 1, borderColor: Colors.border,
   },
-  quickChipActive: { backgroundColor: Colors.surface, borderColor: Colors.text },
+  quickChipActive: { backgroundColor: Colors.accentSoft, borderColor: Colors.accent },
   quickTxt: { ...Fonts.sans, fontSize: 13, ...Fonts.semiBold, color: Colors.text },
-  quickTxtActive: { color: Colors.text },
+  quickTxtActive: { color: Colors.accent },
 
   fieldGroup: { marginBottom: 20 },
   label: { ...Fonts.sans, fontSize: 13, ...Fonts.bold, color: Colors.text, marginBottom: 8 },
   input: {
-    backgroundColor: Colors.white, borderRadius: Radius.md, padding: 14,
+    backgroundColor: Colors.surfaceAlt, borderRadius: Radius.md, padding: 14,
     ...Fonts.sans, fontSize: 15, color: Colors.text,
-    borderWidth: 1, borderColor: Colors.border,
+    borderWidth: 1, borderColor: Colors.borderStrong,
   },
   amountWrap: { flexDirection: 'row', alignItems: 'center' },
   amountInput: { flex: 1, ...Fonts.semiBold },
@@ -359,13 +360,13 @@ function makeStyles(Colors) { return StyleSheet.create({
   cycleRow: { flexDirection: 'row', gap: 8, marginBottom: 24 },
   cycleBtn: {
     flex: 1, paddingVertical: 12, borderRadius: Radius.md,
-    borderWidth: 1, borderColor: Colors.border, alignItems: 'center', backgroundColor: Colors.white,
+    borderWidth: 1, borderColor: Colors.borderStrong, alignItems: 'center', backgroundColor: Colors.surfaceAlt,
   },
-  cycleBtnActive: { backgroundColor: Colors.text, borderColor: Colors.text },
+  cycleBtnActive: { backgroundColor: '#10B981', borderColor: '#10B981' },
   cycleTxt: { ...Fonts.sans, fontSize: 12, ...Fonts.semiBold, color: Colors.textSecondary },
   cycleTxtActive: { color: Colors.pureWhite },
 
-  infoBox: { backgroundColor: Colors.surface, borderRadius: Radius.md, padding: 12, marginBottom: 20 },
+  infoBox: { backgroundColor: Colors.surfaceAlt, borderRadius: Radius.md, padding: 12, marginBottom: 20 },
   infoBoxTxt: { ...Fonts.sans, fontSize: 12, color: Colors.textSecondary, lineHeight: 18 },
 
   categoryHeader: {
@@ -380,13 +381,13 @@ function makeStyles(Colors) { return StyleSheet.create({
     width: 34,
     height: 34,
     borderRadius: 17,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surfaceAlt,
     alignItems: 'center',
     justifyContent: 'center',
   },
   searchIcon: { ...Fonts.sans, fontSize: 16, ...Fonts.bold, color: Colors.text },
   searchInput: {
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surfaceAlt,
     borderRadius: Radius.md,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -443,7 +444,7 @@ function makeStyles(Colors) { return StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 4,
     borderRadius: Radius.pill,
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surfaceAlt,
     marginTop: 2,
   },
   moreDotsText: {
@@ -458,12 +459,12 @@ function makeStyles(Colors) { return StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: Colors.white,
+    backgroundColor: Colors.surfaceAlt,
     borderRadius: Radius.md,
     paddingHorizontal: 14,
     paddingVertical: 14,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: Colors.borderStrong,
   },
   dateValue: { ...Fonts.sans, fontSize: 15, ...Fonts.semiBold, color: Colors.text },
   dateIcon: { fontSize: 16, color: Colors.textSecondary },

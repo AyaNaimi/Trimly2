@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useRef } from 'react';
 import {
   SafeAreaView, ScrollView, StyleSheet, Text, View,
-  Pressable, Animated, Modal, TouchableWithoutFeedback,
+  Pressable, Animated,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Polyline, Line as SvgLine } from 'react-native-svg';
@@ -219,9 +219,6 @@ export default function ReportsScreen() {
   // ── Date filter state ──────────────────────────────────────
   const [activePeriod, setActivePeriod] = useState('month');
   const [offset, setOffset]             = useState(0);
-  const [showPeriodMenu, setShowPeriodMenu] = useState(false);
-  const periodBtnRef = useRef(null);
-  const [menuPos, setMenuPos] = useState({ top: 0, right: 0 });
   const [chartWidth, setChartWidth] = useState(0);
 
   const PERIODS = [
@@ -465,96 +462,50 @@ export default function ReportsScreen() {
       {/* ── Header ── */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <View>
-            <Text style={styles.eyebrow}>{t('reports.subtitle')}</Text>
-            <Text style={styles.title}>{t('reports.title')}</Text>
+          <Text style={styles.title}>{t('reports.title')}</Text>
+          {/* Period segmented pills — top right */}
+          <View style={styles.periodPillsRow}>
+            {PERIODS.map(p => (
+              <Pressable
+                key={p.key}
+                onPress={() => { setActivePeriod(p.key); setOffset(0); }}
+                style={[
+                  styles.periodPill,
+                  activePeriod === p.key && styles.periodPillActive,
+                  activePeriod === p.key && p.key === 'week' && styles.periodPillWeek,
+                  activePeriod === p.key && p.key === 'month' && styles.periodPillMonth,
+                  activePeriod === p.key && p.key === 'quarter' && styles.periodPillQuarter,
+                  activePeriod === p.key && p.key === 'year' && styles.periodPillYear,
+                ]}
+              >
+                <Text style={[
+                  styles.periodPillTxt,
+                  activePeriod === p.key && styles.periodPillTxtActive,
+                ]}>
+                  {p.label}
+                </Text>
+              </Pressable>
+            ))}
           </View>
-          {totalIncome > 0 && (
-            <View style={styles.incomeChip}>
-              <Text style={styles.incomeChipTxt}>+{formatAmount(totalIncome, currency, locale)}</Text>
-            </View>
-          )}
         </View>
 
-        {/* ── Single filter bar: ‹ date › on left, Period ∨ on right ── */}
-        <View style={styles.filterBar}>
-          {/* Date navigator */}
-          <View style={styles.dateNav}>
-            <Pressable style={styles.dateNavBtn} onPress={() => setOffset(o => o - 1)} hitSlop={8}>
-              <Text style={styles.dateNavArrow}>‹</Text>
-            </Pressable>
-            <Pressable onPress={() => setOffset(0)} style={styles.dateNavLabel}>
-              <Text style={styles.dateNavTxt} numberOfLines={1}>{label}</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.dateNavBtn, isCurrentPeriod && styles.dateNavBtnDisabled]}
-              onPress={() => !isCurrentPeriod && setOffset(o => o + 1)}
-              hitSlop={8}
-            >
-              <Text style={[styles.dateNavArrow, isCurrentPeriod && styles.dateNavArrowDisabled]}>›</Text>
-            </Pressable>
-          </View>
-
-          {/* Period dropdown trigger */}
+        {/* ── Date navigator row ── */}
+        <View style={styles.dateNav}>
+          <Pressable style={styles.dateNavBtn} onPress={() => setOffset(o => o - 1)} hitSlop={8}>
+            <Text style={styles.dateNavArrow}>‹</Text>
+          </Pressable>
+          <Pressable onPress={() => setOffset(0)} style={styles.dateNavLabel}>
+            <Text style={styles.dateNavTxt} numberOfLines={1}>{label}</Text>
+          </Pressable>
           <Pressable
-            ref={periodBtnRef}
-            style={styles.periodDropdown}
-            onPress={() => {
-              periodBtnRef.current?.measureInWindow((x, y, width, height) => {
-                setMenuPos({ top: y + height + 6, right: Metrics.screenPadding });
-                setShowPeriodMenu(true);
-              });
-            }}
+            style={[styles.dateNavBtn, isCurrentPeriod && styles.dateNavBtnDisabled]}
+            onPress={() => !isCurrentPeriod && setOffset(o => o + 1)}
+            hitSlop={8}
           >
-            <Text style={styles.periodDropdownTxt}>
-              {PERIODS.find(p => p.key === activePeriod)?.label}
-            </Text>
-            <Text style={styles.periodDropdownChevron}> ∨</Text>
+            <Text style={[styles.dateNavArrow, isCurrentPeriod && styles.dateNavArrowDisabled]}>›</Text>
           </Pressable>
         </View>
       </View>
-
-      {/* ── Period dropdown menu (Modal overlay) ── */}
-      <Modal
-        visible={showPeriodMenu}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowPeriodMenu(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setShowPeriodMenu(false)}>
-          <View style={styles.menuOverlay}>
-            <TouchableWithoutFeedback>
-              <View style={[styles.menuCard, { top: menuPos.top, right: menuPos.right }]}>
-                {PERIODS.map((p, i) => (
-                  <Pressable
-                    key={p.key}
-                    style={[
-                      styles.menuItem,
-                      activePeriod === p.key && styles.menuItemActive,
-                      i < PERIODS.length - 1 && styles.menuItemBorder,
-                    ]}
-                    onPress={() => {
-                      setActivePeriod(p.key);
-                      setOffset(0);
-                      setShowPeriodMenu(false);
-                    }}
-                  >
-                    <Text style={[
-                      styles.menuItemTxt,
-                      activePeriod === p.key && styles.menuItemTxtActive,
-                    ]}>
-                      {p.label}
-                    </Text>
-                    {activePeriod === p.key && (
-                      <Text style={styles.menuItemCheck}>✓</Text>
-                    )}
-                  </Pressable>
-                ))}
-              </View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
@@ -568,10 +519,14 @@ export default function ReportsScreen() {
                 <Text style={styles.heroCardSub}>sur {formatAmount(totalBudget, currency, locale)}</Text>
               )}
             </View>
-            <View style={styles.heroCardRight}>
-              <Text style={[styles.heroCardPercent, { color: toneColors.text }]}>{budgetPct.toFixed(0)}%</Text>
-              <Text style={styles.heroCardPercentLabel}>du budget</Text>
-            </View>
+            {totalBudget > 0 && (
+              <View style={styles.heroCardRight}>
+                <Text style={[styles.heroCardPercent, { color: budgetPct > 100 ? Colors.expense : Colors.income }]}>
+                  {budgetPct.toFixed(0)}%
+                </Text>
+                <Text style={styles.heroCardPercentLabel}>{t('reports.ofBudget')}</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -790,20 +745,6 @@ function makeStyles(Colors) { return StyleSheet.create({
     lineHeight: 26,
     marginTop: 1,
   },
-  incomeChip: {
-    backgroundColor: Colors.incomeSoft,
-    borderRadius: Radius.pill,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderWidth: 1,
-    borderColor: `${Colors.income}22`,
-  },
-  incomeChipTxt: {
-    ...Fonts.primary,
-    ...Fonts.bold,
-    fontSize: 12,
-    color: Colors.income,
-  },
 
   // ── Period pills (unused — replaced by filterBar) ────────
   pillsRow: { flexDirection: 'row', gap: 6 },
@@ -822,16 +763,11 @@ function makeStyles(Colors) { return StyleSheet.create({
   navLabel: { ...Fonts.primary, ...Fonts.bold, fontSize: 13, color: Colors.text, letterSpacing: -0.1 },
   navBack: { ...Fonts.primary, fontSize: 10, color: Colors.income, marginTop: 2 },
 
-  // ── Compact filter bar ────────────────────────────────────
-  filterBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  // Date navigator — left side
+  // ── Date navigator ──────────────────────────────────────
   dateNav: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 2,
   },
   dateNavBtn: {
@@ -850,7 +786,7 @@ function makeStyles(Colors) { return StyleSheet.create({
   },
   dateNavArrowDisabled: { color: Colors.textMuted },
   dateNavLabel: {
-    paddingHorizontal: 2,
+    paddingHorizontal: 6,
   },
   dateNavTxt: {
     ...Fonts.primary,
@@ -859,71 +795,50 @@ function makeStyles(Colors) { return StyleSheet.create({
     color: Colors.text,
     letterSpacing: -0.2,
   },
-  // Period dropdown — right side
-  periodDropdown: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 2,
-    paddingVertical: 4,
-  },
-  periodDropdownTxt: {
-    ...Fonts.primary,
-    ...Fonts.semiBold,
-    fontSize: 15,
-    color: Colors.accent,
-    letterSpacing: -0.2,
-  },
-  periodDropdownChevron: {
-    ...Fonts.primary,
-    ...Fonts.bold,
-    fontSize: 13,
-    color: Colors.accent,
-    lineHeight: 18,
-  },
 
-  // ── Dropdown menu ─────────────────────────────────────────
-  menuOverlay: {
-    flex: 1,
-  },
-  menuCard: {
-    position: 'absolute',
-    backgroundColor: Colors.white,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.borderStrong,
-    minWidth: 160,
-    ...Shadow.premium,
-    overflow: 'hidden',
-  },
-  menuItem: {
+  // ── Period segmented pills ───────────────────────────────
+  periodPillsRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: Spacing.md,
-    paddingVertical: 13,
+    gap: 6,
   },
-  menuItemBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
-  },
-  menuItemActive: {
+  periodPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: Radius.pill,
     backgroundColor: Colors.surface,
+    borderWidth: 1.5,
+    borderColor: Colors.borderStrong,
   },
-  menuItemTxt: {
+  periodPillActive: {
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
+  },
+  periodPillWeek: {
+    backgroundColor: '#6366F1',
+    borderColor: '#6366F1',
+  },
+  periodPillMonth: {
+    backgroundColor: '#8B5CF6',
+    borderColor: '#8B5CF6',
+  },
+  periodPillQuarter: {
+    backgroundColor: '#EC4899',
+    borderColor: '#EC4899',
+  },
+  periodPillYear: {
+    backgroundColor: '#F59E0B',
+    borderColor: '#F59E0B',
+  },
+  periodPillTxt: {
     ...Fonts.primary,
     ...Fonts.semiBold,
-    fontSize: 14,
-    color: Colors.text,
+    fontSize: 11,
+    color: Colors.textSecondary,
   },
-  menuItemTxtActive: {
-    color: Colors.accent,
+  periodPillTxtActive: {
+    color: '#FFFFFF',
     ...Fonts.bold,
-  },
-  menuItemCheck: {
-    ...Fonts.primary,
-    ...Fonts.bold,
-    fontSize: 13,
-    color: Colors.accent,
   },
 
   // ── Scroll ────────────────────────────────────────────────

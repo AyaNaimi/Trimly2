@@ -130,6 +130,9 @@ export const DatabaseService = {
       startDate: s.start_date,
       trialDays: s.trial_days,
       cancelledAt: s.cancelled_at,
+      sourceEmail: s.source_email,
+      sourceFrom: s.source_from,
+      supportEmail: s.support_email,
     }));
   },
 
@@ -144,6 +147,10 @@ export const DatabaseService = {
       start_date: sub.startDate || new Date().toISOString(),
       trial_days: sub.trialDays || 0,
       category: sub.category || 'Streaming',
+      provider: sub.provider || null,
+      source_email: sub.sourceEmail || null,
+      source_from: sub.sourceFrom || null,
+      support_email: sub.supportEmail || null,
       active: sub.active !== undefined ? sub.active : true
     };
     
@@ -160,6 +167,9 @@ export const DatabaseService = {
       startDate: data.start_date,
       trialDays: data.trial_days,
       cancelledAt: data.cancelled_at,
+      sourceEmail: data.source_email,
+      sourceFrom: data.source_from,
+      supportEmail: data.support_email,
     };
   },
 
@@ -181,6 +191,18 @@ export const DatabaseService = {
       sanitizeUpdates.cancelled_at = updates.cancelledAt;
       delete sanitizeUpdates.cancelledAt;
     }
+    if (updates.sourceEmail !== undefined) {
+      sanitizeUpdates.source_email = updates.sourceEmail;
+      delete sanitizeUpdates.sourceEmail;
+    }
+    if (updates.sourceFrom !== undefined) {
+      sanitizeUpdates.source_from = updates.sourceFrom;
+      delete sanitizeUpdates.sourceFrom;
+    }
+    if (updates.supportEmail !== undefined) {
+      sanitizeUpdates.support_email = updates.supportEmail;
+      delete sanitizeUpdates.supportEmail;
+    }
 
     const { data, error } = await supabase
       .from('subscriptions')
@@ -196,6 +218,9 @@ export const DatabaseService = {
       trialDays: data.trial_days,
       leapDayStart: data.leap_day_start,
       cancelledAt: data.cancelled_at,
+      sourceEmail: data.source_email,
+      sourceFrom: data.source_from,
+      supportEmail: data.support_email,
     };
   },
 

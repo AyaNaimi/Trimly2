@@ -8,16 +8,17 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import LottieView from 'lottie-react-native';
 import { useApp } from '../../context/AppContext';
 import { useLanguage } from '../../context/LanguageContext';
 import { useTheme } from '../../context/ThemeContext';
 import { supabase } from '../../utils/supabase';
 import { Fonts, Radius, Shadow } from '../../theme';
 import { PremiumHaptics } from '../../utils/haptics';
+import { ServiceLogo } from '../../components';
 import { EmailService } from '../../services/emailService';
 import { getStoredGoogleProviderTokens } from '../../services/googleAuthService';
 
@@ -31,6 +32,44 @@ const addAlpha = (hex, opacity) => {
   return `#${normalized}${op}`;
 };
 
+const SERVICE_LOGO_MAP = {
+  netflix: 'https://logo.clearbit.com/netflix.com',
+  spotify: 'https://logo.clearbit.com/spotify.com',
+  disney: 'https://logo.clearbit.com/disneyplus.com',
+  disneyplus: 'https://logo.clearbit.com/disneyplus.com',
+  apple: 'https://logo.clearbit.com/apple.com',
+  'apple tv': 'https://logo.clearbit.com/apple.com',
+  youtube: 'https://logo.clearbit.com/youtube.com',
+  amazon: 'https://logo.clearbit.com/amazon.com',
+  adobe: 'https://logo.clearbit.com/adobe.com',
+  microsoft: 'https://logo.clearbit.com/microsoft.com',
+  icloud: 'https://logo.clearbit.com/icloud.com',
+  google: 'https://logo.clearbit.com/google.com',
+  deezer: 'https://logo.clearbit.com/deezer.com',
+  canal: 'https://logo.clearbit.com/canal-plus.com',
+  notion: 'https://logo.clearbit.com/notion.so',
+  dropbox: 'https://logo.clearbit.com/dropbox.com',
+  nordvpn: 'https://logo.clearbit.com/nordvpn.com',
+  chatgpt: 'https://logo.clearbit.com/openai.com',
+  openai: 'https://logo.clearbit.com/openai.com',
+  twitch: 'https://logo.clearbit.com/twitch.tv',
+  hulu: 'https://logo.clearbit.com/hulu.com',
+  hbo: 'https://logo.clearbit.com/hbo.com',
+  slack: 'https://logo.clearbit.com/slack.com',
+  zoom: 'https://logo.clearbit.com/zoom.us',
+  figma: 'https://logo.clearbit.com/figma.com',
+  github: 'https://logo.clearbit.com/github.com',
+};
+
+function getServiceLogo(name) {
+  if (!name) return null;
+  const lower = name.toLowerCase();
+  for (const [key, url] of Object.entries(SERVICE_LOGO_MAP)) {
+    if (lower.includes(key)) return url;
+  }
+  return null;
+}
+
 // SCAN_STAGES moved inside component for localization
 
 export default function EmailScannerModal({
@@ -41,7 +80,7 @@ export default function EmailScannerModal({
   autoPrompt = false,
   existingSubscriptionNames = [],
 }) {
-  const { Colors } = useTheme();
+  const { Colors, isDark } = useTheme();
   const {
     state,
     pendingDetectedSubscriptions,
@@ -61,10 +100,8 @@ export default function EmailScannerModal({
   const [step, setStep] = useState('choose');
   const [provider, setProvider] = useState(null);
   const [userEmail, setUserEmail] = useState(initialEmail);
-  const [appPassword, setAppPassword] = useState('');
   const [found, setFound] = useState([]);
   const [selected, setSelected] = useState(new Set());
-  const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [expandedIndex, setExpandedIndex] = useState(null);
@@ -77,10 +114,8 @@ export default function EmailScannerModal({
     setStep('choose');
     setProvider(null);
     setUserEmail(initialEmail || '');
-    setAppPassword('');
     setFound([]);
     setSelected(new Set());
-    setLogs([]);
     setLoading(false);
     setError(null);
     setExpandedIndex(null);
@@ -114,20 +149,13 @@ export default function EmailScannerModal({
     [found, selected]
   );
 
-  const providerChoices = EmailService.getProviderChoices();
-
-  const addLog = (message) => {
-    console.log('[ScannerLog]', message);
-    setLogs((prev) => [...prev, message]);
-  };
+  const providerChoices = EmailService.getProviderChoices().filter(p => p.key !== 'manual');
 
   const resetAndClose = () => {
     setStep('choose');
     setProvider(null);
-    setAppPassword('');
     setFound([]);
     setSelected(new Set());
-    setLogs([]);
     setLoading(false);
     setError(null);
     setExpandedIndex(null);
@@ -196,13 +224,23 @@ export default function EmailScannerModal({
   };
 
   const getConfidenceColor = (item) => {
-    if (item.reviewStatus === 'confirmed') return '#166534';
+    if (isDark) {
+      if (item.reviewStatus === 'confirmed') return '#6EE7B7';
+      if (item.reviewStatus === 'probable') return '#FCD34D';
+      return '#FDA4AF';
+    }
+    if (item.reviewStatus === 'confirmed') return '#047857';
     if (item.reviewStatus === 'probable') return '#B45309';
     return '#B91C1C';
   };
 
   const getConfidenceBg = (item) => {
-    if (item.reviewStatus === 'confirmed') return '#DCFCE7';
+    if (isDark) {
+      if (item.reviewStatus === 'confirmed') return 'rgba(110, 231, 183, 0.12)';
+      if (item.reviewStatus === 'probable') return 'rgba(252, 211, 77, 0.12)';
+      return 'rgba(253, 164, 175, 0.12)';
+    }
+    if (item.reviewStatus === 'confirmed') return '#D1FAE5';
     if (item.reviewStatus === 'probable') return '#FEF3C7';
     return '#FEE2E2';
   };
@@ -253,10 +291,7 @@ export default function EmailScannerModal({
     setProvider(selectedProvider);
     setLoading(true);
     setError(null);
-    setLogs([]);
     setStep('scanning');
-
-    addLog(t('scanner.scanning.logs.start', { provider: selectedProvider }));
 
     try {
       const {
@@ -279,8 +314,6 @@ export default function EmailScannerModal({
       }
 
       setUserEmail(mailboxEmail);
-      addLog(t('scanner.scanning.logs.mailbox', { email: mailboxEmail }));
-      addLog(t('scanner.scanning.logs.reading'));
 
       let providerProfile = {
         email: mailboxEmail,
@@ -302,19 +335,6 @@ export default function EmailScannerModal({
         refreshToken,
         existingNames: existingSubscriptionNames,
       });
-
-      addLog(t('scanner.scanning.logs.foundEmails', { count: scanResult.raw?.matchedEmailCount || scanResult.emailCount || 0 }));
-      addLog(t('scanner.scanning.logs.analyzed', { count: scanResult.emailCount || 0 }));
-      if (scanResult.raw?.analyzedCandidateCount !== undefined) {
-        addLog(`${scanResult.raw.analyzedCandidateCount} emails candidats analysés par IA`);
-      }
-      if (scanResult.subscriptions.length === 0 && scanResult.raw?.debug?.topScores?.length) {
-        addLog(`Top candidat: ${scanResult.raw.debug.topScores[0].subject || scanResult.raw.debug.topScores[0].from}`);
-      }
-      if (scanResult.subscriptions.length === 0 && scanResult.raw?.debug?.groqConfigured === false) {
-        addLog('Groq non configuré côté Supabase: fallback local utilisé');
-      }
-      addLog(t('scanner.scanning.logs.foundSubs', { count: scanResult.subscriptions.length }));
 
       const persisted = await saveEmailScanResult({
         provider: selectedProvider,
@@ -341,83 +361,7 @@ export default function EmailScannerModal({
     } catch (scanError) {
       console.error('Scan Error:', scanError);
       setError(scanError.message || t('errors.generic'));
-      addLog(t('scanner.scanning.logs.error', { message: scanError.message }));
       setStep('choose');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const startManualScan = async () => {
-    const email = userEmail.trim().toLowerCase();
-    const password = appPassword.replace(/\s/g, '');
-
-    if (!email) {
-      setError(t('scanner.errors.emailRequired'));
-      PremiumHaptics.error();
-      return;
-    }
-
-    if (!password) {
-      setError(t('scanner.errors.passwordRequired'));
-      PremiumHaptics.error();
-      return;
-    }
-
-    setProvider('manual');
-    setLoading(true);
-    setError(null);
-    setLogs([]);
-    setStep('scanning');
-
-    addLog(t('scanner.scanning.logs.mailbox', { email }));
-    addLog(t('scanner.manual.startButton')); // Reuse start text or connecting log
-
-    try {
-      const scanResult = await EmailService.runManualScan({
-        email,
-        appPassword: password,
-        existingNames: existingSubscriptionNames,
-      });
-
-      const persisted = await saveEmailScanResult({
-        provider: 'manual',
-        sourceEmail: email,
-        connection: {
-          provider: 'manual',
-          email,
-          status: 'connected',
-        },
-        emailsScanned: scanResult.emailCount,
-        items: scanResult.subscriptions,
-        metadata: { mode: 'local-imap' },
-      });
-
-      addLog(t('scanner.scanning.logs.analyzed', { count: scanResult.emailCount }));
-      addLog(t('scanner.scanning.logs.foundSubs', { count: scanResult.subscriptions.length }));
-
-      openReview(persisted?.detectedSubscriptions || scanResult.subscriptions);
-    } catch (scanError) {
-      console.error('Scan Error:', scanError);
-      const friendlyError = buildFriendlyNetworkError(scanError);
-      setError(friendlyError);
-      addLog(t('scanner.scanning.logs.error', { message: friendlyError }));
-
-      await saveEmailScanResult({
-        provider: 'manual',
-        sourceEmail: email,
-        connection: {
-          provider: 'manual',
-          email,
-          status: 'error',
-        },
-        emailsScanned: 0,
-        items: [],
-        errorMessage: friendlyError,
-        metadata: { mode: 'local-imap' },
-      });
-
-      setStep('manual');
     } finally {
       setLoading(false);
     }
@@ -543,14 +487,55 @@ export default function EmailScannerModal({
 
   const renderChooseStep = () => (
     <ScrollView style={styles.content} contentContainerStyle={styles.contentBody}>
-      <View style={styles.heroCard}>
-        <Text style={styles.heroEyebrow}>{t('scanner.choose.subtitle')}</Text>
-        <Text style={styles.heroTitle}>
-          {autoPrompt ? t('scanner.choose.titleAuto') : t('scanner.choose.title')}
-        </Text>
-        <Text style={styles.heroText}>
-          {t('scanner.choose.description')}
-        </Text>
+      {/* Lottie Cat Animation */}
+      <View style={styles.lottieWrap}>
+        <LottieView
+          source={require('../../../assets/chat2.json')}
+          autoPlay
+          loop
+          style={styles.lottieAnim}
+        />
+      </View>
+
+      {/* Title */}
+      <Text style={styles.heroTitle}>
+        {t('scanner.choose.title')}
+      </Text>
+      <Text style={styles.heroSubtitle}>
+        {t('scanner.choose.description')}
+      </Text>
+
+      {/* Feature Rows */}
+      <View style={styles.featureList}>
+        <View style={styles.featureRow}>
+          <View style={styles.featureIconWrap}>
+            <Text style={styles.featureIcon}>🔒</Text>
+          </View>
+          <View style={styles.featureTextWrap}>
+            <Text style={styles.featureTitle}>{t('scanner.choose.secureTitle') || 'Secure connection'}</Text>
+            <Text style={styles.featureDesc}>{t('scanner.choose.secureDesc') || 'We only read your emails, never modify or delete anything'}</Text>
+          </View>
+        </View>
+
+        <View style={styles.featureRow}>
+          <View style={styles.featureIconWrap}>
+            <Text style={styles.featureIcon}>🤖</Text>
+          </View>
+          <View style={styles.featureTextWrap}>
+            <Text style={styles.featureTitle}>{t('scanner.choose.aiTitle') || 'AI-powered detection'}</Text>
+            <Text style={styles.featureDesc}>{t('scanner.choose.aiDesc') || 'Our AI finds subscription emails and extracts the details automatically'}</Text>
+          </View>
+        </View>
+
+        <View style={styles.featureRow}>
+          <View style={styles.featureIconWrap}>
+            <Text style={styles.featureIcon}>⚡</Text>
+          </View>
+          <View style={styles.featureTextWrap}>
+            <Text style={styles.featureTitle}>{t('scanner.choose.quickTitle') || 'Quick import'}</Text>
+            <Text style={styles.featureDesc}>{t('scanner.choose.quickDesc') || 'Review detected subscriptions and import them in one tap'}</Text>
+          </View>
+        </View>
       </View>
 
       {pendingForReview.length > 0 ? (
@@ -572,93 +557,28 @@ export default function EmailScannerModal({
         </View>
       ) : null}
 
-      <View style={styles.choiceList}>
-        {providerChoices.map((item) => (
-          <TouchableOpacity
-            key={item.key}
-            style={styles.choiceCard}
-            activeOpacity={0.85}
-            onPress={() => {
-              PremiumHaptics.selection();
-              if (item.key === 'manual') setStep('manual');
-              else startOAuthScan(item.key);
-            }}
-          >
-            <View style={[styles.choiceIconWrap, { backgroundColor: addAlpha(item.color, 0.12) }]}>
-              <Text style={styles.choiceIcon}>{item.icon}</Text>
-            </View>
-            <View style={styles.choiceTextWrap}>
-              <Text style={styles.choiceTitle}>{item.name}</Text>
-              <Text style={styles.choiceText}>{item.description}</Text>
-            </View>
-          </TouchableOpacity>
-        ))}
-      </View>
-    </ScrollView>
-  );
-
-  const renderManualStep = () => (
-    <ScrollView style={styles.content} contentContainerStyle={styles.contentBody}>
-      <View style={styles.heroCard}>
-        <Text style={styles.heroEyebrow}>{t('scanner.manual.subtitle')}</Text>
-        <Text style={styles.heroTitle}>{t('scanner.manual.title')}</Text>
-        <Text style={styles.heroText}>
-          {t('scanner.manual.description')}
-        </Text>
-      </View>
-
-      <View style={styles.formCard}>
-        <Text style={styles.label}>{t('scanner.manual.emailLabel')}</Text>
-        <TextInput
-          style={styles.input}
-          value={userEmail}
-          onChangeText={setUserEmail}
-          placeholder="votre@email.com"
-          placeholderTextColor={Colors.textMuted}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-
-        <Text style={styles.label}>{t('scanner.manual.passwordLabel')}</Text>
-        <TextInput
-          style={styles.input}
-          value={appPassword}
-          onChangeText={setAppPassword}
-          placeholder="xxxx xxxx xxxx xxxx"
-          placeholderTextColor={Colors.textMuted}
-          secureTextEntry
-          autoCapitalize="none"
-        />
-
-        {error ? (
-          <View style={[styles.errorBox, { marginTop: 16 }]}>
-            <Text style={styles.errorText}>{error}</Text>
-          </View>
-        ) : null}
-
+      {/* Scan Button */}
+      {providerChoices.map((item) => (
         <TouchableOpacity
-          style={[styles.primaryButton, loading && styles.buttonDisabled]}
-          onPress={startManualScan}
-          disabled={loading}
+          key={item.key}
+          style={styles.scanButton}
+          activeOpacity={0.85}
+          onPress={() => {
+            PremiumHaptics.selection();
+            startOAuthScan(item.key);
+          }}
         >
-          {loading ? (
-            <ActivityIndicator color={Colors.pureWhite} />
-          ) : (
-            <Text style={styles.primaryButtonText}>{t('scanner.manual.startButton')}</Text>
-          )}
+          <Text style={styles.scanButtonText}>{item.name}</Text>
+          <Text style={styles.scanButtonArrow}>→</Text>
         </TouchableOpacity>
-      </View>
-
-      <TouchableOpacity style={[styles.secondaryButton, { marginTop: 12 }]} onPress={() => setStep('choose')}>
-        <Text style={styles.secondaryButtonText}>{t('common.back')}</Text>
-      </TouchableOpacity>
+      ))}
     </ScrollView>
   );
 
   const renderScanningStep = () => (
     <View style={styles.scanningContainer}>
       <View style={styles.scanPulse}>
-        <ActivityIndicator size="small" color={Colors.text} />
+        <ActivityIndicator size="large" color={Colors.accent} />
       </View>
       <Text style={styles.scanningTitle}>{t('scanner.scanning.title')}</Text>
       <Text style={styles.scanningText}>
@@ -676,16 +596,6 @@ export default function EmailScannerModal({
             <View style={styles.skeletonAmount} />
           </View>
         ))}
-      </View>
-
-      <View style={styles.logsCard}>
-        <ScrollView>
-          {logs.map((log, i) => (
-            <Text key={i} style={styles.logLine}>
-              • {log}
-            </Text>
-          ))}
-        </ScrollView>
       </View>
     </View>
   );
@@ -744,9 +654,14 @@ export default function EmailScannerModal({
                       {selected.has(index) && <Text style={styles.checkboxMark}>✓</Text>}
                     </TouchableOpacity>
 
-                    <View style={styles.resultIconWrap}>
-                      <Text style={styles.resultIcon}>{item.emoji || item.icon || '💳'}</Text>
-                    </View>
+                    <ServiceLogo
+                      logo={item.logo || getServiceLogo(item.name)}
+                      icon={item.emoji || item.icon || '💳'}
+                      color={item.color}
+                      size={42}
+                      borderRadius={12}
+                      style={{ marginRight: 12 }}
+                    />
 
                     <View style={styles.resultTextWrap}>
                       <Text style={styles.resultTitle}>{item.name}</Text>
@@ -829,7 +744,7 @@ export default function EmailScannerModal({
     </View>
   );
 
-  const styles = makeStyles(Colors);
+  const styles = makeStyles(Colors, isDark);
 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onClose}>
@@ -844,7 +759,6 @@ export default function EmailScannerModal({
           </View>
 
           {step === 'choose' && renderChooseStep()}
-          {step === 'manual' && renderManualStep()}
           {step === 'scanning' && renderScanningStep()}
           {step === 'review' && renderReviewStep()}
         </View>
@@ -853,7 +767,7 @@ export default function EmailScannerModal({
   );
 }
 
-function makeStyles(Colors) {
+function makeStyles(Colors, isDark) {
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: Colors.bg },
     header: {
@@ -864,7 +778,7 @@ function makeStyles(Colors) {
       paddingHorizontal: 20,
       borderBottomWidth: 1,
       borderBottomColor: Colors.border,
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.surface,
     },
     headerTitle: { ...Fonts.primary, ...Fonts.bold, fontSize: 17, color: Colors.text },
     closeBtn: { padding: 8, marginLeft: -8 },
@@ -875,12 +789,27 @@ function makeStyles(Colors) {
     heroEyebrow: {
       ...Fonts.primary,
       ...Fonts.bold,
-      fontSize: 12,
+      fontSize: 11,
       color: Colors.accent,
       textTransform: 'uppercase',
-      marginBottom: 6,
+      letterSpacing: 1.5,
+      marginBottom: 8,
     },
-    heroTitle: { ...Fonts.primary, ...Fonts.black, fontSize: 26, color: Colors.text, marginBottom: 8 },
+    heroTitle: {
+      ...Fonts.primary,
+      ...Fonts.black,
+      fontSize: 28,
+      color: Colors.text,
+      marginBottom: 8,
+      lineHeight: 34,
+    },
+    heroSubtitle: {
+      ...Fonts.primary,
+      fontSize: 15,
+      color: Colors.textSecondary,
+      lineHeight: 22,
+      marginBottom: 28,
+    },
     heroText: { ...Fonts.primary, fontSize: 14, color: Colors.textSecondary, lineHeight: 22 },
     pendingCard: {
       backgroundColor: Colors.surface,
@@ -893,63 +822,80 @@ function makeStyles(Colors) {
     },
     pendingTitle: { ...Fonts.primary, ...Fonts.bold, fontSize: 14, color: Colors.text },
     pendingText: { ...Fonts.primary, fontSize: 13, color: Colors.textSecondary, marginTop: 4, lineHeight: 20 },
-    choiceList: { gap: 12 },
-    choiceCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: Colors.white,
-      borderRadius: Radius.lg,
-      padding: 16,
-      borderWidth: 1,
-      borderColor: Colors.border,
-      ...Shadow.soft,
-    },
-    choiceIconWrap: {
-      width: 50,
-      height: 50,
-      borderRadius: 16,
+    lottieWrap: {
       alignItems: 'center',
       justifyContent: 'center',
-      marginRight: 14,
+      marginBottom: 20,
+      marginTop: 10,
     },
-    choiceIcon: { fontSize: 24 },
-    choiceTextWrap: { flex: 1 },
-    choiceTitle: { ...Fonts.primary, ...Fonts.bold, fontSize: 15, color: Colors.text },
-    choiceText: { ...Fonts.primary, fontSize: 12, color: Colors.textSecondary, lineHeight: 18, marginTop: 4 },
-    formCard: {
-      backgroundColor: Colors.white,
-      borderRadius: Radius.lg,
-      padding: 18,
-      borderWidth: 1,
-      borderColor: Colors.border,
-      ...Shadow.soft,
+    lottieAnim: {
+      width: 120,
+      height: 120,
     },
-    label: {
+    featureList: {
+      gap: 20,
+      marginBottom: 28,
+    },
+    featureRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+      gap: 14,
+    },
+    featureIconWrap: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#F3F0FF',
+    },
+    featureIcon: {
+      fontSize: 20,
+    },
+    featureTextWrap: {
+      flex: 1,
+    },
+    featureTitle: {
       ...Fonts.primary,
       ...Fonts.bold,
-      fontSize: 11,
-      color: Colors.textMuted,
-      marginBottom: 8,
-      marginTop: 10,
-      textTransform: 'uppercase',
+      fontSize: 15,
+      color: Colors.income,
+      marginBottom: 3,
     },
-    input: {
-      minHeight: 52,
-      borderRadius: Radius.md,
-      borderWidth: 1,
-      borderColor: Colors.borderStrong,
-      backgroundColor: Colors.surface,
-      paddingHorizontal: 16,
+    featureDesc: {
       ...Fonts.primary,
-      fontSize: 14,
-      color: Colors.text,
+      fontSize: 13,
+      color: Colors.textSecondary,
+      lineHeight: 19,
+    },
+    scanButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: Colors.income,
+      borderRadius: Radius.xl,
+      paddingVertical: 18,
+      paddingHorizontal: 22,
+      marginBottom: 12,
+    },
+    scanButtonText: {
+      ...Fonts.primary,
+      ...Fonts.bold,
+      fontSize: 16,
+      color: '#FFFFFF',
+    },
+    scanButtonArrow: {
+      ...Fonts.primary,
+      ...Fonts.bold,
+      fontSize: 18,
+      color: '#FFFFFF',
     },
     primaryButton: {
       height: 54,
-      borderRadius: Radius.md,
+      borderRadius: Radius.xl,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: Colors.text,
+      backgroundColor: Colors.income,
       marginTop: 18,
     },
     primaryButtonText: {
@@ -964,24 +910,22 @@ function makeStyles(Colors) {
       borderRadius: Radius.md,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.surface,
       borderWidth: 1,
       borderColor: Colors.borderStrong,
     },
     secondaryButtonText: { ...Fonts.primary, ...Fonts.bold, fontSize: 13, color: Colors.text },
     scanningContainer: { flex: 1, padding: 28, alignItems: 'center', justifyContent: 'center' },
     scanPulse: {
-      width: 58,
-      height: 58,
-      borderRadius: 29,
+      width: 64,
+      height: 64,
+      borderRadius: 32,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: Colors.white,
-      borderWidth: 1,
-      borderColor: Colors.border,
-      ...Shadow.soft,
+      backgroundColor: Colors.surfaceAlt,
+      marginBottom: 8,
     },
-    scanningTitle: { ...Fonts.primary, ...Fonts.black, fontSize: 22, color: Colors.text, marginTop: 20 },
+    scanningTitle: { ...Fonts.primary, ...Fonts.bold, fontSize: 20, color: Colors.text, marginTop: 16 },
     scanningText: {
       ...Fonts.primary,
       fontSize: 13,
@@ -992,13 +936,13 @@ function makeStyles(Colors) {
     },
     skeletonCard: {
       width: '100%',
-      marginTop: 24,
-      borderRadius: Radius.lg,
-      backgroundColor: Colors.white,
+      marginTop: 28,
+      borderRadius: Radius.xl,
+      backgroundColor: Colors.surface,
       borderWidth: 1,
-      borderColor: Colors.border,
-      padding: 14,
-      gap: 12,
+      borderColor: Colors.borderStrong,
+      padding: 16,
+      gap: 14,
     },
     skeletonRow: { flexDirection: 'row', alignItems: 'center' },
     skeletonIcon: {
@@ -1012,23 +956,13 @@ function makeStyles(Colors) {
     skeletonLine: { height: 12, borderRadius: 6, backgroundColor: Colors.surfaceAlt },
     skeletonLineSmall: { height: 9, borderRadius: 5, backgroundColor: Colors.surface },
     skeletonAmount: { width: 58, height: 16, borderRadius: 8, backgroundColor: Colors.surfaceAlt, marginLeft: 12 },
-    logsCard: {
-      width: '100%',
-      height: 150,
-      marginTop: 16,
-      borderRadius: Radius.lg,
-      backgroundColor: Colors.white,
-      borderWidth: 1,
-      borderColor: Colors.border,
-      padding: 16,
-    },
-    logLine: { ...Fonts.primary, fontSize: 12, color: Colors.textSecondary, marginBottom: 8 },
     errorBox: {
       backgroundColor: '#FFF1F1',
       borderWidth: 1,
       borderColor: '#FFE0E0',
       borderRadius: Radius.md,
       padding: 16,
+      marginBottom: 16,
     },
     reviewErrorBox: {
       marginHorizontal: 24,
@@ -1043,26 +977,26 @@ function makeStyles(Colors) {
     summaryCard: {
       margin: 24,
       marginBottom: 14,
-      backgroundColor: Colors.text,
+      backgroundColor: Colors.income,
       borderRadius: Radius.xl,
-      padding: 22,
+      padding: 24,
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
       ...Shadow.medium,
     },
-    summaryValue: { ...Fonts.primary, ...Fonts.black, fontSize: 24, color: Colors.white },
-    summaryLabel: { ...Fonts.primary, fontSize: 10, color: '#94A3B8', marginTop: 4, textTransform: 'uppercase' },
-    summaryDivider: { width: 1, height: 40, backgroundColor: '#334155' },
-    resultList: { gap: 12, paddingHorizontal: 24, paddingBottom: 16 },
+    summaryValue: { ...Fonts.primary, ...Fonts.black, fontSize: 26, color: Colors.pureWhite },
+    summaryLabel: { ...Fonts.primary, fontSize: 10, color: isDark ? '#A7F3D0' : '#D1FAE5', marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
+    summaryDivider: { width: 1, height: 44, backgroundColor: isDark ? '#34D399' : '#6EE7B7' },
+    resultList: { gap: 10, paddingHorizontal: 24, paddingBottom: 16 },
     resultCard: {
-      backgroundColor: Colors.white,
-      borderRadius: Radius.md,
+      backgroundColor: Colors.surface,
+      borderRadius: Radius.xl,
       padding: 14,
       borderWidth: 1.5,
-      borderColor: Colors.border,
+      borderColor: Colors.borderStrong,
     },
-    resultCardSelected: { borderColor: Colors.text, backgroundColor: Colors.surface },
+    resultCardSelected: { borderColor: Colors.income, backgroundColor: Colors.surface },
     resultTopRow: { flexDirection: 'row', alignItems: 'center' },
     checkbox: {
       width: 22,
@@ -1074,7 +1008,7 @@ function makeStyles(Colors) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    checkboxActive: { backgroundColor: Colors.text, borderColor: Colors.text },
+    checkboxActive: { backgroundColor: Colors.income, borderColor: Colors.income },
     checkboxMark: { color: Colors.white, fontSize: 12, fontWeight: 'bold' },
     resultIconWrap: {
       width: 42,
@@ -1108,7 +1042,7 @@ function makeStyles(Colors) {
       gap: 14,
     },
     aiAltBox: {
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.surfaceAlt,
       borderRadius: Radius.md,
       borderWidth: 1,
       borderColor: Colors.border,
@@ -1134,11 +1068,11 @@ function makeStyles(Colors) {
       borderRadius: Radius.md,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.surfaceAlt,
       borderWidth: 1,
       borderColor: Colors.borderStrong,
     },
-    inlineActionPrimary: { backgroundColor: Colors.text, borderColor: Colors.text },
+    inlineActionPrimary: { backgroundColor: Colors.income, borderColor: Colors.income },
     inlineActionText: { ...Fonts.primary, ...Fonts.bold, fontSize: 12, color: Colors.text, textTransform: 'uppercase' },
     inlineActionPrimaryText: { ...Fonts.primary, ...Fonts.bold, fontSize: 12, color: Colors.pureWhite, textTransform: 'uppercase' },
     emptyBox: { padding: 24, alignItems: 'center' },
@@ -1156,12 +1090,12 @@ function makeStyles(Colors) {
       bottom: 0,
       left: 0,
       right: 0,
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.surface,
       borderTopWidth: 1,
       borderTopColor: Colors.border,
       padding: 20,
       paddingBottom: Platform.OS === 'ios' ? 38 : 20,
     },
-    buttonDisabled: { opacity: 0.7 },
+    buttonDisabled: { opacity: 0.6 },
   });
 }

@@ -483,7 +483,7 @@ function LanguageModal({ visible, onClose, Colors }) {
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <View style={s.modalOverlay}>
         <View style={s.profileCard}>
           <View style={s.modalHeader}>
@@ -533,7 +533,7 @@ function PINModal({ visible, onClose, onSave, Colors }) {
   };
 
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView style={s.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={s.profileCard}>
           <View style={s.modalHeader}>
@@ -553,7 +553,7 @@ function PINModal({ visible, onClose, onSave, Colors }) {
               autoFocus
             />
           </View>
-          <PrimaryButton onPress={handleSave} label={t('common.save')} style={{ marginTop: 24 }} />
+          <PrimaryButton onPress={handleSave} label={t('common.save')} color="#F59E0B" style={{ marginTop: 24 }} />
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -564,7 +564,7 @@ function IncomeModal({ visible, onClose, draftIncome, setDraftIncome, onSave, cu
   const { t } = useLanguage();
   const s = makeStyles(Colors);
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView style={s.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={s.profileCard}>
           <View style={s.modalHeader}>
@@ -583,7 +583,7 @@ function IncomeModal({ visible, onClose, draftIncome, setDraftIncome, onSave, cu
               autoFocus
             />
           </View>
-          <PrimaryButton onPress={onSave} label={t('settings.updateBudget')} style={{ marginTop: Spacing.md }} />
+          <PrimaryButton onPress={onSave} label={t('settings.updateBudget')} color="#10B981" style={{ marginTop: Spacing.md }} />
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -594,7 +594,7 @@ function ProfileModal({ visible, onClose, draftName, setDraftName, draftEmail, s
   const { t } = useLanguage();
   const s = makeStyles(Colors);
   return (
-    <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
+    <Modal visible={visible} animationType="fade" transparent onRequestClose={onClose}>
       <KeyboardAvoidingView style={s.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <View style={s.profileCard}>
           <View style={s.modalHeader}>
@@ -624,7 +624,7 @@ function ProfileModal({ visible, onClose, draftName, setDraftName, draftEmail, s
               placeholderTextColor={Colors.textMuted}
             />
           </View>
-          <PrimaryButton onPress={onSave} label={t('common.save')} style={{ marginTop: Spacing.md }} />
+          <PrimaryButton onPress={onSave} label={t('common.save')} color="#3B82F6" style={{ marginTop: Spacing.md }} />
         </View>
       </KeyboardAvoidingView>
     </Modal>

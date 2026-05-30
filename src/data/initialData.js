@@ -158,22 +158,22 @@ export const ONBOARDING_CAT_GROUPS = [
 
 // Quick-add popular subscriptions
 export const QUICK_SUBSCRIPTIONS = [
-  { name: 'Netflix', icon: '🎬', color: '#E50914', amount: 15.99, cycle: 'monthly', category: 'Streaming' },
-  { name: 'Spotify', icon: '🎵', color: '#1DB954', amount: 9.99, cycle: 'monthly', category: 'Musique' },
-  { name: 'Disney+', icon: '🏰', color: '#113CCF', amount: 8.99, cycle: 'monthly', category: 'Streaming' },
-  { name: 'Apple TV+', icon: '🍎', color: '#000000', amount: 4.99, cycle: 'monthly', category: 'Streaming' },
-  { name: 'YouTube Premium', icon: '▶️', color: '#FF0000', amount: 11.99, cycle: 'monthly', category: 'Streaming' },
-  { name: 'Amazon Prime', icon: '📦', color: '#FF9900', amount: 69.99, cycle: 'annual', category: 'Shopping' },
-  { name: 'Adobe CC', icon: '🎨', color: '#FF0000', amount: 59.99, cycle: 'monthly', category: 'Productivité' },
-  { name: 'Microsoft 365', icon: '🖥️', color: '#0078D4', amount: 6.99, cycle: 'monthly', category: 'Productivité' },
-  { name: 'iCloud+', icon: '☁️', color: '#0A84FF', amount: 0.99, cycle: 'monthly', category: 'Stockage' },
-  { name: 'Google One', icon: '🔵', color: '#4285F4', amount: 1.99, cycle: 'monthly', category: 'Stockage' },
-  { name: 'Deezer', icon: '🎶', color: '#FF0092', amount: 9.99, cycle: 'monthly', category: 'Musique' },
-  { name: 'Canal+', icon: '📺', color: '#000000', amount: 24.99, cycle: 'monthly', category: 'Streaming' },
-  { name: 'Notion', icon: '📝', color: '#000000', amount: 8.00, cycle: 'monthly', category: 'Productivité' },
-  { name: 'Dropbox', icon: '📁', color: '#0061FF', amount: 9.99, cycle: 'monthly', category: 'Stockage' },
-  { name: 'NordVPN', icon: '🔒', color: '#4687FF', amount: 4.49, cycle: 'monthly', category: 'Sécurité' },
-  { name: 'ChatGPT Plus', icon: '🤖', color: '#10A37F', amount: 20.00, cycle: 'monthly', category: 'IA' },
+  { name: 'Netflix', icon: '🎬', logo: 'https://logo.clearbit.com/netflix.com', color: '#E50914', amount: 15.99, cycle: 'monthly', category: 'Streaming' },
+  { name: 'Spotify', icon: '🎵', logo: 'https://logo.clearbit.com/spotify.com', color: '#1DB954', amount: 9.99, cycle: 'monthly', category: 'Musique' },
+  { name: 'Disney+', icon: '🏰', logo: 'https://logo.clearbit.com/disneyplus.com', color: '#113CCF', amount: 8.99, cycle: 'monthly', category: 'Streaming' },
+  { name: 'Apple TV+', icon: '🍎', logo: 'https://logo.clearbit.com/apple.com', color: '#000000', amount: 4.99, cycle: 'monthly', category: 'Streaming' },
+  { name: 'YouTube Premium', icon: '▶️', logo: 'https://logo.clearbit.com/youtube.com', color: '#FF0000', amount: 11.99, cycle: 'monthly', category: 'Streaming' },
+  { name: 'Amazon Prime', icon: '📦', logo: 'https://logo.clearbit.com/amazon.com', color: '#FF9900', amount: 69.99, cycle: 'annual', category: 'Shopping' },
+  { name: 'Adobe CC', icon: '🎨', logo: 'https://logo.clearbit.com/adobe.com', color: '#FF0000', amount: 59.99, cycle: 'monthly', category: 'Productivité' },
+  { name: 'Microsoft 365', icon: '🖥️', logo: 'https://logo.clearbit.com/microsoft.com', color: '#0078D4', amount: 6.99, cycle: 'monthly', category: 'Productivité' },
+  { name: 'iCloud+', icon: '☁️', logo: 'https://logo.clearbit.com/icloud.com', color: '#0A84FF', amount: 0.99, cycle: 'monthly', category: 'Stockage' },
+  { name: 'Google One', icon: '🔵', logo: 'https://logo.clearbit.com/google.com', color: '#4285F4', amount: 1.99, cycle: 'monthly', category: 'Stockage' },
+  { name: 'Deezer', icon: '🎶', logo: 'https://logo.clearbit.com/deezer.com', color: '#FF0092', amount: 9.99, cycle: 'monthly', category: 'Musique' },
+  { name: 'Canal+', icon: '📺', logo: 'https://logo.clearbit.com/canal-plus.com', color: '#000000', amount: 24.99, cycle: 'monthly', category: 'Streaming' },
+  { name: 'Notion', icon: '📝', logo: 'https://logo.clearbit.com/notion.so', color: '#000000', amount: 8.00, cycle: 'monthly', category: 'Productivité' },
+  { name: 'Dropbox', icon: '📁', logo: 'https://logo.clearbit.com/dropbox.com', color: '#0061FF', amount: 9.99, cycle: 'monthly', category: 'Stockage' },
+  { name: 'NordVPN', icon: '🔒', logo: 'https://logo.clearbit.com/nordvpn.com', color: '#4687FF', amount: 4.49, cycle: 'monthly', category: 'Sécurité' },
+  { name: 'ChatGPT Plus', icon: '🤖', logo: 'https://logo.clearbit.com/openai.com', color: '#10A37F', amount: 20.00, cycle: 'monthly', category: 'IA' },
 ];
 
 // Default subscription categories

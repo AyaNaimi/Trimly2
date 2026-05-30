@@ -7,6 +7,7 @@ import { annualEquivalent, getNextBilling, monthlyEquivalent } from '../../utils
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { ServiceLogo } from '../../components';
 import CancellationModal from './CancellationModal';
 import { getCancellationGuide } from '../../services/cancellationService';
 
@@ -116,10 +117,15 @@ export default function SubDetailModal({
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={s.scroll}>
-          <View style={s.hero}>
-            <View style={[s.iconCircle, { backgroundColor: addAlpha(sub.color || Colors.accent, 0.12) }]}>
-              <Text style={s.iconText}>{sub.icon || 'S'}</Text>
-            </View>
+            <View style={s.hero}>
+            <ServiceLogo
+              logo={sub.logo}
+              icon={sub.icon || 'S'}
+              color={sub.color || Colors.accent}
+              size={100}
+              borderRadius={Radius.lg}
+              style={{ marginBottom: 20, ...Shadow.soft }}
+            />
             <Text style={s.subName}>{sub.name}</Text>
             <Text style={s.subCat}>{sub.category || 'Abonnement'}</Text>
 

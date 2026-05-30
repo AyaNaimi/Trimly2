@@ -322,6 +322,62 @@ export function getCancellationAutomationPlan(sub = {}, billing = {}) {
   }));
 }
 
+export function getCancellationGuide(serviceName = '') {
+  const service = String(serviceName || '').trim() || 'Abonnement';
+  const methods = getCancellationWorkflow({ name: service });
+  const recommended = methods[0] || CANCELLATION_METHODS[0];
+  const lower = service.toLowerCase();
+  const hardServices = /canal|adobe|salle|gym|fitness|assurance|telecom|mobile|internet/.test(lower);
+  const easyServices = /netflix|spotify|deezer|disney|youtube|icloud|google|notion|dropbox/.test(lower);
+  const difficulty = hardServices ? 'hard' : easyServices ? 'easy' : 'medium';
+
+  return {
+    serviceName: service,
+    difficulty,
+    estimatedTime: difficulty === 'hard' ? '10-15 minutes' : difficulty === 'easy' ? '2-5 minutes' : '5-10 minutes',
+    directUrl: getMethodOpenUrl(recommended, { name: service }) || undefined,
+    steps: (recommended.steps || []).map((description, index) => ({
+      order: index + 1,
+      title: index === 0 ? recommended.title : `Etape ${index + 1}`,
+      description,
+      url: index === 0 ? getMethodOpenUrl(recommended, { name: service }) || undefined : undefined,
+      type: recommended.key === 'phone_chat'
+        ? 'call'
+        : recommended.key === 'email_letter'
+          ? 'email'
+          : 'navigate',
+    })),
+    importantNotes: [
+      "Gardez une preuve de chaque demande de resiliation.",
+      "Ne considerez l'abonnement resilie qu'apres confirmation du service.",
+    ],
+  };
+}
+
+export function generateCancellationLetter({
+  serviceName,
+  userName,
+  userEmail,
+  subscriptionId,
+  cancelDate,
+} = {}) {
+  const sub = {
+    id: subscriptionId,
+    name: serviceName || 'abonnement',
+    amount: 0,
+    cycle: 'monthly',
+  };
+
+  const letter = buildCancellationLetter({
+    sub,
+    billing: { nextChargeDate: cancelDate || null },
+    currency: 'EUR',
+    userName: userName || 'Client Trimly',
+  });
+
+  return userEmail ? `${userName || 'Client Trimly'}\n${userEmail}\n\n${letter}` : letter;
+}
+
 function formatSafeDate(value) {
   if (!value) return 'non définie';
   const date = new Date(value);

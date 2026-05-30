@@ -6,7 +6,7 @@ import {
 } from 'react-native';
 import Svg, { Path, Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { PremiumHaptics } from '../../utils/haptics';
-import { Fonts, Shadow, Radius, Metrics } from '../../theme';
+import { Fonts, Shadow, Radius, Metrics, Spacing } from '../../theme';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
@@ -327,9 +327,6 @@ export default function TransactionsScreen() {
 
     return (
       <View style={styles.headerContainer}>
-        {/* Screen Title */}
-        <Text style={styles.screenTitle}>{t('transactions.title')}</Text>
-
         {/* Dashboard Card */}
         <View style={styles.cardContainer}>
           {/* Card Gradient Background using SVG */}
@@ -423,24 +420,44 @@ export default function TransactionsScreen() {
         Colors={Colors}
         rowTravelDistance={screenWidth}
       >
-        <Pressable style={({ pressed }) => [styles.ledgerRow, pressed && styles.ledgerRowPressed]}>
+        <Pressable style={({ pressed }) => [
+          styles.ledgerRow, 
+          pressed && styles.ledgerRowPressed,
+        ]}>
           {/* Left: Icon + Info */}
           <View style={styles.rowLeft}>
             {/* Category Icon */}
             <View style={[
               styles.categoryIconWrap, 
               { 
-                backgroundColor: getSolidCategoryColor(txCategoryColor, Colors),
+                backgroundColor: isIncome 
+                  ? (isDark ? Colors.incomeSoft : addAlpha(Colors.income, 0.18)) 
+                  : (isDark ? Colors.expenseSoft : addAlpha(Colors.expense, 0.18)),
               }
             ]}>
-              <Text style={styles.categoryIconText}>{txCategoryIcon}</Text>
+              <Text style={[styles.categoryIconText, { color: isIncome ? Colors.income : Colors.expense }]}>
+                {txCategoryIcon}
+              </Text>
             </View>
 
-            {/* Name + Category */}
+            {/* Name + Category + Type Badge */}
             <View style={styles.txInfo}>
-              <Text style={styles.txName} numberOfLines={1}>
-                {displayName}
-              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={styles.txName} numberOfLines={1}>
+                  {displayName}
+                </Text>
+                <View style={[
+                  styles.txTypeBadge,
+                  { backgroundColor: isIncome ? Colors.incomeSoft : Colors.expenseSoft }
+                ]}>
+                  <Text style={[
+                    styles.txTypeBadgeText,
+                    { color: isIncome ? Colors.income : Colors.expense }
+                  ]}>
+                    {isIncome ? (locale === 'fr' ? 'Entrée' : 'Income') : (locale === 'fr' ? 'Sortie' : 'Expense')}
+                  </Text>
+                </View>
+              </View>
               {shouldShowCategory ? (
                 <View style={styles.txMetaRow}>
                   <Text style={styles.txCategory} numberOfLines={1}>
@@ -475,6 +492,9 @@ export default function TransactionsScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
+      <View style={styles.header}>
+        <Text style={styles.screenTitle}>{t('transactions.title')}</Text>
+      </View>
       <FlatList
         data={listData}
         keyExtractor={item => item.id}
@@ -522,13 +542,19 @@ function makeStyles(Colors, screenWidth) {
       marginBottom: 16,
       marginTop: 10,
     },
+    header: {
+      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+      paddingHorizontal: Metrics.screenPadding,
+      paddingBottom: Spacing.md,
+      paddingTop: Metrics.headerTop,
+    },
     screenTitle: {
       ...Fonts.sans,
       ...Fonts.black,
-      fontSize: isCompact ? 26 : 28,
+      fontSize: 22,
       color: Colors.text,
-      letterSpacing: 0,
-      marginBottom: 16,
+      textTransform: 'uppercase',
+      letterSpacing: 1.5,
     },
     cardContainer: {
       width: '100%',
@@ -641,11 +667,12 @@ function makeStyles(Colors, screenWidth) {
       alignItems: 'center',
       minHeight: isCompact ? 48 : 52,
       paddingVertical: isCompact ? 7 : 8,
-      paddingHorizontal: 10,
-      borderRadius: Radius.md,
-      backgroundColor: Colors.surface,
+      paddingHorizontal: 12,
+      borderRadius: Radius.xl,
+      backgroundColor: Colors.white,
       borderWidth: 1,
-      borderColor: Colors.border,
+      borderColor: Colors.borderStrong,
+      ...Shadow.soft,
     },
     ledgerRowPressed: {
       opacity: 0.7,
@@ -666,7 +693,6 @@ function makeStyles(Colors, screenWidth) {
     },
     categoryIconText: {
       fontSize: isCompact ? 14 : 15,
-      color: Colors.pureWhite,
     },
     txInfo: {
       flex: 1,
@@ -691,6 +717,18 @@ function makeStyles(Colors, screenWidth) {
       color: Colors.textMuted,
       flexShrink: 1,
     },
+    txTypeBadge: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 6,
+    },
+    txTypeBadgeText: {
+      ...Fonts.sans,
+      ...Fonts.bold,
+      fontSize: 9,
+      letterSpacing: 0.3,
+      textTransform: 'uppercase',
+    },
     // ── Amount ───────────────────────────────────────────────
     amountContainer: {
       alignItems: 'flex-end',
@@ -699,7 +737,7 @@ function makeStyles(Colors, screenWidth) {
     },
     ledgerAmount: {
       ...Fonts.sans,
-      ...Fonts.bold,
+      ...Fonts.semiBold,
       fontSize: isCompact ? 12 : 13,
       letterSpacing: 0,
     },
@@ -707,13 +745,13 @@ function makeStyles(Colors, screenWidth) {
       color: Colors.income,
     },
     ledgerAmountExpense: {
-      color: Colors.text,
+      color: Colors.expense,
     },
 
     // ── Swipe delete ─────────────────────────────────────────
     swipeRowContainer: {
       marginBottom: 5,
-      borderRadius: Radius.md,
+      borderRadius: Radius.xl,
       overflow: 'hidden',
       backgroundColor: Colors.expense,
     },
@@ -726,7 +764,7 @@ function makeStyles(Colors, screenWidth) {
       backgroundColor: Colors.expense,
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: Radius.md,
+      borderRadius: Radius.xl,
     },
     swipeDeleteBtn: {
       flex: 1,
@@ -776,15 +814,15 @@ function makeStyles(Colors, screenWidth) {
     // ── FAB ──────────────────────────────────────────────────
     fab: {
       position: 'absolute',
-      right: Metrics.screenPadding,
-      bottom: Metrics.fabBottom,
-      width: fabSize,
-      height: fabSize,
-      borderRadius: fabSize / 2,
-      backgroundColor: Colors.accent,
-      alignItems: 'center',
-      justifyContent: 'center',
-      ...Shadow.medium,
+    right: 16,
+    bottom: 140,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#10B981', // Vert émeraude
+    ...Shadow.medium,
     },
     fabPressed: {
       opacity: 0.85,
