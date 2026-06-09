@@ -1,0 +1,190 @@
+/* Groups1 (CTA Section) — Dark background layout matching reference image */
+
+.ctaContent {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+/* Reference image: Left label "PRÊT À ÉCONOMISER?" + center text + right store buttons */
+.ctaGrid {
+  display: grid;
+  grid-template-columns: 280px 1fr auto;
+  gap: 60px;
+  align-items: center;
+}
+
+/* Left: "PRÊT À ÉCONOMISER?" heading */
+.ctaHeadlineBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.prtEconomiser {
+  font-family: var(--font-road-rage), cursive !important;
+  font-size: 36px !important;
+  line-height: 1.15 !important;
+  color: #ffffff !important;
+  text-transform: uppercase;
+  margin: 0 !important;
+}
+
+.brushStrokeUnderline {
+  height: 22px;
+  width: 170px;
+  background-image: url('/brush_strokes.jpg');
+  background-color: var(--color-greenyellow-100);
+  background-blend-mode: multiply;
+  background-size: 100% 600%;
+  background-position: 0 40%;
+  background-repeat: no-repeat;
+  margin-top: 6px;
+  transform: rotate(-1.5deg);
+}
+
+/* Center: Descriptive text */
+.ctaTextContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ctaText {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 16px;
+  line-height: 1.65;
+  color: #cccccc;
+  margin: 0;
+}
+
+/* "repris le contrôle" with green underline */
+.ctaHighlight {
+  background-color: var(--color-greenyellow-100);
+  color: #101010;
+  padding: 1px 6px;
+  border-radius: 3px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* Arrow pointing right toward store buttons */
+.arrowContainer {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.ctaArrowIcon {
+  width: 40px;
+  height: auto;
+  filter: brightness(0) invert(0.7);
+  transform: rotate(-10deg);
+  object-fit: contain;
+  display: block;
+}
+
+/* Right: Store Buttons */
+.ctaButtonsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: stretch;
+  min-width: 200px;
+}
+
+.storeButton {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background-color: #0a0a0a;
+  border: 1px solid #555;
+  border-radius: 10px;
+  padding: 10px 20px;
+  min-width: 200px;
+  text-decoration: none;
+  transition: background-color 0.2s, transform 0.15s, border-color 0.2s;
+  box-sizing: border-box;
+}
+
+.storeButton:hover {
+  background-color: #1a1a1a;
+  transform: translateY(-2px);
+  border-color: #888;
+}
+
+.storeLogo {
+  width: 28px;
+  height: 32px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.storeTextCol {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.storeSub {
+  font-size: 9px;
+  color: #999;
+  font-weight: 400;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+}
+
+.storeMain {
+  font-size: 17px;
+  color: #ffffff;
+  font-weight: 600;
+  margin-top: 1px;
+  line-height: 1.2;
+}
+
+/* -------- Responsive -------- */
+@media screen and (max-width: 1100px) {
+  .ctaGrid {
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+  }
+  
+  .ctaButtonsContainer {
+    grid-column: 1 / -1;
+    flex-direction: row;
+    justify-content: center;
+    gap: 16px;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .ctaGrid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+    text-align: center;
+  }
+  
+  .ctaHeadlineBlock {
+    align-items: center;
+  }
+  
+  .ctaTextContainer {
+    align-items: center;
+  }
+  
+  .arrowContainer {
+    display: none;
+  }
+  
+  .ctaButtonsContainer {
+    grid-column: unset;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .storeButton {
+    min-width: 220px;
+    justify-content: center;
+  }
+}

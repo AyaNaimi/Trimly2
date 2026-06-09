@@ -1,0 +1,150 @@
+/* Groups — Feature Cards Section */
+
+.groupsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  max-width: 1200px;
+  margin: 0 auto;
+  border: 1.5px solid rgba(0,0,0,0.09);
+  border-radius: 20px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 4px 40px rgba(0,0,0,0.06);
+}
+
+.featureColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  padding: 40px 32px 36px;
+  position: relative;
+  background: #ffffff;
+  border-right: 1.5px solid rgba(0,0,0,0.08);
+  transition: background 0.3s ease;
+}
+
+.featureColumn:last-child {
+  border-right: none;
+}
+
+.featureColumn:hover {
+  background: #fafff0;
+}
+
+/* Lime top accent bar on hover */
+.featureColumn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--color-greenyellow-100);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.featureColumn:hover::before {
+  transform: scaleX(1);
+}
+
+/* Step number top-right */
+.featureColumn::after {
+  content: attr(data-num);
+  position: absolute;
+  top: 18px;
+  right: 22px;
+  font-family: var(--font-oswald), sans-serif;
+  font-size: 36px;
+  font-weight: 700;
+  color: rgba(0,0,0,0.055);
+  line-height: 1;
+  pointer-events: none;
+}
+
+/* Icon */
+.iconContainer {
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.featureIcon {
+  width: 72px;
+  height: 72px;
+  object-fit: contain;
+}
+
+/* Lime tint on ÉCONOMISE icon */
+.economiseIcon {
+  filter: hue-rotate(60deg) saturate(1.8) brightness(1.1);
+}
+
+/* Label */
+.featureLabel {
+  font-family: var(--font-oswald), sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #1b1b1b;
+  margin: 0 0 12px 0;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+/* Description */
+.featureDesc {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 14px;
+  line-height: 1.65;
+  color: #6a6a6a;
+  margin: 0 0 24px 0;
+  flex: 1;
+}
+
+/* Bottom lime divider line */
+.dividerLine {
+  width: 32px;
+  height: 3px;
+  background: var(--color-greenyellow-100);
+  border-radius: 2px;
+  transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.featureColumn:hover .dividerLine {
+  width: 56px;
+}
+
+/* Responsive */
+@media screen and (max-width: 900px) {
+  .groupsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .featureColumn:nth-child(2) {
+    border-right: none;
+  }
+  .featureColumn:nth-child(1),
+  .featureColumn:nth-child(2) {
+    border-bottom: 1.5px solid rgba(0,0,0,0.08);
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .groupsGrid {
+    grid-template-columns: 1fr;
+    border-radius: 14px;
+  }
+  .featureColumn {
+    border-right: none;
+    border-bottom: 1.5px solid rgba(0,0,0,0.08);
+  }
+  .featureColumn:last-child {
+    border-bottom: none;
+  }
+}
