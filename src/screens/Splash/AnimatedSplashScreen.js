@@ -1,116 +1,98 @@
 // src/screens/Splash/AnimatedSplashScreen.js
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
-import LottieView from 'lottie-react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
 import { useTheme } from '../../context/ThemeContext';
 import { Fonts } from '../../theme';
+
+const FULL_TEXT = 'trimly.';
 
 export default function AnimatedSplashScreen({ onFinish }) {
   const { Colors } = useTheme();
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const lottieRef = useRef(null);
+  const [displayedText, setDisplayedText] = useState('');
+  const [showTagline, setShowTagline] = useState(false);
+  const dotOpacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Fade in animation
     Animated.timing(fadeAnim, {
       toValue: 1,
-      duration: 800,
+      duration: 400,
       useNativeDriver: true,
     }).start();
 
-    // Play Lottie animation
-    if (lottieRef.current) {
-      lottieRef.current.play();
-    }
-
-    const handleFinish = () => {
-      if (onFinish) {
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 400,
+    let charIndex = 0;
+    const typeInterval = setInterval(() => {
+      if (charIndex < FULL_TEXT.length) {
+        setDisplayedText(FULL_TEXT.slice(0, charIndex + 1));
+        charIndex++;
+      } else {
+        clearInterval(typeInterval);
+        Animated.timing(dotOpacity, {
+          toValue: 1,
+          duration: 200,
           useNativeDriver: true,
-        }).start(() => onFinish());
+        }).start(() => {
+          setShowTagline(true);
+        });
       }
-    };
+    }, 150);
 
-    // Fallback timer (reduced from 9.8s to 4s)
-    const timer = setTimeout(handleFinish, 4000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  const styles = makeStyles(Colors);
-
-  const handleAnimationFinish = () => {
-    // Only trigger if timer hasn't already (or just let it override)
-    // We start fade out immediately
-    if (onFinish) {
+    const timer = setTimeout(() => {
       Animated.timing(fadeAnim, {
         toValue: 0,
         duration: 400,
         useNativeDriver: true,
       }).start(() => onFinish());
-    }
-  };
+    }, 5000);
+
+    return () => {
+      clearInterval(typeInterval);
+      clearTimeout(timer);
+    };
+  }, []);
 
   return (
-    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
-      <View style={styles.animationContainer}>
-        <LottieView
-          ref={lottieRef}
-          source={require('../../../assets/splash-animation.json')}
-          style={styles.animation}
-          loop={false}
-          autoPlay={false}
-          onAnimationFinish={handleAnimationFinish}
-        />
-      </View>
-      
+    <Animated.View style={[styles.container, { opacity: fadeAnim, backgroundColor: Colors.bg }]}>
       <View style={styles.textContainer}>
-        <Text style={styles.title}>TRIMLY</Text>
-        <Text style={styles.tagline}>Sophistication Analytique</Text>
+        <Text style={[styles.title, { color: Colors.text }]}>
+          {displayedText.slice(0, -1)}
+          <Text style={[styles.titleDot, { color: Colors.accentSecondary }]}>
+            {displayedText.slice(-1) === '.' ? '.' : ''}
+          </Text>
+        </Text>
+        {showTagline && (
+          <Animated.View style={{ opacity: dotOpacity }}>
+            <Text style={[styles.tagline, { color: Colors.textMuted }]}>
+              Sophistication Analytique
+            </Text>
+          </Animated.View>
+        )}
       </View>
     </Animated.View>
   );
 }
 
-function makeStyles(Colors) {
-  return StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: Colors.bg,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    animationContainer: {
-      width: 300,
-      height: 300,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    animation: {
-      width: '100%',
-      height: '100%',
-    },
-    textContainer: {
-      marginTop: 40,
-      alignItems: 'center',
-      gap: 8,
-    },
-    title: {
-      ...Fonts.primary,
-      ...Fonts.black,
-      fontSize: 32,
-      color: Colors.text,
-      letterSpacing: 4,
-      textTransform: 'uppercase',
-    },
-    tagline: {
-      ...Fonts.primary,
-      fontSize: 12,
-      color: Colors.textMuted,
-      letterSpacing: 2,
-      textTransform: 'uppercase',
-    },
-  });
-}
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textContainer: {
+    alignItems: 'center',
+    gap: 12,
+  },
+  title: {
+    ...Fonts.primary,
+    ...Fonts.black,
+    fontSize: 42,
+    letterSpacing: -0.5,
+  },
+  titleDot: {},
+  tagline: {
+    ...Fonts.primary,
+    fontSize: 12,
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+});

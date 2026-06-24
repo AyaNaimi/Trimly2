@@ -125,6 +125,7 @@ export default function SubDetailModal({
               size={100}
               borderRadius={Radius.lg}
               style={{ marginBottom: 20, ...Shadow.soft }}
+              senderPhotoUrl={sub.senderPhotoUrl}
             />
             <Text style={s.subName}>{sub.name}</Text>
             <Text style={s.subCat}>{sub.category || 'Abonnement'}</Text>

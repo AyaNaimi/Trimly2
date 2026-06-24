@@ -115,7 +115,7 @@ body {
 }
 
 .logo-img {
-    height: 32px;
+    height: 40px;
     width: auto;
 }
 
@@ -458,86 +458,291 @@ body {
 .phone-mockup {
     position: relative;
     z-index: 2;
+    --phone-width: clamp(270px, 31vw, 390px);
+    width: calc(var(--phone-width) + 160px);
+    min-height: calc(var(--phone-width) * 1.98);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .phone-frame {
-    width: 300px;
-    height: 600px;
-    background: var(--text-primary);
-    border-radius: 40px;
-    padding: 12px;
-    box-shadow: var(--shadow-xl);
+    width: var(--phone-width);
+    aspect-ratio: 390 / 760;
+    background: linear-gradient(145deg, #101217 0%, #3b4048 48%, #050607 100%);
+    border: 2px solid rgba(255, 255, 255, 0.32);
+    border-radius: calc(var(--phone-width) * 0.105);
+    padding: calc(var(--phone-width) * 0.025);
+    box-shadow: 0 32px 70px rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(255, 255, 255, 0.18);
     position: relative;
+}
+
+.phone-frame::before,
+.phone-frame::after {
+    content: '';
+    position: absolute;
+    width: 3px;
+    border-radius: 999px;
+    background: linear-gradient(180deg, #4d545e, #15181d);
+    left: -5px;
+}
+
+.phone-frame::before {
+    height: 12%;
+    top: 22%;
+}
+
+.phone-frame::after {
+    height: 10%;
+    top: 39%;
 }
 
 .phone-notch {
     position: absolute;
-    top: 20px;
+    top: 2.4%;
     left: 50%;
     transform: translateX(-50%);
-    width: 120px;
-    height: 24px;
-    background: var(--bg-primary);
-    border-radius: 0 0 20px 20px;
+    width: 30%;
+    height: 4.8%;
+    background: #020204;
+    border-radius: 999px;
+    z-index: 3;
 }
 
 .phone-screen {
     width: 100%;
     height: 100%;
-    background: var(--bg-secondary);
-    border-radius: 32px;
+    background:
+        radial-gradient(circle at 102% 48%, rgba(194, 203, 220, 0.38) 0 19%, rgba(121, 132, 151, 0.22) 20%, transparent 36%),
+        radial-gradient(circle at 70% 60%, rgba(105, 117, 138, 0.16), transparent 35%),
+        linear-gradient(160deg, #171d27 0%, #0c1118 48%, #03070c 100%);
+    border-radius: calc(var(--phone-width) * 0.086);
     overflow: hidden;
+    position: relative;
+    color: #fff;
 }
 
-.app-screenshot {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.floating-card {
+.phone-status {
     position: absolute;
+    top: 3.1%;
+    left: 8.2%;
+    right: 7%;
+    z-index: 4;
     display: flex;
     align-items: center;
+    justify-content: space-between;
+    font-size: calc(var(--phone-width) * 0.04);
+    font-weight: 700;
+    letter-spacing: 0;
+}
+
+.phone-status-icons {
+    display: flex;
+    align-items: center;
+    gap: calc(var(--phone-width) * 0.018);
+    font-size: calc(var(--phone-width) * 0.033);
+}
+
+.phone-lock {
+    position: absolute;
+    top: 11.4%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: calc(var(--phone-width) * 0.065);
+    opacity: 0.96;
+}
+
+.phone-clock {
+    position: absolute;
+    top: 18.4%;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: calc(var(--phone-width) * 0.17);
+    font-weight: 300;
+    line-height: 1;
+    letter-spacing: 0;
+}
+
+.phone-date {
+    position: absolute;
+    top: 29%;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: calc(var(--phone-width) * 0.045);
+    font-weight: 500;
+    opacity: 0.88;
+}
+
+.lock-orb {
+    position: absolute;
+    right: -17%;
+    top: 34%;
+    width: 70%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    border: 1px solid rgba(220, 227, 238, 0.48);
+    background: radial-gradient(circle at 12% 20%, rgba(232, 239, 250, 0.35), rgba(21, 27, 38, 0.8) 32%, rgba(3, 8, 14, 0.94) 62%);
+    box-shadow: -24px -28px 54px rgba(190, 202, 221, 0.12);
+}
+
+.ios-notification {
+    position: absolute;
+    z-index: 6;
+    top: 54%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 116%;
+    display: flex;
+    align-items: flex-start;
+    gap: calc(var(--phone-width) * 0.05);
+    padding: calc(var(--phone-width) * 0.045) calc(var(--phone-width) * 0.048);
+    background: linear-gradient(180deg, rgba(43, 45, 50, 0.94), rgba(22, 24, 28, 0.96));
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: calc(var(--phone-width) * 0.052);
+    box-shadow: 0 20px 44px rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(22px);
+}
+
+.notification-icon {
+    width: calc(var(--phone-width) * 0.15);
+    height: calc(var(--phone-width) * 0.15);
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    border-radius: calc(var(--phone-width) * 0.03);
+    background: linear-gradient(145deg, #111 0%, #050505 100%);
+    color: #b7ff16;
+    font-size: calc(var(--phone-width) * 0.115);
+    font-weight: 900;
+    font-style: italic;
+    line-height: 1;
+    text-shadow: 0 0 16px rgba(183, 255, 22, 0.55);
+}
+
+.notification-copy {
+    flex: 1;
+    min-width: 0;
+    color: rgba(255, 255, 255, 0.95);
+    font-size: calc(var(--phone-width) * 0.044);
+    line-height: 1.28;
+}
+
+.notification-copy p {
+    margin: 0;
+}
+
+.notification-head {
+    display: flex;
+    justify-content: space-between;
     gap: 12px;
-    padding: 16px 20px;
-    background: var(--bg-primary);
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow-lg);
-    animation: floatCard 3s ease-in-out infinite;
+    margin-bottom: calc(var(--phone-width) * 0.01);
+    font-size: calc(var(--phone-width) * 0.041);
 }
 
-.floating-card i {
-    font-size: 24px;
+.notification-head span {
+    color: rgba(255, 255, 255, 0.62);
+    font-weight: 400;
 }
 
-.card-1 {
-    top: 10%;
-    left: -20%;
-    color: var(--success-color);
+.phone-actions {
+    position: absolute;
+    left: 16%;
+    right: 16%;
+    bottom: 8%;
+    display: flex;
+    justify-content: space-between;
+    font-size: calc(var(--phone-width) * 0.052);
 }
 
-.card-2 {
-    top: 50%;
-    right: -20%;
-    color: var(--warning-color);
-    animation-delay: -1s;
+.phone-actions span {
+    width: calc(var(--phone-width) * 0.125);
+    height: calc(var(--phone-width) * 0.125);
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.11);
+    backdrop-filter: blur(10px);
 }
 
-.card-3 {
-    bottom: 15%;
-    left: -15%;
-    color: var(--primary-color);
-    animation-delay: -2s;
+.home-indicator {
+    position: absolute;
+    left: 50%;
+    bottom: 2.9%;
+    transform: translateX(-50%);
+    width: 34%;
+    height: 0.8%;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.94);
 }
 
-@keyframes floatCard {
-    0%, 100% {
-        transform: translateY(0);
-    }
-    50% {
-        transform: translateY(-20px);
-    }
+.phone-arrow {
+    position: absolute;
+    z-index: 5;
+    left: 0;
+    top: 41%;
+    width: 122px;
+    height: 88px;
+    border-left: 7px solid #b8ff19;
+    border-bottom: 7px solid #b8ff19;
+    border-radius: 0 0 0 90px;
+    transform: rotate(-24deg);
+    filter: drop-shadow(0 0 8px rgba(184, 255, 25, 0.35));
+}
+
+.phone-arrow::before,
+.phone-arrow::after {
+    content: '';
+    position: absolute;
+    right: -7px;
+    bottom: -8px;
+    width: 48px;
+    height: 7px;
+    border-radius: 999px;
+    background: #b8ff19;
+    transform-origin: right center;
+}
+
+.phone-arrow::before {
+    transform: rotate(36deg);
+}
+
+.phone-arrow::after {
+    transform: rotate(-34deg);
+}
+
+.phone-bursts {
+    position: absolute;
+    z-index: 5;
+    right: 6px;
+    top: 48%;
+    width: 76px;
+    height: 68px;
+    filter: drop-shadow(0 0 8px rgba(184, 255, 25, 0.35));
+}
+
+.phone-bursts span {
+    position: absolute;
+    left: 8px;
+    top: 32px;
+    width: 58px;
+    height: 7px;
+    border-radius: 999px;
+    background: #b8ff19;
+    transform-origin: left center;
+}
+
+.phone-bursts span:nth-child(1) {
+    transform: rotate(-58deg);
+}
+
+.phone-bursts span:nth-child(2) {
+    transform: rotate(-22deg);
+}
+
+.phone-bursts span:nth-child(3) {
+    transform: rotate(16deg);
 }
 
 .lottie-container {
@@ -546,7 +751,8 @@ body {
     height: 200px;
     top: -50px;
     right: -50px;
-    opacity: 0.6;
+    display: none;
+    opacity: 0;
 }
 
 .scroll-indicator {
@@ -1075,6 +1281,10 @@ section {
     .hero-visual {
         order: -1;
     }
+
+    .phone-mockup {
+        --phone-width: clamp(260px, 48vw, 340px);
+    }
     
     .hero-title {
         font-size: 42px;
@@ -1121,6 +1331,47 @@ section {
     
     .hero-title {
         font-size: 36px;
+    }
+
+    .phone-mockup {
+        --phone-width: clamp(226px, 70vw, 286px);
+        width: min(100vw - 20px, calc(var(--phone-width) + 100px));
+        min-height: calc(var(--phone-width) * 2.05);
+    }
+
+    .ios-notification {
+        width: 110%;
+        gap: calc(var(--phone-width) * 0.04);
+    }
+
+    .phone-arrow {
+        left: 2px;
+        top: 42%;
+        width: 74px;
+        height: 58px;
+        border-left-width: 5px;
+        border-bottom-width: 5px;
+    }
+
+    .phone-arrow::before,
+    .phone-arrow::after {
+        width: 32px;
+        height: 5px;
+        right: -5px;
+        bottom: -6px;
+    }
+
+    .phone-bursts {
+        right: 2px;
+        top: 49%;
+        width: 48px;
+        height: 46px;
+    }
+
+    .phone-bursts span {
+        width: 36px;
+        height: 5px;
+        top: 22px;
     }
     
     .section-title {
@@ -1419,5 +1670,75 @@ section {
     .privacy-links-bar {
         flex-direction: column;
         align-items: center;
+    }
+    
+    /* Optimisations tactiles */
+    .feature-card,
+    .pricing-card,
+    .testimonial-card {
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+    
+    /* Améliorer la zone de clic sur mobile */
+    .btn,
+    .cta-btn,
+    .pricing-btn {
+        min-height: 48px;
+        touch-action: manipulation;
+    }
+    
+    /* Smooth scroll pour les sections */
+    .testimonials-slider {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+}
+
+/* Media queries pour détecter les appareils tactiles */
+@media (hover: none) and (pointer: coarse) {
+    /* Styles spécifiques aux appareils tactiles */
+    * {
+        -webkit-tap-highlight-color: rgba(99, 102, 241, 0.1);
+    }
+    
+    /* Augmenter la taille des zones cliquables */
+    button,
+    a {
+        min-height: 44px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    /* Feedback visuel pour les touches */
+    .feature-card,
+    .pricing-card,
+    .testimonial-card,
+    .privacy-card {
+        user-select: none;
+        -webkit-user-select: none;
+    }
+    
+    /* Animations optimisées pour mobile */
+    .feature-card,
+    .pricing-card {
+        will-change: transform, opacity;
+    }
+    
+    /* Désactiver les animations de survol */
+    .feature-card:hover,
+    .pricing-card:hover,
+    .testimonial-card:hover {
+        transform: none;
+    }
+}
+
+/* Support pour le mode sombre avec les interactions tactiles */
+[data-theme="dark"] {
+    @media (hover: none) and (pointer: coarse) {
+        * {
+            -webkit-tap-highlight-color: rgba(139, 92, 246, 0.1);
+        }
     }
 }

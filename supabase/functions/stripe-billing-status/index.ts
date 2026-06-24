@@ -18,11 +18,15 @@ Deno.serve(async (req) => {
 
     if (!profile?.stripe_customer_id) {
       return jsonResponse({
-        plan: null,
-        status: "none",
-        currentPeriodEnd: null,
-        stripeCustomerId: null,
-      });
+      plan: null,
+      status: "none",
+      currentPeriodEnd: null,
+      proStartedAt: null,
+      proCurrentPeriodStart: null,
+      proCurrentPeriodEnd: null,
+      trialEndDate: profile?.trial_end_date || null,
+      stripeCustomerId: null,
+    });
     }
 
     const subscription = await getLatestSubscriptionForCustomer(profile.stripe_customer_id);
@@ -33,6 +37,10 @@ Deno.serve(async (req) => {
       plan: updatedProfile.subscription_plan || null,
       status: updatedProfile.stripe_subscription_status || "none",
       currentPeriodEnd: updatedProfile.subscription_current_period_end || null,
+      proStartedAt: updatedProfile.pro_started_at || null,
+      proCurrentPeriodStart: updatedProfile.pro_current_period_start || null,
+      proCurrentPeriodEnd: updatedProfile.pro_current_period_end || null,
+      trialEndDate: updatedProfile.trial_end_date || null,
       stripeCustomerId: updatedProfile.stripe_customer_id || null,
       stripeSubscriptionId: updatedProfile.stripe_subscription_id || null,
       stripePriceId: updatedProfile.stripe_price_id || null,

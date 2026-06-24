@@ -297,12 +297,11 @@ const FigmaDesignChatGPTImageJun72026124544PMjpg: FunctionComponent = () => {
               <div className={`${styles.brushStrokeBehind} ${styles.behind4}`}></div>
               <div className={`${styles.brushStrokeBehind} ${styles.behind5}`}></div>
 
-              <div className={styles.phoneMockup}>
-                <div className={styles.phoneNotch}></div>
-                <div className={styles.phoneScreen}>
-                  <img src="/image%20copy.png" alt="Trimly App" className={styles.phoneScreenImage} />
-                </div>
-              </div>
+              <img
+                src="/WhatsApp%20Image%202026-06-24%20at%2013.45.47-left.png"
+                alt="Trimly App"
+                className={styles.phoneImage}
+              />
 
               <div className={`${styles.handwrittenAnnotation} ${styles.annotationTopRight}`}>
                 <div className={styles.annotationText}>ÉCONOMIES <br /> CHAQUE MOIS</div>

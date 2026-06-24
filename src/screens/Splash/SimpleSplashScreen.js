@@ -72,7 +72,10 @@ export default function SimpleSplashScreen({ onFinish }) {
           style={styles.logo}
           resizeMode="contain"
         />
-        <Text style={styles.title}>TRIMLY</Text>
+        <Text style={styles.title}>
+          trimly
+          <Text style={styles.titleDot}>.</Text>
+        </Text>
         <Text style={styles.tagline}>Minimal Excellence</Text>
       </Animated.View>
     </View>
@@ -100,7 +103,10 @@ function makeStyles(Colors) {
       ...Fonts.black,
       fontSize: 32,
       color: Colors.pureWhite,
-      letterSpacing: 4,
+      letterSpacing: -0.5,
+    },
+    titleDot: {
+      color: '#FF9100', // Premium Logo Orange
     },
     tagline: {
       ...Fonts.primary,

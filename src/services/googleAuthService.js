@@ -102,10 +102,31 @@ function decodeUrlValue(value = '') {
   }
 }
 
-export async function getStoredGoogleProviderTokens() {
+function getAccountStorageKey({ userId, email } = {}) {
+  if (userId) return `user:${userId}`;
+  if (email) return `email:${String(email).trim().toLowerCase()}`;
+  return 'current';
+}
+
+function normalizeStoredTokens(rawValue, { userId, email } = {}) {
+  if (!rawValue) return null;
+
+  if (rawValue.accounts) {
+    const accountKey = getAccountStorageKey({ userId, email });
+    const emailKey = email ? getAccountStorageKey({ email }) : null;
+    return rawValue.accounts[accountKey]
+      || (emailKey ? rawValue.accounts[emailKey] : null)
+      || rawValue.current
+      || null;
+  }
+
+  return rawValue;
+}
+
+export async function getStoredGoogleProviderTokens({ userId, email } = {}) {
   try {
     const raw = await AsyncStorage.getItem(GOOGLE_PROVIDER_STORAGE_KEY);
-    return raw ? JSON.parse(raw) : null;
+    return raw ? normalizeStoredTokens(JSON.parse(raw), { userId, email }) : null;
   } catch (error) {
     console.error('Error reading stored Google tokens:', error);
     return null;
@@ -123,7 +144,14 @@ export async function storeGoogleProviderTokens({
     return null;
   }
 
-  const existing = await getStoredGoogleProviderTokens();
+  const raw = await AsyncStorage.getItem(GOOGLE_PROVIDER_STORAGE_KEY).catch(() => null);
+  let parsed = null;
+  try {
+    parsed = raw ? JSON.parse(raw) : null;
+  } catch {
+    parsed = null;
+  }
+  const existing = normalizeStoredTokens(parsed, { userId, email });
   const nextValue = {
     userId: userId || existing?.userId || null,
     email: email || existing?.email || null,
@@ -134,7 +162,17 @@ export async function storeGoogleProviderTokens({
   };
 
   try {
-    await AsyncStorage.setItem(GOOGLE_PROVIDER_STORAGE_KEY, JSON.stringify(nextValue));
+    const nextStore = parsed?.accounts
+      ? { ...parsed, accounts: { ...parsed.accounts } }
+      : { accounts: {}, current: parsed || null };
+    const primaryKey = getAccountStorageKey(nextValue);
+    const emailKey = nextValue.email ? getAccountStorageKey({ email: nextValue.email }) : null;
+
+    nextStore.current = nextValue;
+    nextStore.accounts[primaryKey] = nextValue;
+    if (emailKey) nextStore.accounts[emailKey] = nextValue;
+
+    await AsyncStorage.setItem(GOOGLE_PROVIDER_STORAGE_KEY, JSON.stringify(nextStore));
     return nextValue;
   } catch (error) {
     console.error('Error storing Google tokens:', error);

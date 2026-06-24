@@ -182,7 +182,7 @@ function SwipeableRow({ children, onConfirmDelete, onDelete, styles, Colors, row
 }
 
 export default function TransactionsScreen() {
-  const { state, addTransaction, deleteTransaction } = useApp();
+  const { state, addTransaction, deleteTransaction, requireProAccess } = useApp();
   const { Colors, isDark } = useTheme();
   const { t, locale } = useLanguage();
   const [showAdd, setShowAdd] = useState(false);
@@ -507,7 +507,11 @@ export default function TransactionsScreen() {
 
       <Pressable
         style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
-        onPress={() => { PremiumHaptics.click(); setShowAdd(true); }}
+        onPress={() => {
+          PremiumHaptics.click();
+          if (!requireProAccess('add_transaction')) return;
+          setShowAdd(true);
+        }}
       >
         <Text style={styles.fabPlus}>+</Text>
       </Pressable>
@@ -517,9 +521,11 @@ export default function TransactionsScreen() {
         onClose={() => setShowAdd(false)}
         categories={state.categories}
         onSave={async tx => {
+          if (!requireProAccess('add_transaction')) return false;
           const ok = await addTransaction(tx);
           if (ok) { setShowAdd(false); PremiumHaptics.success(); }
           else Alert.alert(t('common.error'), t('transactions.syncError'));
+          return ok;
         }}
       />
     </SafeAreaView>

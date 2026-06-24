@@ -14,7 +14,7 @@ import {
   storeGoogleProviderTokens,
 } from '../services/googleAuthService';
 import { DEFAULT_APP_STATE, DEFAULT_CATEGORIES } from '../data/initialData';
-import { scheduleAllSubscriptionNotifications, scheduleDailyReminders } from '../utils/notifications';
+import { scheduleAllSubscriptionNotifications, scheduleAppAccessNotifications, scheduleDailyReminders } from '../utils/notifications';
 import { todayISO } from '../utils/dateUtils';
 
 const AppContext = createContext(null);
@@ -33,6 +33,7 @@ const initialState = {
   scanHistory: [],
   detectedSubscriptions: [],
   emailScanPrompt: null,
+  paywallPrompt: null,
   profile: null,
   session: null,
   passwordRecoveryPending: false,
@@ -53,6 +54,7 @@ function createFreshState(overrides = {}) {
     scanHistory: [],
     detectedSubscriptions: [],
     emailScanPrompt: null,
+    paywallPrompt: null,
     session: null,
     passwordRecoveryPending: false,
     loaded: true,
@@ -77,6 +79,12 @@ function reducer(state, action) {
 
     case 'CLEAR_EMAIL_SCAN_PROMPT':
       return { ...state, emailScanPrompt: null };
+
+    case 'SHOW_TRIAL_EXPIRED_PAYWALL':
+      return { ...state, paywallPrompt: action.payload || { source: 'feature' } };
+
+    case 'HIDE_TRIAL_EXPIRED_PAYWALL':
+      return { ...state, paywallPrompt: null };
 
     case 'SET_EMAIL_CONNECTIONS':
       return { ...state, emailConnections: action.payload };
@@ -179,7 +187,16 @@ function reducer(state, action) {
       return { ...state, currency: action.payload };
 
     case 'SET_SUBSCRIPTION_PLAN':
-      return { ...state, subscription: action.payload, trial: { ...state.trial, active: false } };
+      return {
+        ...state,
+        subscription: action.payload,
+        trial: { ...state.trial, active: false },
+        profile: {
+          ...state.profile,
+          subscription_plan: action.payload,
+          pro_started_at: state.profile?.pro_started_at || new Date().toISOString(),
+        },
+      };
 
     case 'UPDATE_PROFILE':
       return { ...state, profile: { ...state.profile, ...action.payload } };
@@ -202,9 +219,16 @@ function reducer(state, action) {
           stripe_subscription_status: billing.status || null,
           stripe_price_id: billing.stripePriceId || null,
           subscription_current_period_end: billing.currentPeriodEnd || null,
+          pro_started_at: billing.proStartedAt || state.profile?.pro_started_at || null,
+          pro_current_period_start: billing.proCurrentPeriodStart || null,
+          pro_current_period_end: billing.proCurrentPeriodEnd || billing.currentPeriodEnd || null,
+          trial_end_date: billing.trialEndDate || state.profile?.trial_end_date || null,
         },
       };
     }
+
+    case 'SET_TRIAL':
+      return { ...state, trial: { ...state.trial, ...action.payload } };
 
     case 'SET_TRANSACTIONS':
       return { ...state, transactions: action.payload };
@@ -308,34 +332,19 @@ export function AppProvider({ children }) {
   };
 
   const getGoogleTokensForAutomaticScan = async (session) => {
+    const savedConnection = getStoredConnectionForProvider('gmail', session?.user?.email);
+    const storedTokens = await getStoredGoogleProviderTokens({
+      userId: session?.user?.id,
+      email: session?.user?.email,
+    });
     const liveTokens = {
       accessToken: session?.provider_token || null,
       refreshToken: session?.provider_refresh_token || null,
     };
 
-    if (liveTokens.accessToken || liveTokens.refreshToken) {
-      return liveTokens;
-    }
-
-    const storedTokens = await getStoredGoogleProviderTokens();
-    if (storedTokens?.accessToken || storedTokens?.refreshToken) {
-      return {
-        accessToken: storedTokens.accessToken || null,
-        refreshToken: storedTokens.refreshToken || null,
-      };
-    }
-
-    const savedConnection = getStoredConnectionForProvider('gmail', session?.user?.email);
-    if (savedConnection?.access_token || savedConnection?.refresh_token) {
-      return {
-        accessToken: savedConnection.access_token || null,
-        refreshToken: savedConnection.refresh_token || null,
-      };
-    }
-
     return {
-      accessToken: null,
-      refreshToken: null,
+      accessToken: liveTokens.accessToken || storedTokens?.accessToken || savedConnection?.access_token || null,
+      refreshToken: liveTokens.refreshToken || storedTokens?.refreshToken || savedConnection?.refresh_token || null,
     };
   };
 
@@ -425,6 +434,23 @@ export function AppProvider({ children }) {
         dispatch({ type: 'SET_CURRENCY', payload: profile.currency || '€' });
         dispatch({ type: 'SET_NOTIF_LEVEL', payload: profile.notif_level || 1 });
         dispatch({ type: 'SET_ONBOARDING_STATUS', payload: !!profile.onboarding_complete });
+        const trialStartDate = profile.trial_start_date || DEFAULT_APP_STATE.trial.startDate;
+        const trialDurationDays = profile.trial_duration_days || DEFAULT_APP_STATE.trial.durationDays;
+        const trialEndDate = profile.trial_end_date
+          || (() => {
+            const end = new Date(trialStartDate);
+            end.setDate(end.getDate() + trialDurationDays);
+            return end.toISOString();
+          })();
+        dispatch({
+          type: 'SET_TRIAL',
+          payload: {
+            active: !stripePlan && new Date(trialEndDate) >= new Date(),
+            startDate: trialStartDate,
+            durationDays: trialDurationDays,
+            endDate: trialEndDate,
+          },
+        });
         if (profile.stripe_subscription_status || stripePlan) {
           dispatch({
             type: 'SET_BILLING_STATUS',
@@ -432,6 +458,10 @@ export function AppProvider({ children }) {
               plan: stripePlan,
               status: profile.stripe_subscription_status || 'none',
               currentPeriodEnd: profile.subscription_current_period_end || null,
+              proStartedAt: profile.pro_started_at || null,
+              proCurrentPeriodStart: profile.pro_current_period_start || null,
+              proCurrentPeriodEnd: profile.pro_current_period_end || profile.subscription_current_period_end || null,
+              trialEndDate: trialEndDate || null,
               stripeCustomerId: profile.stripe_customer_id || null,
               stripeSubscriptionId: profile.stripe_subscription_id || null,
               stripePriceId: profile.stripe_price_id || null,
@@ -474,8 +504,17 @@ export function AppProvider({ children }) {
     if (!state.loaded) return;
     const syncNotifications = async () => {
       try {
-        if (state.notifLevel > 0 && state.subscriptions.length > 0) {
+        if (state.notifLevel > 0) {
           await scheduleAllSubscriptionNotifications(state.subscriptions, locale, t);
+          await scheduleAppAccessNotifications({
+            trial: state.trial,
+            subscriptionPlan: state.subscription,
+            proCurrentPeriodEnd: state.profile?.pro_current_period_end || state.profile?.subscription_current_period_end,
+            currency: state.currency,
+          }, locale);
+        } else {
+          await scheduleAllSubscriptionNotifications([], locale, t);
+          await scheduleAppAccessNotifications({}, locale);
         }
         await scheduleDailyReminders(state.notifLevel, t);
       } catch (error) {
@@ -484,7 +523,17 @@ export function AppProvider({ children }) {
     };
 
     syncNotifications();
-  }, [state.subscriptions, state.notifLevel, state.loaded]);
+  }, [
+    state.subscriptions,
+    state.notifLevel,
+    state.loaded,
+    state.trial,
+    state.subscription,
+    state.profile?.pro_current_period_end,
+    state.profile?.subscription_current_period_end,
+    state.currency,
+    locale,
+  ]);
 
   useEffect(() => {
     if (!state.loaded || !state.session?.user?.id) return undefined;
@@ -544,6 +593,39 @@ export function AppProvider({ children }) {
     }
   };
 
+  const trialDaysLeft = () => {
+    if (!state.trial?.active) return 0;
+    const end = state.trial.endDate
+      ? new Date(state.trial.endDate)
+      : new Date(state.trial.startDate);
+    if (!state.trial.endDate) {
+      end.setDate(end.getDate() + (state.trial.durationDays || 14));
+    }
+    const today = new Date();
+    return Math.max(0, Math.ceil((end - today) / (1000 * 60 * 60 * 24)));
+  };
+
+  const hasProAccess = () => {
+    if (state.subscription) return true;
+    return trialDaysLeft() > 0;
+  };
+
+  const requireProAccess = (source = 'feature') => {
+    if (hasProAccess()) return true;
+    dispatch({
+      type: 'SHOW_TRIAL_EXPIRED_PAYWALL',
+      payload: {
+        source,
+        shownAt: new Date().toISOString(),
+      },
+    });
+    return false;
+  };
+
+  const closeTrialExpiredPaywall = () => {
+    dispatch({ type: 'HIDE_TRIAL_EXPIRED_PAYWALL' });
+  };
+
   const completeOnboarding = async () => {
     try {
       if (state.session) {
@@ -600,6 +682,8 @@ export function AppProvider({ children }) {
   };
 
   const addTransaction = async (tx) => {
+    if (!requireProAccess('add_transaction')) return false;
+
     try {
       if (state.session) {
         const cloudTx = await DatabaseService.addTransaction(state.session.user.id, tx);
@@ -628,6 +712,8 @@ export function AppProvider({ children }) {
   };
 
   const addSubscription = async (sub) => {
+    if (!requireProAccess('add_subscription')) return false;
+
     try {
       if (state.session) {
         const cloudSub = await DatabaseService.addSubscription(state.session.user.id, sub);
@@ -680,6 +766,16 @@ export function AppProvider({ children }) {
       let savedConnection = null;
 
       if (connection || sourceEmail) {
+        if (provider === 'gmail' && (connection?.accessToken || connection?.refreshToken)) {
+          await storeGoogleProviderTokens({
+            userId,
+            email: sourceEmail || connection?.email || state.session.user.email,
+            accessToken: connection?.accessToken,
+            refreshToken: connection?.refreshToken,
+            scopes: connection?.scopes || ['https://www.googleapis.com/auth/gmail.readonly'],
+          });
+        }
+
         savedConnection = await DatabaseService.upsertEmailConnection(userId, {
           provider,
           email: sourceEmail || connection?.email || state.session.user.email,
@@ -926,6 +1022,8 @@ export function AppProvider({ children }) {
   };
 
   const addCategory = async (cat) => {
+    if (!requireProAccess('add_category')) return false;
+
     try {
       if (state.session) {
         const cloudCat = await DatabaseService.addCategory(state.session.user.id, cat);
@@ -941,6 +1039,8 @@ export function AppProvider({ children }) {
   };
 
   const updateCategory = async (id, updates) => {
+    if (!requireProAccess('update_category')) return false;
+
     try {
       if (state.session) {
         await DatabaseService.updateCategory(id, updates);
@@ -969,8 +1069,14 @@ export function AppProvider({ children }) {
 
   const setSubscriptionPlan = async (plan) => {
     try {
+      const now = new Date().toISOString();
       if (state.session) {
-        await DatabaseService.updateProfile(state.session.user.id, { subscription_plan: plan });
+        await DatabaseService.updateProfile(state.session.user.id, {
+          subscription_plan: plan,
+          pro_started_at: state.profile?.pro_started_at || now,
+          pro_current_period_start: now,
+          pro_current_period_end: state.profile?.subscription_current_period_end || state.profile?.pro_current_period_end || null,
+        });
       }
       dispatch({ type: 'SET_SUBSCRIPTION_PLAN', payload: plan });
       return true;
@@ -1046,15 +1152,6 @@ export function AppProvider({ children }) {
     return a + (monthly[s.cycle] || s.amount);
   }, 0);
 
-  const trialDaysLeft = () => {
-    if (!state.trial?.active) return 0;
-    const start = new Date(state.trial.startDate);
-    const end = new Date(start);
-    end.setDate(end.getDate() + (state.trial.durationDays || 14));
-    const today = new Date();
-    return Math.max(0, Math.ceil((end - today) / (1000 * 60 * 60 * 24)));
-  };
-
   const isPro = () => {
     if (state.subscription) return true;
     return trialDaysLeft() > 0;
@@ -1072,6 +1169,9 @@ export function AppProvider({ children }) {
         pendingDetectedSubscriptions,
         trialDaysLeft: trialDaysLeft(),
         isPro: isPro(),
+        hasProAccess: hasProAccess(),
+        requireProAccess,
+        closeTrialExpiredPaywall,
         // New sync actions
         completeOnboarding,
         setIncome,

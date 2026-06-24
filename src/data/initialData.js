@@ -197,6 +197,11 @@ export const DEFAULT_APP_STATE = {
     active: true,
     startDate: todayISO(),
     durationDays: 14,
+    endDate: (() => {
+      const end = new Date(todayISO());
+      end.setDate(end.getDate() + 14);
+      return end.toISOString();
+    })(),
   },
   subscription: null, // null = free/trial, 'monthly'|'annual'|'lifetime'
   features: {

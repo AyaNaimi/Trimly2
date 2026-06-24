@@ -376,9 +376,9 @@ export default function CategoryManagerModal({
             visible={showCreateModal}
             mode="create"
             onClose={() => setShowCreateModal(false)}
-            onSave={(category) => {
-              onCreateCategory(category);
-              setShowCreateModal(false);
+            onSave={async (category) => {
+              const ok = await onCreateCategory(category);
+              if (ok !== false) setShowCreateModal(false);
             }}
           />
 
@@ -387,9 +387,9 @@ export default function CategoryManagerModal({
             mode="edit"
             initialValues={activeCategory}
             onClose={() => setShowEditModal(false)}
-            onSave={(category) => {
-              onUpdateCategory(category);
-              setShowEditModal(false);
+            onSave={async (category) => {
+              const ok = await onUpdateCategory(category);
+              if (ok !== false) setShowEditModal(false);
             }}
           />
         </KeyboardAvoidingView>

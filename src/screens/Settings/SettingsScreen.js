@@ -58,9 +58,17 @@ export default function SettingsScreen() {
   const profile = useMemo(() => {
     const email = state.email || state.profile?.email || state.session?.user?.email || t('settings.yourEmail');
     const emailPrefix = email.split('@')[0];
+    
+    // Récupérer la photo de profil Google si disponible
+    const googlePhotoUrl = state.session?.user?.user_metadata?.avatar_url || 
+                          state.session?.user?.user_metadata?.picture || 
+                          state.profile?.avatar_url ||
+                          null;
+    
     return {
       name: state.name || state.profile?.name || state.session?.user?.user_metadata?.full_name || emailPrefix || t('settings.user'),
       email,
+      photoUrl: googlePhotoUrl,
     };
   }, [state.name, state.profile, state.email, state.session, t]);
 
@@ -142,7 +150,14 @@ export default function SettingsScreen() {
 
   async function manageBilling() {
     if (!state.subscription) {
-      setShowPaywall(true);
+      dispatch({
+        type: 'SHOW_TRIAL_EXPIRED_PAYWALL',
+        payload: {
+          source: 'settings_trial',
+          trialDaysLeft,
+          shownAt: new Date().toISOString(),
+        },
+      });
       return;
     }
 
@@ -291,7 +306,7 @@ export default function SettingsScreen() {
         <View style={s.avatarRow}>
           <View style={s.avatar}>
             <Image
-              source={require('../../../assets/mascot.jpg')}
+              source={profile.photoUrl ? { uri: profile.photoUrl } : require('../../../assets/mascot.jpg')}
               style={{ width: 64, height: 64, borderRadius: 32 }}
               resizeMode="cover"
             />

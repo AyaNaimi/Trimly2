@@ -275,6 +275,76 @@
     "invalidInput": "Entrada inválida",
     "required": "Este campo es obligatorio"
   },
+  "scanner": {
+    "headerTitle": "Escaneo inteligente",
+    "stages": {
+      "connecting": "Conectando al buz\u00f3n de correo",
+      "searching": "Buscando recibos y facturas",
+      "analyzing": "An\u00e1lisis con IA de importes",
+      "preparing": "Preparando alternativas"
+    },
+    "choose": {
+      "title": "Detecta tus suscripciones",
+      "titleAuto": "Conecta tu buz\u00f3n",
+      "subtitle": "Flujo h\u00edbrido",
+      "description": "Trimly escanea tu Gmail para encontrar correos de suscripci\u00f3n e importarlos autom\u00e1ticamente.",
+      "pendingTitle": "Detecciones pendientes",
+      "pendingDescription": "{{count}} suscripciones esperan tu validaci\u00f3n.",
+      "secureTitle": "Conexi\u00f3n segura",
+      "secureDesc": "Solo leemos tus correos, nunca modificamos ni eliminamos nada.",
+      "aiTitle": "Detecci\u00f3n con IA",
+      "aiDesc": "Nuestra IA encuentra correos de suscripci\u00f3n y extrae los detalles autom\u00e1ticamente.",
+      "quickTitle": "Importaci\u00f3n r\u00e1pida",
+      "quickDesc": "Revisa las suscripciones detectadas e imp\u00f3rtalas con un toque."
+    },
+    "manual": {
+      "title": "Escaneo manual de Gmail",
+      "subtitle": "Configuraci\u00f3n IMAP",
+      "description": "Usa una \"contrase\u00f1a de aplicaci\u00f3n\" de Google para permitir que Trimly lea tus correos de facturaci\u00f3n de forma segura.",
+      "emailLabel": "Direcci\u00f3n de correo",
+      "passwordLabel": "Contrase\u00f1a de aplicaci\u00f3n de Gmail",
+      "startButton": "Iniciar escaneo manual"
+    },
+    "scanning": {
+      "title": "Escaneo en curso...",
+      "logs": {
+        "start": "Escaneando con {{provider}}...",
+        "mailbox": "Buz\u00f3n: {{email}}",
+        "reading": "Leyendo correos mediante API...",
+        "foundEmails": "{{count}} correos relevantes encontrados",
+        "analyzed": "{{count}} correos analizados en detalle",
+        "foundSubs": "{{count}} suscripciones encontradas",
+        "error": "Error: {{message}}"
+      }
+    },
+    "review": {
+      "detected": "Detectadas",
+      "monthlyTotal": "Total mensual",
+      "emptyTitle": "No se encontr\u00f3 nada",
+      "emptyDescription": "No se detectaron suscripciones en los correos analizados. Prueba otro periodo u otra cuenta.",
+      "retry": "Reintentar",
+      "actions": "Acciones",
+      "close": "Cerrar",
+      "aiAlternatives": "Alternativas sugeridas por IA",
+      "noAlternatives": "No hay alternativas fiables para este servicio.",
+      "import": "Importar",
+      "importSelected": "Importar {{count}} suscripciones",
+      "ignore": "Ignorar",
+      "successTitle": "\u00c9xito",
+      "successMessage": "{{count}} suscripciones importadas en Trimly."
+    },
+    "errors": {
+      "loginRequired": "Inicia sesi\u00f3n en tu cuenta primero.",
+      "gmailOnly": "Por ahora solo est\u00e1 configurado el escaneo de Gmail mediante Google.",
+      "noTokens": "No se encontraron tokens de Gmail. Con\u00e9ctate con Google e int\u00e9ntalo de nuevo.",
+      "emailRequired": "Proporciona una direcci\u00f3n de correo.",
+      "passwordRequired": "Proporciona una contrase\u00f1a de aplicaci\u00f3n de Gmail.",
+      "importFailed": "No se puede importar esta suscripci\u00f3n.",
+      "dismissFailed": "No se puede ignorar esta suscripci\u00f3n.",
+      "networkReach": "No se puede contactar con el servicio de escaneo. Revisa la URL del backend o la direcci\u00f3n IP.",
+      "timeout": "El escaneo empez\u00f3 pero agot\u00f3 el tiempo. Revisa los logs del backend o prueba con menos correos."
+    }
+  },
   "modals": {
     "addTransaction": {
       "title": "Añadir transacción",

@@ -8,6 +8,26 @@ const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
 const LOCAL_EMAIL_SCANNER_URL = process.env.EXPO_PUBLIC_EMAIL_SCANNER_URL || 'http://localhost:3001';
 
+function formatEndpoint(url = '') {
+  try {
+    const parsed = new URL(url);
+    return parsed.origin;
+  } catch {
+    return url || 'endpoint inconnu';
+  }
+}
+
+async function fetchWithNetworkContext(url, options, label) {
+  try {
+    return await fetch(url, options);
+  } catch (error) {
+    const endpoint = formatEndpoint(url);
+    const message = error?.message || 'Network request failed';
+    console.error(`[EmailService] Network request failed for ${label}:`, { endpoint, message });
+    throw new Error(`Impossible de joindre ${label} (${endpoint}). ${message}`);
+  }
+}
+
 const EMAIL_PROVIDERS = {
   gmail: {
     name: 'Gmail',
@@ -159,7 +179,7 @@ async function requestAiAlternativesForSubscriptions(items = []) {
       cycle: item.cycle,
     }));
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetchWithNetworkContext('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -181,7 +201,7 @@ async function requestAiAlternativesForSubscriptions(items = []) {
         temperature: 0.25,
         max_tokens: 900,
       }),
-    });
+    }, 'Groq API');
 
     if (!response.ok) return {};
 
@@ -342,6 +362,7 @@ export function mapDetectedSubscriptionToApp(item = {}) {
     provider: item.provider,
     sourceEmail: item.sourceEmail,
     sourceFrom: item.sourceFrom || getRawPayloadValue(item, 'sourceFrom') || null,
+    senderPhotoUrl: item.senderPhotoUrl || getRawPayloadValue(item, 'senderPhotoUrl') || null,
     supportEmail: extractEmailAddress(item.supportEmail || item.sourceFrom || getRawPayloadValue(item, 'sourceFrom')),
     confidence: item.confidence,
     trialEndsAt,
@@ -431,9 +452,9 @@ export const EmailService = {
 
   async fetchProviderProfile(provider, accessToken) {
     if (provider === 'gmail') {
-      const response = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+      const response = await fetchWithNetworkContext('https://www.googleapis.com/oauth2/v2/userinfo', {
         headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      }, 'Google profile');
       if (!response.ok) throw new Error('Impossible de recuperer le profil Gmail');
       const data = await response.json();
       return {
@@ -443,9 +464,9 @@ export const EmailService = {
     }
 
     if (provider === 'outlook') {
-      const response = await fetch('https://graph.microsoft.com/v1.0/me', {
+      const response = await fetchWithNetworkContext('https://graph.microsoft.com/v1.0/me', {
         headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      }, 'Microsoft Graph profile');
       if (!response.ok) throw new Error('Impossible de recuperer le profil Outlook');
       const data = await response.json();
       return {
@@ -460,9 +481,17 @@ export const EmailService = {
   async scanEmails({ email, provider = 'gmail', providerAccessToken = null, providerRefreshToken = null }) {
     console.log('[EmailService] Scanning emails for:', email, 'provider:', provider);
 
-    const {
+    let {
       data: { session },
     } = await supabase.auth.getSession();
+
+    const expiresAtMs = session?.expires_at ? session.expires_at * 1000 : 0;
+    if (session?.refresh_token && (!expiresAtMs || expiresAtMs - Date.now() < 60 * 1000)) {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (!error && data?.session) {
+        session = data.session;
+      }
+    }
 
     if (!session?.access_token) {
       throw new Error('Session utilisateur introuvable.');
@@ -472,12 +501,12 @@ export const EmailService = {
       throw new Error('Clé Supabase anon introuvable.');
     }
 
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/scan-emails`, {
+    const buildRequest = (activeSession) => ({
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         apikey: SUPABASE_ANON_KEY,
-        Authorization: `Bearer ${session.access_token}`,
+        Authorization: `Bearer ${activeSession.access_token}`,
       },
       body: JSON.stringify({
         email,
@@ -488,6 +517,16 @@ export const EmailService = {
         providerRefreshToken,
       }),
     });
+
+    let response = await fetchWithNetworkContext(`${SUPABASE_URL}/functions/v1/scan-emails`, buildRequest(session), 'Supabase scan-emails');
+
+    if (response.status === 401 && session.refresh_token) {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (!error && data?.session?.access_token) {
+        session = data.session;
+        response = await fetchWithNetworkContext(`${SUPABASE_URL}/functions/v1/scan-emails`, buildRequest(session), 'Supabase scan-emails');
+      }
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -505,7 +544,7 @@ export const EmailService = {
   },
 
   async scanMailbox(email, appPassword) {
-    const response = await fetch(`${LOCAL_EMAIL_SCANNER_URL}/scan`, {
+    const response = await fetchWithNetworkContext(`${LOCAL_EMAIL_SCANNER_URL}/scan`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -514,7 +553,7 @@ export const EmailService = {
         email,
         appPassword,
       }),
-    });
+    }, 'local email scanner');
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -572,7 +611,7 @@ export const EmailService = {
     }
 
     try {
-      const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      const response = await fetchWithNetworkContext('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -594,7 +633,7 @@ export const EmailService = {
           temperature: 0.1,
           max_tokens: 1000,
         }),
-      });
+      }, 'Groq API');
 
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content;
@@ -619,14 +658,14 @@ export const EmailService = {
       throw new Error('Session non disponible');
     }
 
-    const response = await fetch(`${SUPABASE_URL}/functions/v1/scan-emails-supabase`, {
+    const response = await fetchWithNetworkContext(`${SUPABASE_URL}/functions/v1/scan-emails-supabase`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${session.access_token}`,
       },
       body: JSON.stringify({ email }),
-    });
+    }, 'Supabase scan-emails-supabase');
 
     if (!response.ok) {
       const error = await response.text();

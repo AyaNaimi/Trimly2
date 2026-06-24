@@ -1,0 +1,144 @@
+.groups,
+.groups2 {
+  display: flex;
+  align-items: center;
+}
+.groups {
+  position: absolute;
+  top: 2432px;
+  left: 0;
+  background-color: var(--color-gray-2300);
+  width: 100%;
+  justify-content: center;
+  padding: var(--padding-36) var(--padding-30) 7.1px;
+  box-sizing: border-box;
+  max-width: 100%;
+  text-align: left;
+  font-size: var(--fs-17);
+  color: var(--color-dimgray-900);
+  font-family: var(--font-inter);
+}
+.groups2 {
+  flex: 1;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  align-content: center;
+  gap: var(--gap-19);
+  max-width: 854px;
+  z-index: 0;
+}
+.groupsColumn0,
+.groupsColumn02 {
+  display: flex;
+  flex-direction: column;
+}
+.groupsColumn0 {
+  flex: 1;
+  align-items: center;
+  padding: var(--padding-0) var(--padding-30) 17.4px;
+  box-sizing: border-box;
+  min-width: 433px;
+  max-width: 666.2px;
+  z-index: 3;
+}
+.groupsColumn02 {
+  width: 100%;
+  align-items: flex-end;
+  gap: 7.5px;
+  max-width: 150px;
+  z-index: 0;
+}
+.groupsColumn0Row0 {
+  width: 135.4px;
+  height: var(--height-28);
+  display: flex;
+  align-items: center;
+  padding: var(--padding-0) var(--padding-26);
+  box-sizing: border-box;
+  gap: var(--gap-4);
+  z-index: 2;
+}
+.imageIcon {
+  height: var(--height-28);
+  width: var(--width-26);
+  position: relative;
+}
+.trimly {
+  height: 22.9px;
+  display: flex;
+  align-items: flex-start;
+  padding: 1.9px var(--padding-0) var(--padding-0);
+  box-sizing: border-box;
+}
+.prenezLeContro,
+.trimly2 {
+  position: relative;
+}
+.prenezLeContro {
+  align-self: stretch;
+  font-size: var(--fs-9);
+  color: var(--color-gray-300);
+  z-index: 1;
+}
+.image {
+  height: 59px;
+  display: flex;
+  align-items: flex-start;
+  padding: var(--padding-20) var(--padding-3) var(--padding-20) var(--padding-0);
+  box-sizing: border-box;
+}
+.imageIcon2,
+.imageIcon3 {
+  height: var(--height-19);
+  width: var(--width-19);
+  position: relative;
+}
+.imageIcon3 {
+  width: var(--width-17);
+  z-index: 1;
+}
+.button,
+.button2,
+.frame {
+  display: flex;
+  align-items: flex-start;
+}
+.button {
+  height: 24.8px;
+  padding: var(--padding-0) var(--padding-0) 1.8px;
+  box-sizing: border-box;
+  text-align: center;
+  color: var(--color-darkgray-700);
+}
+.button2,
+.frame {
+  justify-content: center;
+}
+.button2 {
+  width: var(--width-24);
+  background-color: var(--color-gray-2300);
+  padding: var(--padding-3) var(--padding-1) var(--padding-1);
+  box-sizing: border-box;
+}
+.frame {
+  height: var(--height-19);
+  background-image: url(/public/Frame@3x.png);
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: top;
+}
+.in {
+  position: relative;
+  flex-shrink: 0;
+}
+@media screen and (max-width: 900px) {
+  .groups2 {
+    max-width: 100%;
+  }
+}
+@media screen and (max-width: 700px) {
+  .groupsColumn0 {
+    max-width: 100%;
+    min-width: 100%;
+  }
+}

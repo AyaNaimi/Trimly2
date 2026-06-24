@@ -74,7 +74,8 @@ export default function HomeScreen({ navigation }) {
     addTransaction,
     addCategory,
     updateCategory,
-    deleteCategory 
+    deleteCategory,
+    requireProAccess
   } = useApp();
   const { Colors } = useTheme();
   const { t, locale } = useLanguage();
@@ -211,7 +212,14 @@ export default function HomeScreen({ navigation }) {
 
   const openCategoryPanel = () => {
     PremiumHaptics.selection();
+    if (!requireProAccess('manage_categories')) return;
     setShowCategoryPanel(true);
+  };
+
+  const openAddTransaction = () => {
+    PremiumHaptics.click();
+    if (!requireProAccess('add_transaction')) return;
+    setShowAddTx(true);
   };
 
   const openCategoryDetail = (categoryId) => {
@@ -327,7 +335,10 @@ export default function HomeScreen({ navigation }) {
               style={styles.headerLottieAnimation}
             />
           </View>
-          <Text style={styles.logoTitle}>TRIMLY</Text>
+          <Text style={styles.logoTitle}>
+            trimly
+            <Text style={styles.logoDot}>.</Text>
+          </Text>
         </View>
         <View style={styles.headerActions}>
           <PeriodPill label={getPeriodLabel(period, locale, t)} onPress={togglePeriod} />
@@ -566,7 +577,7 @@ export default function HomeScreen({ navigation }) {
       )}
 
       <Pressable
-        onPress={() => setShowAddTx(true)}
+        onPress={openAddTransaction}
         onPressIn={fabPress.onPressIn}
         onPressOut={fabPress.onPressOut}
       >
@@ -580,6 +591,7 @@ export default function HomeScreen({ navigation }) {
         onClose={() => setShowAddTx(false)}
         categories={state.categories}
         onSave={async (tx) => {
+          if (!requireProAccess('add_transaction')) return false;
           const ok = await addTransaction(tx);
           if (ok) {
             setShowAddTx(false);
@@ -603,12 +615,16 @@ export default function HomeScreen({ navigation }) {
           openCategoryDetail(categoryId);
         }}
         onCreateCategory={async (cat) => {
+          if (!requireProAccess('add_category')) return false;
           const ok = await addCategory({ ...cat, spent: 0 });
           if (ok) PremiumHaptics.success();
+          return ok;
         }}
         onUpdateCategory={async (cat) => {
+          if (!requireProAccess('update_category')) return false;
           const ok = await updateCategory(cat.id, cat);
           if (ok) PremiumHaptics.success();
+          return ok;
         }}
       />
 
@@ -620,12 +636,16 @@ export default function HomeScreen({ navigation }) {
         currency={state.currency || '€'}
         periodRange={periodRange}
         onClose={() => setShowCategoryDetail(false)}
+        onRequestUpdateCategory={() => requireProAccess('update_category')}
+        onRequestAddTransaction={() => requireProAccess('add_transaction')}
         onUpdateCategory={async (cat) => {
+          if (!requireProAccess('update_category')) return false;
           const ok = await updateCategory(cat.id, cat);
           if (ok) {
             setSelectedCategoryId(cat.id);
             PremiumHaptics.success();
           }
+          return ok;
         }}
         onDeleteCategory={async (categoryId) => {
           const ok = await deleteCategory(categoryId);
@@ -635,8 +655,10 @@ export default function HomeScreen({ navigation }) {
           }
         }}
         onAddTransaction={async (tx) => {
+          if (!requireProAccess('add_transaction')) return false;
           const ok = await addTransaction(tx);
           if (ok) PremiumHaptics.success();
+          return ok;
         }}
       />
 
@@ -665,9 +687,12 @@ function makeStyles(Colors) { return StyleSheet.create({
   logoTitle: {
     ...Fonts.primary,
     ...Fonts.black,
-    fontSize: 18,
+    fontSize: 22,
     color: Colors.text,
-    letterSpacing: 3,
+    letterSpacing: -0.5,
+  },
+  logoDot: {
+    color: '#FF9100', // Premium Logo Orange
   },
   headerMascotContainer: {
     width: 40,

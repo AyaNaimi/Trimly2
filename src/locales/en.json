@@ -33,7 +33,8 @@
     "overspent": "Overspent",
     "daysRemaining": "{{count}} days remaining",
     "leftLabel": "Left",
-    "later": "Later"
+    "later": "Later",
+    "appName": "Trimly"
   },
   "navigation": {
     "home": "Home",
@@ -424,6 +425,7 @@
     }
   },
   "scanner": {
+    "headerTitle": "Smart scan",
     "stages": {
       "connecting": "Connecting to mailbox",
       "searching": "Searching for receipts & invoices",
@@ -436,7 +438,13 @@
       "subtitle": "Hybrid Flow",
       "description": "Trimly scans your Gmail to find subscription emails and import them automatically.",
       "pendingTitle": "Pending detections",
-      "pendingDescription": "{{count}} subscriptions are waiting for your validation."
+      "pendingDescription": "{{count}} subscriptions are waiting for your validation.",
+      "secureTitle": "Secure connection",
+      "secureDesc": "We only read your emails, never modify or delete anything.",
+      "aiTitle": "AI-powered detection",
+      "aiDesc": "Our AI finds subscription emails and extracts the details automatically.",
+      "quickTitle": "Quick import",
+      "quickDesc": "Review detected subscriptions and import them in one tap."
     },
     "manual": {
       "title": "Manual Gmail Scan",
@@ -469,6 +477,7 @@
       "aiAlternatives": "AI suggested alternatives",
       "noAlternatives": "No reliable alternatives for this service.",
       "import": "Import",
+      "importSelected": "Import {{count}} subscriptions",
       "ignore": "Ignore",
       "successTitle": "Success",
       "successMessage": "{{count}} subscriptions imported into Trimly."

@@ -358,7 +358,7 @@
   justify-content: center;
   align-items: center;
   position: relative;
-  height: 620px;
+  height: 700px;
 }
 
 .mockupWrapper {
@@ -443,55 +443,14 @@
 }
 .behind5::after { background-position: 0 80%; }
 
-/* Phone outer shell */
-.phoneMockup {
-  position: relative;
-  width: 280px;
-  height: 560px;
-  background-color: #1a1a1a;
-  border-radius: 44px;
-  padding: 12px;
-  box-shadow:
-    0 35px 70px rgba(0,0,0,0.3),
-    0 15px 30px rgba(0,0,0,0.2),
-    inset 0 0 0 2px #333;
-  transform: rotate(-8deg) translateY(-20px);
+/* Phone image (already includes device frame) */
+.phoneImage {
+  width: 400px;
+  height: auto;
+  transform: rotate(5deg) translateY(-20px);
   z-index: 3;
   flex-shrink: 0;
-  /* Ensure phone displays correctly on top of brush strokes */
-}
-
-/* Dynamic Island / Notch */
-.phoneNotch {
-  position: absolute;
-  top: 18px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90px;
-  height: 24px;
-  background-color: #1a1a1a;
-  border-radius: 14px;
-  z-index: 10;
-}
-
-/* Phone screen inner */
-.phoneScreen {
-  width: 100%;
-  height: 100%;
-  background-color: #f5f5f5;
-  border-radius: 34px;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  font-size: 10px;
-}
-
-/* Full-screen image inside phone */
-.phoneScreenImage {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+  filter: drop-shadow(0 35px 70px rgba(0,0,0,0.3)) drop-shadow(0 15px 30px rgba(0,0,0,0.2));
 }
 
 /* Status Bar */
@@ -2307,9 +2266,8 @@
   .heroRight {
     height: 420px;
   }
-  .phoneMockup {
-    width: 240px;
-    height: 480px;
+  .phoneImage {
+    width: 320px;
   }
   
   /* Adjust brush strokes for mobile - proportional to phone size */
@@ -2504,10 +2462,8 @@
   .heroRight {
     height: 360px;
   }
-  .phoneMockup {
-    width: 210px;
-    height: 420px;
-    border-radius: 36px;
+  .phoneImage {
+    width: 280px;
   }
   
   /* Brush strokes for very small mobile - proportional */

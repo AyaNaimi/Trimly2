@@ -272,6 +272,76 @@
     "invalidInput": "Ungültige Eingabe",
     "required": "Dieses Feld ist erforderlich"
   },
+  "scanner": {
+    "headerTitle": "Intelligenter Scan",
+    "stages": {
+      "connecting": "Verbindung zum Postfach",
+      "searching": "Suche nach Belegen und Rechnungen",
+      "analyzing": "KI-Analyse der Betr\u00e4ge",
+      "preparing": "Alternativen werden vorbereitet"
+    },
+    "choose": {
+      "title": "Abonnements erkennen",
+      "titleAuto": "Postfach verbinden",
+      "subtitle": "Hybrid-Flow",
+      "description": "Trimly scannt Gmail, findet E-Mails zu Abonnements und importiert sie automatisch.",
+      "pendingTitle": "Ausstehende Erkennungen",
+      "pendingDescription": "{{count}} Abonnements warten auf deine Best\u00e4tigung.",
+      "secureTitle": "Sichere Verbindung",
+      "secureDesc": "Wir lesen deine E-Mails nur und \u00e4ndern oder l\u00f6schen nichts.",
+      "aiTitle": "Erkennung mit KI",
+      "aiDesc": "Unsere KI findet E-Mails zu Abonnements und extrahiert die Details automatisch.",
+      "quickTitle": "Schneller Import",
+      "quickDesc": "Pr\u00fcfe erkannte Abonnements und importiere sie mit einem Fingertipp."
+    },
+    "manual": {
+      "title": "Manueller Gmail-Scan",
+      "subtitle": "IMAP-Konfiguration",
+      "description": "Verwende ein Google-App-Passwort, damit Trimly deine Rechnungs-E-Mails sicher lesen kann.",
+      "emailLabel": "E-Mail-Adresse",
+      "passwordLabel": "Gmail-App-Passwort",
+      "startButton": "Manuellen Scan starten"
+    },
+    "scanning": {
+      "title": "Scan l\u00e4uft...",
+      "logs": {
+        "start": "Scan mit {{provider}}...",
+        "mailbox": "Postfach: {{email}}",
+        "reading": "E-Mails werden per API gelesen...",
+        "foundEmails": "{{count}} relevante E-Mails gefunden",
+        "analyzed": "{{count}} E-Mails im Detail analysiert",
+        "foundSubs": "{{count}} Abonnements gefunden",
+        "error": "Fehler: {{message}}"
+      }
+    },
+    "review": {
+      "detected": "Erkannt",
+      "monthlyTotal": "Monatssumme",
+      "emptyTitle": "Nichts gefunden",
+      "emptyDescription": "In den analysierten E-Mails wurden keine Abonnements erkannt. Versuche einen anderen Zeitraum oder ein anderes Konto.",
+      "retry": "Erneut versuchen",
+      "actions": "Aktionen",
+      "close": "Schlie\u00dfen",
+      "aiAlternatives": "Von KI vorgeschlagene Alternativen",
+      "noAlternatives": "Keine verl\u00e4sslichen Alternativen f\u00fcr diesen Dienst.",
+      "import": "Importieren",
+      "importSelected": "{{count}} Abonnements importieren",
+      "ignore": "Ignorieren",
+      "successTitle": "Erfolg",
+      "successMessage": "{{count}} Abonnements wurden in Trimly importiert."
+    },
+    "errors": {
+      "loginRequired": "Bitte melde dich zuerst in deinem Konto an.",
+      "gmailOnly": "Derzeit ist nur der Gmail-Scan \u00fcber Google eingerichtet.",
+      "noTokens": "Keine Gmail-Tokens gefunden. Verbinde dich mit Google und versuche es erneut.",
+      "emailRequired": "Bitte gib eine E-Mail-Adresse an.",
+      "passwordRequired": "Bitte gib ein Gmail-App-Passwort an.",
+      "importFailed": "Dieses Abonnement kann nicht importiert werden.",
+      "dismissFailed": "Dieses Abonnement kann nicht ignoriert werden.",
+      "networkReach": "Der Scan-Dienst ist nicht erreichbar. Pr\u00fcfe die Backend-URL oder IP-Adresse.",
+      "timeout": "Der Scan wurde gestartet, ist aber abgelaufen. Pr\u00fcfe die Backend-Logs oder versuche weniger E-Mails."
+    }
+  },
   "modals": {
     "addTransaction": {
       "title": "Transaktion hinzufügen",

@@ -6,6 +6,7 @@ import {
   AccessibilityInfo,
   FlatList,
   Image,
+  ImageBackground,
   KeyboardAvoidingView,
   LayoutAnimation,
   Animated,
@@ -179,29 +180,6 @@ const COMPANY_CARDS_ROW_4 = [
   { name: 'Tata', logo: 'https://cdn-icons-png.flaticon.com/512/5969/5969188.png' },
 ];
 
-const NOTIF_CARDS_ROW_1 = [
-  { name: 'Netflix', logo: 'https://cdn-icons-png.flaticon.com/512/732/732228.png', time: '5m', msg: '🚨 Prélèvement de 15,99 € demain', isAlert: true },
-  { name: 'Spotify', logo: 'https://cdn-icons-png.flaticon.com/512/174/174872.png', time: '2h', msg: '✅ Premium renouvelé avec succès', isAlert: false },
-  { name: 'iCloud', logo: 'https://cdn-icons-png.flaticon.com/512/0/747.png', time: '1j', msg: 'Abonnement iCloud 2 To actif', isAlert: false },
-];
-
-const NOTIF_CARDS_ROW_2 = [
-  { name: 'Prime', logo: 'https://cdn-icons-png.flaticon.com/512/5968/5968202.png', time: '10m', msg: '⚠️ Prix en hausse le mois prochain', isAlert: true },
-  { name: 'Disney+', logo: 'https://cdn-icons-png.flaticon.com/512/5977/5977590.png', time: '4h', msg: 'Essai gratuit expire dans 2j !', isAlert: true },
-  { name: 'YouTube', logo: 'https://cdn-icons-png.flaticon.com/512/1384/1384060.png', time: '2j', msg: '✅ Facture de 12,99 € payée', isAlert: false },
-];
-
-const NOTIF_CARDS_ROW_3 = [
-  { name: 'Canva', logo: 'https://cdn-icons-png.flaticon.com/512/5968/5968250.png', time: '1h', msg: '🚨 Erreur de paiement : carte rejetée', isAlert: true },
-  { name: 'Dropbox', logo: 'https://cdn-icons-png.flaticon.com/512/5968/5968250.png', time: '6h', msg: 'Espace de stockage mis à niveau', isAlert: false },
-  { name: 'Adobe', logo: 'https://cdn-icons-png.flaticon.com/512/5968/5968202.png', time: '3j', msg: '⚠️ Période d\'essai terminée', isAlert: true },
-];
-
-const NOTIF_CARDS_ROW_4 = [
-  { name: 'Slack', logo: 'https://cdn-icons-png.flaticon.com/512/5968/5968250.png', time: 'maintenant', msg: '✅ Facture Slack Pro payée', isAlert: false },
-  { name: 'PS Plus', logo: 'https://cdn-icons-png.flaticon.com/512/5977/5977590.png', time: '3h', msg: '⚠️ Prochain prélèvement le 25/05', isAlert: false },
-  { name: 'Canva', logo: 'https://cdn-icons-png.flaticon.com/512/5968/5968250.png', time: '12h', msg: 'Abonnement modifié avec succès', isAlert: false },
-];
 const NOTIFICATION_ALERT_PREVIEW = [
   { name: 'Spotify', brand: 'spotify', time: '2h', msg: 'Premium renouvelé avec succès', color: '#1DB954' },
   { name: 'Disney+', brand: 'disney', time: '4h', msg: 'Essai gratuit expire dans 2j !', color: '#0B2D5C' },
@@ -217,6 +195,9 @@ const FLOATING_ALERT_LOGOS = [
   { logo: 'https://cdn-icons-png.flaticon.com/512/5969/5969248.png', style: 'alertFloatYellow', drift: 0.45 },
 ];
 
+import { mockupImageBase64 } from './mockupImageBase64';
+const MOCKUP_IMAGE = { uri: mockupImageBase64 };
+
 function BrandLogo({ brand, color, size = 34, muted = false, styles }) {
   const BRAND_IMAGES = {
     spotify: { uri: 'https://cdn-icons-png.flaticon.com/512/174/174872.png' },
@@ -231,315 +212,7 @@ function BrandLogo({ brand, color, size = 34, muted = false, styles }) {
   );
 }
 
-function NotificationStepDesign({ styles }) {
-  const { isDark, Colors } = useTheme();
-  const notifAnim = useRef(new Animated.Value(0)).current;
-
-  useEffect(() => {
-    Animated.sequence([
-      Animated.delay(600),
-      Animated.spring(notifAnim, {
-        toValue: 1,
-        tension: 25,
-        friction: 6,
-        useNativeDriver: true,
-      })
-    ]).start();
-  }, []);
-
-  return (
-    <View style={styles.notifDesignContainer}>
-      <View style={styles.designStatusBar}>
-        <Text style={styles.designStatusTime}>9:41</Text>
-        <View style={styles.designIsland} />
-        <View style={styles.designStatusRight}>
-          <View style={styles.signalBars}>
-            <View style={[styles.signalBar, styles.signalBarOne]} />
-            <View style={[styles.signalBar, styles.signalBarTwo]} />
-            <View style={[styles.signalBar, styles.signalBarThree]} />
-          </View>
-          <Text style={styles.wifiMark}>⌁</Text>
-          <View style={styles.batteryPill}>
-            <Text style={styles.batteryText}>80</Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.phonePoster}>
-        {/* Curved elegant background lines */}
-        <Svg height="100%" width="100%" style={StyleSheet.absoluteFillObject} pointerEvents="none">
-          <Path
-            d="M -60 220 C 60 180, 160 380, 360 320"
-            fill="none"
-            stroke={isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)'}
-            strokeWidth={1.5}
-          />
-          <Path
-            d="M -30 120 C 120 100, 220 340, 420 240"
-            fill="none"
-            stroke={isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.02)'}
-            strokeWidth={1}
-          />
-        </Svg>
-
-        {/* Ambient Glow */}
-        <View style={styles.ambientGlow} />
-
-        {/* Rotated 3D cards behind the phone */}
-        <View style={[styles.bgFloatingCard, styles.bgFloatingCardLeft]}>
-          <Text style={styles.bgFloatingCardTitle}>Économies</Text>
-          <Text style={styles.bgFloatingCardValue}>+120,50 €</Text>
-          <Text style={styles.bgFloatingCardSub}>Ce mois-ci</Text>
-        </View>
-
-        <View style={[styles.bgFloatingCard, styles.bgFloatingCardRight]}>
-          <Text style={styles.bgFloatingCardTitle}>Alerte Budget</Text>
-          <Text style={styles.bgFloatingCardValue}>85%</Text>
-          <Text style={styles.bgFloatingCardSub}>Shopping atteint</Text>
-        </View>
-
-        <View style={styles.phoneShell}>
-          <View style={styles.phoneSideButtonLeft} />
-          <View style={styles.phoneSideButtonRight} />
-          <View style={styles.phoneGlass}>
-            {/* Background Gradient Wash */}
-            <View style={styles.phonePhotoWash} />
-            
-            {/* Dynamic Island */}
-            <View style={styles.dynamicIslandLarge} />
-
-            {/* Simulated Trimly App inspired by Screen 2 */}
-            <View style={styles.dashboardContainer}>
-              {/* Header */}
-              <View style={styles.mockHeader}>
-                <View>
-                  <Text style={styles.mockGreeting}>Salut, Louise</Text>
-                  <Text style={styles.mockSubtitle}>Prenez le contrôle ici.</Text>
-                </View>
-                <Image source={{ uri: CENTRAL_AVATAR }} style={styles.mockAvatar} />
-              </View>
-
-              {/* Search Bar */}
-              <View style={styles.mockSearchBar}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Search size={11} color={isDark ? '#64748B' : '#94A3B8'} />
-                  <Text style={styles.mockSearchText}>Rechercher...</Text>
-                </View>
-                <SlidersHorizontal size={11} color={isDark ? '#64748B' : '#94A3B8'} />
-              </View>
-
-              {/* Horizontal Category Pills */}
-              <View style={styles.mockPillsContainer}>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingHorizontal: 12 }}>
-                  <View style={[styles.mockPill, { backgroundColor: '#818CF8' }]}><Text style={styles.mockPillText}>Streaming</Text></View>
-                  <View style={[styles.mockPill, { backgroundColor: '#F472B6' }]}><Text style={styles.mockPillText}>Loisirs</Text></View>
-                  <View style={[styles.mockPill, { backgroundColor: '#2DD4BF' }]}><Text style={styles.mockPillText}>Musique</Text></View>
-                  <View style={[styles.mockPill, { backgroundColor: '#FB923C' }]}><Text style={styles.mockPillText}>Cloud</Text></View>
-                </ScrollView>
-              </View>
-
-              {/* Section Header */}
-              <Text style={styles.mockSectionTitle}>Mes abonnements</Text>
-
-              {/* Subscription List */}
-              <View style={styles.mockList}>
-                {/* Netflix Card */}
-                <View style={styles.mockCard}>
-                  <LinearGradient colors={['#E11D48', '#881337']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.mockCardHeader}>
-                    <View style={styles.mockLogoWrapper}>
-                      <Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/732/732228.png' }} style={styles.mockCardLogo} />
-                    </View>
-                    <View style={{ flex: 1, marginLeft: 8 }}>
-                      <Text style={styles.mockCardTitle}>Netflix Premium</Text>
-                      <Text style={styles.mockCardCompany}>Streaming Inc.</Text>
-                    </View>
-                    <View style={styles.mockCardViewBtn}>
-                      <Text style={styles.mockCardViewText}>Gérer</Text>
-                    </View>
-                  </LinearGradient>
-                  <View style={styles.mockCardBody}>
-                    <View style={styles.mockCardTagRow}>
-                      <View style={styles.mockCardTag}><Text style={styles.mockCardTagText}>Mensuel</Text></View>
-                      <View style={styles.mockCardTag}><Text style={styles.mockCardTagText}>UHD 4K</Text></View>
-                      <View style={styles.mockCardTag}><Text style={styles.mockCardTagText}>4 Écrans</Text></View>
-                    </View>
-                    <Text style={styles.mockCardDescription} numberOfLines={2}>
-                      Prélèvement automatique mensuel programmé. Recommandé de vérifier le solde avant l'échéance.
-                    </Text>
-                    <View style={styles.budgetProgressRow}>
-                      <View style={styles.progressBarBg}>
-                        <View style={[styles.progressBarFill, { width: '85%', backgroundColor: '#EF4444' }]} />
-                      </View>
-                      <Text style={styles.budgetPercentText}>85% du budget</Text>
-                    </View>
-                    <View style={styles.mockCardFooter}>
-                      <Text style={styles.mockCardFooterText}>Facturé le 22 Juin</Text>
-                      <Text style={styles.mockCardPrice}>15,99 €</Text>
-                    </View>
-                  </View>
-                </View>
-
-                {/* Spotify Card */}
-                <View style={styles.mockCard}>
-                  <LinearGradient colors={['#10B981', '#064E3B']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.mockCardHeader}>
-                    <View style={styles.mockLogoWrapper}>
-                      <Image source={{ uri: 'https://cdn-icons-png.flaticon.com/512/174/174872.png' }} style={styles.mockCardLogo} />
-                    </View>
-                    <View style={{ flex: 1, marginLeft: 8 }}>
-                      <Text style={styles.mockCardTitle}>Spotify Family</Text>
-                      <Text style={styles.mockCardCompany}>Spotify AB</Text>
-                    </View>
-                    <View style={styles.mockCardViewBtn}>
-                      <Text style={styles.mockCardViewText}>Gérer</Text>
-                    </View>
-                  </LinearGradient>
-                  <View style={styles.mockCardBody}>
-                    <View style={styles.mockCardTagRow}>
-                      <View style={styles.mockCardTag}><Text style={styles.mockCardTagText}>Mensuel</Text></View>
-                      <View style={styles.mockCardTag}><Text style={styles.mockCardTagText}>Musique</Text></View>
-                      <View style={styles.mockCardTag}><Text style={styles.mockCardTagText}>Partagé</Text></View>
-                    </View>
-                    <Text style={styles.mockCardDescription} numberOfLines={2}>
-                      Abonnement partagé avec la famille. Paiement sécurisé via carte de crédit.
-                    </Text>
-                    <View style={styles.budgetProgressRow}>
-                      <View style={styles.progressBarBg}>
-                        <View style={[styles.progressBarFill, { width: '40%', backgroundColor: '#10B981' }]} />
-                      </View>
-                      <Text style={styles.budgetPercentText}>40% du budget</Text>
-                    </View>
-                    <View style={styles.mockCardFooter}>
-                      <Text style={styles.mockCardFooterText}>Facturé le 25 Juin</Text>
-                      <Text style={styles.mockCardPrice}>10,99 €</Text>
-                    </View>
-                  </View>
-                </View>
-              </View>
-            </View>
-
-            {/* Floating Animated Notification Banner */}
-            <Animated.View
-              style={[
-                styles.floatingNotifCard,
-                {
-                  transform: [
-                    {
-                      translateY: notifAnim.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: [-120, 68],
-                      })
-                    }
-                  ],
-                  opacity: notifAnim,
-                }
-              ]}
-            >
-              <View style={styles.designNotifCardContent}>
-                <Image source={require('../../../assets/icon.png')} style={styles.designNotifAvatar} />
-                <View style={styles.designNotifCopy}>
-                  <View style={styles.designNotifRow}>
-                    <Text style={styles.designNotifName}>Trimly</Text>
-                    <Text style={styles.designNotifTime}>maintenant</Text>
-                  </View>
-                  <Text style={styles.designNotifDesc} numberOfLines={2}>
-                    Objectif atteint ! Vous avez économisé 50€ ce mois-ci.
-                  </Text>
-                </View>
-              </View>
-            </Animated.View>
-          </View>
-        </View>
-      </View>
-
-      <Text style={styles.heroTitle}>Gardez le contrôle</Text>
-      <Text style={styles.heroSubtitle}>Recevez des alertes avant chaque prélèvement et évitez les surprises.</Text>
-    </View>
-  );
-}
-
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
-
-function AvatarOrbit({ styles }) {
-  const spinValue = useRef(new Animated.Value(0)).current;
-  const { isDark, Colors } = useTheme();
-
-  useEffect(() => {
-    Animated.loop(
-      Animated.timing(spinValue, {
-        toValue: 1,
-        duration: 40000,
-        useNativeDriver: true,
-      })
-    ).start();
-  }, []);
-
-  return (
-    <View style={styles.orbitContainer}>
-      {/* Background Orbit Rings (Axe au dessous) */}
-      <View style={[styles.orbitRing, { width: 140, height: 140, borderRadius: 70 }]} />
-      <View style={[styles.orbitRing, { width: 195, height: 195, borderRadius: 97.5 }]} />
-      <View style={[styles.orbitRing, { width: 250, height: 250, borderRadius: 125 }]} />
-
-      <Animated.View
-        style={[
-          styles.orbitInner,
-          {
-            transform: [
-              {
-                rotate: spinValue.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['0deg', '360deg'],
-                }),
-              },
-            ],
-          },
-        ]}
-      >
-        {FINANCE_ASSETS.map((asset, index) => {
-          const angle = (index / FINANCE_ASSETS.length) * Math.PI * 2;
-          const x = Math.cos(angle) * asset.radius;
-          const y = Math.sin(angle) * asset.radius;
-
-          return (
-            <View
-              key={index}
-              style={[
-                styles.orbitSquicleWrapper,
-                {
-                  left: 105 + x - asset.size / 2,
-                  top: 105 + y - asset.size / 2,
-                  width: asset.size,
-                  height: asset.size,
-                  borderRadius: asset.size * 0.3,
-                },
-              ]}
-            >
-              <Animated.View
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  transform: [
-                    {
-                      rotate: spinValue.interpolate({
-                        inputRange: [0, 1],
-                        outputRange: ['0deg', '-360deg'],
-                      }),
-                    },
-                  ],
-                }}
-              >
-                <Image source={{ uri: asset.uri }} style={styles.orbitAssetImage} />
-              </Animated.View>
-            </View>
-          );
-        })}
-      </Animated.View>
-      <View style={styles.centerSquicleContainer}>
-        <Image source={require('../../../assets/icon.png')} style={styles.centerAvatar} />
-      </View>
-    </View>
-  );
-}
 
 export default function LoginScreen() {
   const { state: appState, dispatch: appDispatch } = useApp();
@@ -613,6 +286,8 @@ export default function LoginScreen() {
       subscription?.remove?.();
     };
   }, []);
+
+
 
   // Pulse animation for accent capsules
   useEffect(() => {
@@ -1443,6 +1118,7 @@ export default function LoginScreen() {
         colors={gradientColors}
         style={styles.container}
       >
+
         {step === 0 && (
           <View style={styles.landingContainer}>
             {/* Background Tilted Grid of Cards */}
@@ -1524,7 +1200,7 @@ export default function LoginScreen() {
                   <Text style={styles.startSearchingText}>Commencer</Text>
                   <View style={styles.arrowCircle}>
                     <Animated.View style={{ transform: [{ translateX: arrowWiggleAnim }] }}>
-                      <ArrowRight size={20} color={Colors.accent} />
+                      <ArrowRight size={20} color={'#F59E0B'} />
                     </Animated.View>
                   </View>
                 </TouchableOpacity>
@@ -1540,7 +1216,7 @@ export default function LoginScreen() {
             onTouchEnd={resetAlertParallax}
             onTouchCancel={resetAlertParallax}
           >
-                      <View style={styles.alertPhoneFrame}>
+            <View style={styles.alertPhoneFrame}>
               {FLOATING_ALERT_LOGOS.map(item => (
                 <Animated.View
                   key={item.style}
@@ -1580,7 +1256,7 @@ export default function LoginScreen() {
                   <View style={styles.alertPreviewArea}>
                     <Animated.View
                       style={[
-                        styles.alertCardsStack,
+                        styles.alertPhoneMockup,
                         {
                           transform: [
                             { translateX: foregroundParallaxTranslateX },
@@ -1589,34 +1265,77 @@ export default function LoginScreen() {
                         },
                       ]}
                     >
-                      {NOTIFICATION_ALERT_PREVIEW.map((item, index) => (
-                        <Animated.View
-                          key={item.name}
-                            style={[
-                              styles.alertCard,
+                      {/* Single portrait mockup image (phone frame + lock screen baked in) */}
+                      <Image
+                        source={MOCKUP_IMAGE}
+                        style={[StyleSheet.absoluteFill, { width: '100%', height: '100%' }]}
+                        resizeMode="contain"
+                        fadeDuration={0}
+                      />
+
+                      {/* Notification card — overlays the whole mockup */}
+                      <Animated.View
+                        style={[
+                          styles.lockNotifCard,
+                          {
+                            opacity: alertCardEntranceAnims[0],
+                            transform: [
                               {
-                                opacity: alertCardEntranceAnims[index],
-                                transform: [
-                                  {
-                                    translateY: alertCardEntranceAnims[index].interpolate({
-                                      inputRange: [0, 1],
-                                      outputRange: [16, 0],
-                                    }),
-                                  },
-                                ],
+                                translateY: alertCardEntranceAnims[0].interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [14, 0],
+                                }),
                               },
-                            ]}
-                          >
-                            <BrandLogo brand={item.brand} color={item.color} size={50} styles={styles} />
-                          <View style={styles.alertCardCopy}>
-                            <View style={styles.alertCardHeaderRow}>
-                              <Text style={styles.alertCardName}>{item.name}</Text>
-                              <Text style={styles.alertCardTime}>{item.time}</Text>
-                            </View>
-                            <Text style={styles.alertCardMessage} numberOfLines={2}>{item.msg}</Text>
+                            ],
+                          },
+                        ]}
+                      >
+                        {/* Single row: square icon left + all text stacked right */}
+                        <View style={styles.lockNotifRow}>
+                          <View style={styles.lockNotifLogoBg}>
+                            <Image
+                              source={require('../../../assets/logo.png')}
+                              style={{ width: '80%', height: '80%', resizeMode: 'contain' }}
+                            />
                           </View>
-                        </Animated.View>
-                      ))}
+                          <View style={styles.lockNotifTextCol}>
+                            <View style={styles.lockNotifNameRow}>
+                              <Text style={styles.lockNotifAppName}>Trimly</Text>
+                              <Text style={styles.lockNotifTimestamp}>maintenant</Text>
+                            </View>
+                            <Text style={styles.lockNotifTitle}>Rappel : Netflix.</Text>
+                            <Text style={styles.lockNotifBody}>{'Renouvellement prévu dans 2 jours\n(18,99€)'}</Text>
+                          </View>
+                        </View>
+                      </Animated.View>
+                      
+                      
+                      {/* Flèche pointant vers l'écran du téléphone */}
+                      <Animated.View
+                        style={[
+                          styles.phoneArrow,
+                          {
+                            opacity: step1NotifAnim,
+                          },
+                        ]}
+                      >
+                        <Svg width="60" height="70" viewBox="0 0 60 70">
+                          <Path
+                            d="M 50 10 Q 35 30, 30 60"
+                            stroke={isDark ? '#10B981' : '#059669'}
+                            strokeWidth="3"
+                            fill="none"
+                            strokeLinecap="round"
+                          />
+                          <Path
+                            d="M 30 60 L 26 53 M 30 60 L 35 54"
+                            stroke={isDark ? '#10B981' : '#059669'}
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </Svg>
+                      </Animated.View>
                     </Animated.View>
                   </View>
 
@@ -1669,7 +1388,7 @@ export default function LoginScreen() {
                 onPress={() => setStep(0)}
                 activeOpacity={0.7}
               >
-                <ArrowLeft size={24} color={Colors.text} />
+                <ArrowLeft size={24} color={'#F59E0B'} />
               </TouchableOpacity>
 
               <View style={styles.cardHeader}>
@@ -1824,7 +1543,7 @@ export default function LoginScreen() {
                     <Text style={styles.submitButtonText}>{submitLabel}</Text>
                     <View style={styles.submitButtonCircle}>
                       <Animated.View style={{ transform: [{ translateX: arrowWiggleAnim }] }}>
-                      <ArrowRight size={20} color={'#10B981'} />
+                      <ArrowRight size={20} color={'#F59E0B'} />
                       </Animated.View>
                     </View>
                   </>
@@ -1943,47 +1662,19 @@ function makeStyles(Colors, isDark) {
   const cardBg = Colors.surface;
   const pageBg = Colors.bg;
   const isShortScreen = SCREEN_HEIGHT < 740;
-  const alertPreviewHeight = Math.min(610, Math.max(500, SCREEN_HEIGHT - 285));
+  const isSmallPhone = SCREEN_WIDTH <= 375;
+  const isLargePhone = SCREEN_WIDTH >= 400;
+  const isTinyPhone = SCREEN_WIDTH <= 360 || SCREEN_HEIGHT < 700;
+  const alertPhoneWidth = Math.min(
+    SCREEN_WIDTH * (isTinyPhone ? 0.68 : 0.78),
+    isTinyPhone ? 250 : isSmallPhone ? 270 : isLargePhone ? 320 : 300
+  );
+  const alertPhoneHeight = alertPhoneWidth * 1.71166666667;
+  const alertPreviewHeight = alertPhoneHeight + (isTinyPhone ? 20 : 36);
 
   return StyleSheet.create({
     safe: { flex: 1, backgroundColor: pageBg },
     container: { flex: 1 },
-    scrollContent: {
-      flexGrow: 1,
-      justifyContent: 'center',
-      paddingHorizontal: 26,
-      paddingTop: 30,
-      paddingBottom: 34,
-    },
-    heroPanel: {
-      minHeight: 380,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingTop: 20,
-      paddingBottom: 20,
-    },
-    heroTitle: {
-      ...Fonts.primary,
-      ...Fonts.black,
-      color: Colors.text,
-      fontSize: 28,
-      textAlign: 'center',
-      marginTop: 24,
-      maxWidth: 320,
-      lineHeight: 34,
-      letterSpacing: -0.8,
-    },
-    heroSubtitle: {
-      ...Fonts.primary,
-      ...Fonts.medium,
-      color: Colors.textSecondary,
-      fontSize: 15,
-      lineHeight: 22,
-      textAlign: 'center',
-      marginTop: 12,
-      maxWidth: 290,
-      letterSpacing: -0.2,
-    },
     fullPageForm: {
       flex: 1,
     },
@@ -2171,15 +1862,6 @@ function makeStyles(Colors, isDark) {
       textAlign: 'center',
       paddingVertical: 28,
     },
-    inputIconCircle: {
-      width: 32,
-      height: 32,
-      borderRadius: 16,
-      backgroundColor: Colors.accent,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 12,
-    },
     input: {
       flex: 1,
       ...Fonts.primary,
@@ -2282,723 +1964,6 @@ function makeStyles(Colors, isDark) {
       fontSize: 13,
       flex: 1,
     },
-    mainCta: {
-      height: 56,
-      borderRadius: Radius.pill,
-      paddingHorizontal: 28,
-      alignItems: 'center',
-      justifyContent: 'center',
-      alignSelf: 'center',
-      marginTop: 24,
-      minWidth: 230,
-      flexDirection: 'row',
-      ...Shadow.medium,
-    },
-    mainCtaText: {
-      ...Fonts.primary,
-      ...Fonts.black,
-      color: Colors.pureWhite,
-      fontSize: 15,
-      letterSpacing: 0,
-    },
-    skipBtn: {
-      marginTop: 16,
-      padding: 10,
-    },
-    skipText: {
-      ...Fonts.primary,
-      ...Fonts.medium,
-      color: Colors.textSecondary,
-      fontSize: 14,
-      opacity: 0.6,
-    },
-    notifStepContainer: {
-      width: '100%',
-      alignItems: 'center',
-      paddingTop: 20,
-    },
-    notifDesignContainer: {
-      width: '100%',
-      alignItems: 'center',
-      paddingTop: 0,
-    },
-    designStatusBar: {
-      display: 'none',
-      width: '100%',
-      height: 0,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 22,
-      marginBottom: 0,
-    },
-    designStatusTime: {
-      ...Fonts.primary,
-      ...Fonts.black,
-      color: Colors.text,
-      fontSize: 16,
-      letterSpacing: 0,
-      width: 58,
-    },
-    designIsland: {
-      width: 118,
-      height: 38,
-      borderRadius: 19,
-      backgroundColor: '#000',
-    },
-    designStatusRight: {
-      width: 74,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'flex-end',
-      gap: 6,
-    },
-    signalBars: {
-      width: 18,
-      height: 14,
-      flexDirection: 'row',
-      alignItems: 'flex-end',
-      gap: 2,
-    },
-    signalBar: {
-      width: 3,
-      borderRadius: 2,
-      backgroundColor: Colors.text,
-    },
-    signalBarOne: { height: 6 },
-    signalBarTwo: { height: 10 },
-    signalBarThree: { height: 14 },
-    wifiMark: {
-      ...Fonts.primary,
-      ...Fonts.black,
-      color: Colors.text,
-      fontSize: 17,
-      lineHeight: 18,
-      transform: [{ rotate: '180deg' }],
-    },
-    batteryPill: {
-      minWidth: 28,
-      height: 17,
-      borderRadius: 8,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: Colors.text,
-    },
-    batteryText: {
-      ...Fonts.primary,
-      ...Fonts.black,
-      color: pageBg,
-      fontSize: 10,
-      lineHeight: 12,
-      letterSpacing: 0,
-    },
-    phonePoster: {
-      width: '100%',
-      maxWidth: 360,
-      height: 410,
-      alignItems: 'center',
-      overflow: 'visible',
-      marginBottom: 0,
-    },
-    ambientGlow: {
-      position: 'absolute',
-      width: 140,
-      height: 140,
-      borderRadius: 70,
-      backgroundColor: isDark ? 'rgba(99, 102, 241, 0.12)' : 'rgba(99, 102, 241, 0.06)',
-      top: 130,
-      left: '50%',
-      marginLeft: -70,
-      shadowColor: '#6366F1',
-      shadowOffset: { width: 0, height: 0 },
-      shadowOpacity: 0.4,
-      shadowRadius: 50,
-    },
-    bgFloatingCard: {
-      position: 'absolute',
-      padding: 10,
-      borderRadius: 14,
-      backgroundColor: isDark ? 'rgba(25, 25, 30, 0.92)' : 'rgba(255, 255, 255, 0.96)',
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.08)',
-      ...Shadow.premium,
-      zIndex: 1,
-    },
-    bgFloatingCardLeft: {
-      left: -20,
-      top: 110,
-      transform: [{ rotate: '-12deg' }],
-    },
-    bgFloatingCardRight: {
-      right: -25,
-      top: 220,
-      transform: [{ rotate: '12deg' }],
-    },
-    bgFloatingCardTitle: {
-      ...Fonts.primary,
-      ...Fonts.bold,
-      fontSize: 9,
-      color: isDark ? '#94A3B8' : '#64748B',
-    },
-    bgFloatingCardValue: {
-      ...Fonts.primary,
-      ...Fonts.black,
-      fontSize: 13,
-      color: isDark ? '#FFF' : '#0F172A',
-      marginTop: 2,
-    },
-    bgFloatingCardSub: {
-      ...Fonts.primary,
-      ...Fonts.medium,
-      fontSize: 8,
-      color: '#10B981',
-      marginTop: 1,
-    },
-    phoneShell: {
-      position: 'absolute',
-      top: 4,
-      width: 260,
-      height: 460,
-      borderRadius: 44,
-      backgroundColor: '#0D0D0F',
-      padding: 6,
-      borderWidth: 2,
-      borderColor: '#2A2A2E',
-      ...Shadow.premium,
-      zIndex: 2,
-    },
-    phoneSideButtonLeft: {
-      position: 'absolute',
-      left: -3,
-      top: 96,
-      width: 3,
-      height: 58,
-      borderRadius: 2,
-      backgroundColor: '#111',
-    },
-    phoneSideButtonRight: {
-      position: 'absolute',
-      right: -3,
-      top: 130,
-      width: 3,
-      height: 78,
-      borderRadius: 2,
-      backgroundColor: '#111',
-    },
-    phoneGlass: {
-      flex: 1,
-      width: '100%',
-      height: '100%',
-      borderRadius: 38,
-      alignItems: 'center',
-      paddingTop: 15,
-      overflow: 'hidden',
-      backgroundColor: isDark ? '#000000' : '#FFFFFF',
-    },
-    phonePhoto: {
-      borderRadius: 38,
-    },
-    phoneBackground: {
-      ...StyleSheet.absoluteFillObject,
-      width: '100%',
-      height: '100%',
-    },
-    phonePhotoWash: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: isDark ? 'rgba(0, 0, 0, 0.72)' : 'rgba(255, 255, 255, 0.68)',
-    },
-    dynamicIslandLarge: {
-      position: 'absolute',
-      top: 12,
-      width: 74,
-      height: 21,
-      borderRadius: 11,
-      backgroundColor: '#050505',
-    },
-    dashboardContainer: {
-      flex: 1,
-      width: '100%',
-      paddingTop: 36,
-    },
-    mockHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      paddingHorizontal: 12,
-      marginTop: 4,
-    },
-    mockGreeting: {
-      ...Fonts.primary,
-      ...Fonts.medium,
-      fontSize: 10,
-      color: isDark ? '#94A3B8' : '#64748B',
-    },
-    mockSubtitle: {
-      ...Fonts.primary,
-      ...Fonts.bold,
-      fontSize: 13,
-      color: isDark ? '#FFF' : '#0F172A',
-      marginTop: 1,
-    },
-    mockAvatar: {
-      width: 22,
-      height: 22,
-      borderRadius: 11,
-    },
-    mockSearchBar: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.07)' : 'rgba(0, 0, 0, 0.04)',
-      borderRadius: 10,
-      paddingHorizontal: 10,
-      height: 30,
-      marginTop: 10,
-      marginHorizontal: 12,
-    },
-    mockSearchText: {
-      ...Fonts.primary,
-      ...Fonts.medium,
-      fontSize: 10,
-      color: isDark ? '#64748B' : '#94A3B8',
-    },
-    mockPillsContainer: {
-      marginTop: 10,
-      height: 22,
-    },
-    mockPill: {
-      paddingHorizontal: 10,
-      borderRadius: 12,
-      alignItems: 'center',
-      justifyContent: 'center',
-      height: 20,
-    },
-    mockPillText: {
-      ...Fonts.primary,
-      ...Fonts.bold,
-      fontSize: 8.5,
-      color: '#FFF',
-    },
-    mockSectionTitle: {
-      ...Fonts.primary,
-      ...Fonts.black,
-      fontSize: 11.5,
-      color: isDark ? '#FFF' : '#000',
-      marginHorizontal: 12,
-      marginTop: 14,
-      letterSpacing: -0.2,
-    },
-    mockList: {
-      flex: 1,
-      marginTop: 4,
-      paddingHorizontal: 12,
-      gap: 8,
-    },
-    mockCard: {
-      borderRadius: 14,
-      backgroundColor: isDark ? 'rgba(30, 30, 35, 0.6)' : '#F8FAFC',
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-      overflow: 'hidden',
-      paddingBottom: 6,
-      ...Shadow.soft,
-    },
-    mockCardHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 10,
-      height: 38,
-    },
-    mockLogoWrapper: {
-      width: 22,
-      height: 22,
-      borderRadius: 6,
-      backgroundColor: '#FFF',
-      alignItems: 'center',
-      justifyContent: 'center',
-      ...Shadow.soft,
-    },
-    mockCardLogo: {
-      width: 14,
-      height: 14,
-      borderRadius: 4,
-      backgroundColor: '#FFF',
-    },
-    mockCardTitle: {
-      ...Fonts.primary,
-      ...Fonts.bold,
-      fontSize: 10,
-      color: '#FFF',
-      marginLeft: 0,
-    },
-    mockCardCompany: {
-      ...Fonts.primary,
-      ...Fonts.medium,
-      fontSize: 7.5,
-      color: 'rgba(255, 255, 255, 0.7)',
-      marginTop: 0.5,
-    },
-    mockCardViewBtn: {
-      backgroundColor: 'rgba(255, 255, 255, 0.25)',
-      paddingHorizontal: 6,
-      paddingVertical: 2,
-      borderRadius: 6,
-    },
-    mockCardViewText: {
-      ...Fonts.primary,
-      ...Fonts.bold,
-      fontSize: 8,
-      color: '#FFF',
-    },
-    mockCardBody: {
-      paddingHorizontal: 8,
-      paddingTop: 6,
-    },
-    mockCardTagRow: {
-      flexDirection: 'row',
-      gap: 4,
-    },
-    mockCardTag: {
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.03)',
-      paddingHorizontal: 6,
-      paddingVertical: 2,
-      borderRadius: 6,
-    },
-    mockCardTagText: {
-      ...Fonts.primary,
-      ...Fonts.bold,
-      fontSize: 8,
-      color: isDark ? '#94A3B8' : '#475569',
-    },
-    mockCardDescription: {
-      ...Fonts.primary,
-      ...Fonts.medium,
-      fontSize: 8,
-      color: isDark ? '#94A3B8' : '#64748B',
-      marginTop: 5,
-      lineHeight: 11,
-    },
-    budgetProgressRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginTop: 6,
-    },
-    progressBarBg: {
-      flex: 1,
-      height: 4,
-      borderRadius: 2,
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)',
-      marginRight: 6,
-      overflow: 'hidden',
-    },
-    progressBarFill: {
-      height: '100%',
-      borderRadius: 2,
-    },
-    budgetPercentText: {
-      ...Fonts.primary,
-      ...Fonts.bold,
-      fontSize: 7.5,
-      color: isDark ? '#94A3B8' : '#64748B',
-    },
-    mockCardFooter: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginTop: 6,
-      borderTopWidth: 0.5,
-      borderTopColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.04)',
-      paddingTop: 4,
-    },
-    mockCardFooterText: {
-      ...Fonts.primary,
-      ...Fonts.medium,
-      fontSize: 8,
-      color: isDark ? '#64748B' : '#94A3B8',
-    },
-    mockCardPrice: {
-      ...Fonts.primary,
-      ...Fonts.black,
-      fontSize: 9,
-      color: isDark ? '#FFF' : '#000',
-    },
-    floatingNotifCard: {
-      position: 'absolute',
-      left: 12,
-      right: 12,
-      borderRadius: 18,
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.03)',
-      paddingHorizontal: 12,
-      paddingVertical: 10,
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-      ...Shadow.premium,
-      zIndex: 9999,
-    },
-    designNotifCardContent: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      width: '100%',
-    },
-    designNotifCard: {
-      height: 58,
-      borderRadius: 18,
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.03)',
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 14,
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-      ...Shadow.soft,
-    },
-    designNotifAvatar: {
-      width: 32,
-      height: 32,
-      borderRadius: 10,
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-    },
-    designNotifBadge: {
-      position: 'absolute',
-      left: 40,
-      top: 35,
-      width: 18,
-      height: 18,
-      borderRadius: 9,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#FF4C6A',
-      borderWidth: 2,
-      borderColor: Colors.pureWhite,
-    },
-    designNotifBadgeGreen: {
-      backgroundColor: '#70D96B',
-    },
-    designNotifBadgeText: {
-      ...Fonts.primary,
-      ...Fonts.black,
-      color: Colors.pureWhite,
-      fontSize: 10,
-      lineHeight: 12,
-    },
-    designNotifCopy: {
-      flex: 1,
-      marginLeft: 12,
-      minWidth: 0,
-    },
-    designNotifRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: 10,
-    },
-    designNotifName: {
-      ...Fonts.primary,
-      ...Fonts.black,
-      color: Colors.text,
-      fontSize: 13,
-      letterSpacing: -0.2,
-    },
-    designNotifTime: {
-      ...Fonts.primary,
-      ...Fonts.medium,
-      color: Colors.textMuted,
-      fontSize: 11,
-    },
-    designNotifDesc: {
-      ...Fonts.primary,
-      ...Fonts.medium,
-      color: Colors.textSecondary,
-      fontSize: 11,
-      marginTop: 2,
-    },
-    notifStackLine1: {
-      height: 5,
-      width: '86%',
-      backgroundColor: Colors.surfaceAlt,
-      borderBottomLeftRadius: 16,
-      borderBottomRightRadius: 16,
-      marginTop: -2,
-      zIndex: -1,
-      borderWidth: 0.4,
-      borderColor: Colors.border,
-    },
-    notifStackLine2: {
-      height: 5,
-      width: '80%',
-      backgroundColor: Colors.surfaceAlt,
-      borderBottomLeftRadius: 16,
-      borderBottomRightRadius: 16,
-      marginTop: -2,
-      zIndex: -2,
-      borderWidth: 0.4,
-      borderColor: Colors.border,
-    },
-
-    notifGradient: {
-      position: 'absolute',
-      top: -100,
-      left: -100,
-      right: -100,
-      bottom: -100,
-      opacity: 0.4,
-    },
-    phoneMockup: {
-      width: 260,
-      height: 480,
-      borderRadius: 48,
-      backgroundColor: '#000',
-      padding: 10,
-      borderWidth: 2,
-      borderColor: '#333',
-      marginBottom: 30,
-      ...Shadow.premium,
-      overflow: 'hidden',
-    },
-    phoneScreen: {
-      flex: 1,
-      backgroundColor: Colors.bg,
-      borderRadius: 40,
-      padding: 15,
-      alignItems: 'center',
-      justifyContent: 'flex-start',
-    },
-    dynamicIsland: {
-      width: 80,
-      height: 24,
-      backgroundColor: isDark ? '#000' : '#1A1A1A',
-      borderRadius: 12,
-      marginTop: 5,
-      marginBottom: 30,
-    },
-    phoneDate: {
-      ...Fonts.primary,
-      ...Fonts.bold,
-      color: Colors.textSecondary,
-      fontSize: 14,
-      opacity: 0.7,
-    },
-    phoneTime: {
-      ...Fonts.primary,
-      ...Fonts.black,
-      color: Colors.text,
-      fontSize: 64,
-      marginVertical: 5,
-      letterSpacing: -2,
-    },
-    notifCard: {
-      width: '108%',
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.03)',
-      borderRadius: 22,
-      padding: 14,
-      marginBottom: 12,
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-    },
-    notifHeader: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    notifIcon: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
-    },
-    notifContent: {
-      flex: 1,
-      marginLeft: 12,
-    },
-    notifRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    },
-    notifTitle: {
-      ...Fonts.primary,
-      ...Fonts.bold,
-      fontSize: 14,
-      color: Colors.text,
-    },
-    notifDesc: {
-      ...Fonts.primary,
-      fontSize: 12,
-      color: Colors.textSecondary,
-      marginTop: 1,
-    },
-    notifTime: {
-      fontSize: 11,
-      color: Colors.textMuted,
-    },
-    emojiWrap: {
-      position: 'absolute',
-      zIndex: 10,
-    },
-    emoji: {
-      fontSize: 28,
-    },
-    orbitRing: {
-      position: 'absolute',
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)',
-      borderStyle: 'dashed',
-    },
-    orbitContainer: {
-      width: 210,
-      height: 210,
-      justifyContent: 'center',
-      alignItems: 'center',
-      position: 'relative',
-    },
-    orbitInner: {
-      width: '100%',
-      height: '100%',
-      position: 'relative',
-    },
-    orbitAvatarWrapper: {
-      position: 'absolute',
-      width: 44,
-      height: 44,
-      borderRadius: 18,
-      overflow: 'hidden',
-      borderWidth: 2,
-      borderColor: isDark ? Colors.borderStrong : '#FFF',
-      ...Shadow.soft,
-    },
-    orbitSquicleWrapper: {
-      position: 'absolute',
-      width: 44,
-      height: 44,
-      borderRadius: 14,
-      backgroundColor: Colors.surface,
-      padding: 8,
-      ...Shadow.soft,
-      justifyContent: 'center',
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: Colors.border,
-    },
-    orbitAssetImage: {
-      width: '100%',
-      height: '100%',
-      resizeMode: 'contain',
-    },
-    centerSquicleContainer: {
-      position: 'absolute',
-      width: 84,
-      height: 84,
-      borderRadius: 24,
-      backgroundColor: Colors.surface,
-      padding: 0,
-      overflow: 'hidden',
-      borderWidth: 1,
-      borderColor: Colors.border,
-      ...Shadow.premium,
-    },
-    centerAvatar: {
-      width: '100%',
-      height: '100%',
-    },
     landingContainer: {
       flex: 1,
       backgroundColor: 'transparent',
@@ -3031,10 +1996,6 @@ function makeStyles(Colors, isDark) {
       alignItems: 'center',
       opacity: 0.9,
       zIndex: 1,
-    },
-    alertGridWrapper: {
-      opacity: 0.12,
-      transform: [{ scale: 0.95 }],
     },
     gridTiltedContainer: {
       width: '140%',
@@ -3083,12 +2044,12 @@ function makeStyles(Colors, isDark) {
       flex: 1,
       justifyContent: 'space-between',
       zIndex: 10,
-      paddingTop: Platform.OS === 'ios' ? (isShortScreen ? 30 : 48) : 24,
-      paddingBottom: isShortScreen ? 16 : 22,
+      paddingTop: Platform.OS === 'ios' ? (isShortScreen ? 12 : 20) : 12,
+      paddingBottom: isShortScreen ? 10 : 14,
     },
     alertLandingHeader: {
       alignItems: 'center',
-      marginTop: isShortScreen ? 22 : 46,
+      marginTop: isShortScreen ? 8 : 16,
       paddingHorizontal: 22,
     },
     alertLandingTitle: {
@@ -3172,7 +2133,7 @@ function makeStyles(Colors, isDark) {
     },
     arrowWrapper: {
       marginTop: 15,
-      marginLeft: -50,
+      alignItems: 'center',
     },
     landingFooter: {
       paddingHorizontal: 24,
@@ -3181,7 +2142,7 @@ function makeStyles(Colors, isDark) {
     alertLandingFooter: {
       flex: 1,
       justifyContent: 'flex-end',
-      paddingHorizontal: 24,
+      paddingHorizontal: 16,
     },
     startSearchingButton: {
       flexDirection: 'row',
@@ -3210,104 +2171,10 @@ function makeStyles(Colors, isDark) {
     },
     alertPreviewArea: {
       height: alertPreviewHeight,
-      marginTop: isShortScreen ? 8 : 14,
-      marginBottom: isShortScreen ? 10 : 18,
+      marginTop: isShortScreen ? 6 : 10,
+      marginBottom: isShortScreen ? 8 : 12,
       justifyContent: 'center',
       position: 'relative',
-    },
-    alertCardsStack: {
-      width: '88%',
-      alignSelf: 'center',
-      gap: isShortScreen ? 13 : 20,
-      zIndex: 2,
-    },
-    alertCard: {
-      minHeight: isShortScreen ? 72 : 82,
-      borderRadius: 17,
-      backgroundColor: isDark ? 'rgba(5, 11, 24, 0.96)' : 'rgba(255, 255, 255, 0.96)',
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(15,23,42,0.04)',
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: isShortScreen ? 14 : 16,
-      paddingVertical: isShortScreen ? 10 : 13,
-      ...Shadow.premium,
-    },
-    brandLogo: {
-      borderRadius: 999,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 16,
-      overflow: 'hidden',
-    },
-    brandLogoMuted: {
-      marginRight: 0,
-      transform: [{ scale: 1.08 }],
-      shadowColor: Colors.text,
-      shadowOpacity: 0.08,
-      shadowRadius: 18,
-      shadowOffset: { width: 0, height: 0 },
-    },
-    brandMarkText: {
-      ...Fonts.primary,
-      ...Fonts.black,
-      color: Colors.pureWhite,
-      letterSpacing: 0,
-    },
-    dropboxGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: 2,
-    },
-    dropboxTile: {
-      borderRadius: 1.5,
-      transform: [{ rotate: '45deg' }],
-    },
-    alertLogoWrap: {
-      width: 48,
-      height: 48,
-      borderRadius: 24,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 14,
-    },
-    alertLogo: {
-      width: 34,
-      height: 34,
-      borderRadius: 17,
-      resizeMode: 'contain',
-    },
-    alertCardCopy: {
-      flex: 1,
-      minWidth: 0,
-    },
-    alertCardHeaderRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 4,
-    },
-    alertCardName: {
-      ...Fonts.primary,
-      ...Fonts.black,
-      fontSize: isShortScreen ? 14 : 16,
-      color: Colors.text,
-      letterSpacing: 0,
-    },
-    alertCardMessage: {
-      ...Fonts.primary,
-      ...Fonts.semiBold,
-      fontSize: isShortScreen ? 12.5 : 14,
-      lineHeight: isShortScreen ? 17 : 19,
-      color: Colors.textSecondary,
-    },
-    alertCardTime: {
-      ...Fonts.primary,
-      ...Fonts.bold,
-      fontSize: isShortScreen ? 12 : 14,
-      color: Colors.textSecondary,
     },
     alertFloatingLogo: {
       position: 'absolute',
@@ -3383,121 +2250,246 @@ function makeStyles(Colors, isDark) {
       color: Colors.textSecondary,
       textDecorationLine: 'underline',
     },
-    miniBadge: {
-      paddingHorizontal: 8,
-      paddingVertical: 2,
-      borderRadius: 8,
-      marginLeft: 10,
+    alertPhoneMockup: {
+      width: alertPhoneWidth,
+      height: alertPhoneHeight,
+      alignSelf: 'center',
+      position: 'relative',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 20 },
+      shadowOpacity: 0.7,
+      shadowRadius: 30,
+      elevation: 20,
     },
-    miniBadgeText: {
+    mockPhoneInner: {
+      position: 'absolute',
+      top: '1.5%',
+      bottom: '1.5%',
+      left: '2%',
+      right: '2%',
+      borderRadius: alertPhoneWidth * 0.14,
+      overflow: 'hidden',
+      alignItems: 'center',
+    },
+    // Status bar at very top of screen
+    lockStatusBar: {
+      width: '100%',
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: alertPhoneWidth * 0.075,
+      paddingTop: alertPhoneWidth * 0.028,
+      height: alertPhoneWidth * 0.11,
+    },
+    lockStatusTime: {
       ...Fonts.primary,
-      ...Fonts.black,
-      fontSize: 11,
+      fontWeight: '600',
+      fontSize: alertPhoneWidth * 0.045,
       color: '#FFF',
+      letterSpacing: 0,
     },
-    notifStackContainer: {
+    lockStatusRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
+    },
+    lockSignalBars: {
+      flexDirection: 'row',
+      alignItems: 'flex-end',
+      gap: 1.5,
+    },
+    lockSignalBar: {
+      width: Math.max(2, alertPhoneWidth * 0.01),
+      borderRadius: 1,
+      backgroundColor: '#FFF',
+    },
+    lockWifiIcon: {
+      fontSize: 8,
+      color: '#FFF',
+      transform: [{ rotate: '180deg' }],
+      marginTop: -2,
+    },
+    lockBattery: {
+      width: alertPhoneWidth * 0.078,
+      height: alertPhoneWidth * 0.04,
+      borderRadius: 2,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.6)',
+      padding: 1.5,
+      justifyContent: 'center',
+    },
+    lockBatteryFill: {
+      flex: 1,
+      backgroundColor: '#FFF',
+      borderRadius: 1,
+    },
+    mockPhoneDynamicIsland: {
+      position: 'absolute',
+      top: alertPhoneWidth * 0.028,
+      width: alertPhoneWidth * 0.3,
+      height: alertPhoneWidth * 0.085,
+      borderRadius: alertPhoneWidth * 0.045,
+      backgroundColor: '#000',
+      zIndex: 4,
+    },
+    lockScreenHeader: {
+      position: 'absolute',
+      top: alertPhoneHeight * 0.115,
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+      paddingHorizontal: 10,
+      gap: 2,
+    },
+    lockTime: {
+      ...Fonts.primary,
+      fontWeight: '200',
+      fontSize: alertPhoneWidth * 0.17,
+      color: '#FFFFFF',
+      letterSpacing: -2,
+      lineHeight: alertPhoneWidth * 0.19,
+    },
+    lockDate: {
+      ...Fonts.primary,
+      fontWeight: '400',
+      fontSize: alertPhoneWidth * 0.047,
+      color: 'rgba(255,255,255,0.82)',
+      letterSpacing: 0,
+    },
+    // Notification card — overlays the mockup, positioned where iOS notifs appear
+    lockNotifCard: {
+      position: 'absolute',
+      top: alertPhoneHeight * 0.42,
+      left: alertPhoneWidth * 0.05,
+      right: alertPhoneWidth * 0.05,
+      borderRadius: alertPhoneWidth * 0.055,
+      backgroundColor: 'rgba(28,28,32,0.92)',
+      paddingHorizontal: alertPhoneWidth * 0.045,
+      paddingVertical: alertPhoneWidth * 0.038,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.16)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.5,
+      shadowRadius: 16,
+      elevation: 14,
+      zIndex: 20,
+    },
+    lockNotifRow: {
+      flexDirection: 'row',
+      alignItems: 'flex-start',
+    },
+    lockNotifLogoBg: {
+      width: alertPhoneWidth * 0.11,
+      height: alertPhoneWidth * 0.11,
+      borderRadius: alertPhoneWidth * 0.024,
+      backgroundColor: '#111113',
       alignItems: 'center',
       justifyContent: 'center',
-      height: 110,
-      width: '100%',
-      marginTop: Platform.OS === 'ios' ? 20 : 10,
-      marginBottom: 10,
-      zIndex: 100,
+      marginRight: alertPhoneWidth * 0.032,
+      flexShrink: 0,
+      borderWidth: 0.5,
+      borderColor: 'rgba(255,255,255,0.1)',
     },
-    notifCardBase: {
-      position: 'absolute',
-      width: '90%',
-      borderRadius: 20,
-      padding: 14,
-      flexDirection: 'row',
-      alignItems: 'center',
-      borderWidth: 1,
-      ...Shadow.premium,
-    },
-    notifCardFront: {
-      zIndex: 2,
-    },
-    notifCardBack: {
-      zIndex: 1,
-    },
-    notifCardAvatar: {
-      width: 38,
-      height: 38,
-      borderRadius: 12,
-      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    },
-    notifCardCopy: {
-      flex: 1,
-      marginLeft: 12,
-    },
-    notifCardHeaderRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 3,
-    },
-    notifCardAppName: {
-      ...Fonts.primary,
-      ...Fonts.black,
-      fontSize: 13.5,
-      letterSpacing: -0.2,
-    },
-    notifCardTime: {
-      ...Fonts.primary,
-      ...Fonts.bold,
-      fontSize: 11,
-    },
-    notifCardBodyText: {
-      ...Fonts.primary,
-      ...Fonts.medium,
-      fontSize: 11.5,
-      letterSpacing: -0.1,
-    },
-    bgNotifCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.03)',
-      borderWidth: 1,
-      borderColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)',
-      borderRadius: 14,
-      paddingVertical: 8,
-      paddingHorizontal: 12,
-      marginHorizontal: 8,
-      width: 220,
-      height: 52,
-      ...Shadow.soft,
-    },
-    bgNotifLogo: {
-      width: 22,
-      height: 22,
-      borderRadius: 6,
-      marginRight: 10,
-      resizeMode: 'contain',
-    },
-    bgNotifContent: {
+    lockNotifTextCol: {
       flex: 1,
     },
-    bgNotifHeader: {
+    lockNotifNameRow: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
       alignItems: 'center',
+      justifyContent: 'space-between',
       marginBottom: 2,
     },
-    bgNotifAppName: {
+    lockNotifAppName: {
       ...Fonts.primary,
-      ...Fonts.bold,
-      fontSize: 11.5,
-      color: Colors.text,
+      ...Fonts.semiBold,
+      fontSize: alertPhoneWidth * 0.038,
+      color: 'rgba(255,255,255,0.88)',
+      letterSpacing: 0,
     },
-    bgNotifTime: {
+    lockNotifTimestamp: {
       ...Fonts.primary,
-      fontSize: 9,
-      color: Colors.textMuted,
+      fontSize: alertPhoneWidth * 0.033,
+      color: 'rgba(255,255,255,0.5)',
     },
-    bgNotifMsg: {
+    lockNotifTitle: {
       ...Fonts.primary,
-      fontSize: 9.5,
-      color: Colors.textSecondary,
+      ...Fonts.semiBold,
+      fontSize: alertPhoneWidth * 0.038,
+      color: '#FFFFFF',
+      letterSpacing: -0.1,
+      marginBottom: 1,
+    },
+    lockNotifBody: {
+      ...Fonts.primary,
+      fontSize: alertPhoneWidth * 0.035,
+      color: 'rgba(255,255,255,0.8)',
+      lineHeight: alertPhoneWidth * 0.048,
+    },
+    // Flèche pointant vers l'écran du téléphone
+    phoneArrow: {
+      position: 'absolute',
+      right: -62,
+      top: alertPhoneHeight * 0.38,
+      zIndex: 25,
+    },
+    lockScreenFooter: {
+      position: 'absolute',
+      bottom: alertPhoneHeight * 0.07,
+      left: 0,
+      right: 0,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: alertPhoneWidth * 0.13,
+    },
+    lockToolCircle: {
+      width: alertPhoneWidth * 0.13,
+      height: alertPhoneWidth * 0.13,
+      borderRadius: alertPhoneWidth * 0.065,
+      backgroundColor: 'rgba(60,60,65,0.8)',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    lockHomeIndicator: {
+      width: alertPhoneWidth * 0.34,
+      height: 4,
+      borderRadius: 3,
+      backgroundColor: 'rgba(255,255,255,0.9)',
+    },
+    lockArrowWrap: {
+      position: 'absolute',
+      left: -alertPhoneWidth * 0.42,
+      top: alertPhoneHeight * 0.43,
+      width: 112,
+      height: 104,
+      zIndex: 24,
+    },
+    lockBurstGroup: {
+      position: 'absolute',
+      right: -alertPhoneWidth * 0.34,
+      top: alertPhoneHeight * 0.505,
+      width: 72,
+      height: 64,
+      zIndex: 24,
+    },
+    lockBurstLine: {
+      position: 'absolute',
+      left: 5,
+      top: 30,
+      width: isTinyPhone ? 36 : 48,
+      height: 6,
+      borderRadius: 6,
+      backgroundColor: '#F59E0B',
+    },
+    lockBurstLineTop: {
+      transform: [{ rotate: '-58deg' }],
+    },
+    lockBurstLineMid: {
+      transform: [{ rotate: '-20deg' }],
+    },
+    lockBurstLineBottom: {
+      transform: [{ rotate: '18deg' }],
     },
   });
 }

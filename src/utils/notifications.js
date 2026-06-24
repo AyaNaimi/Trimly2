@@ -4,6 +4,25 @@ import * as Device from 'expo-device';
 import { Platform } from 'react-native';
 import { getNextBilling, getNotificationMessage } from './dateUtils';
 
+const FALLBACK_NOTIFICATIONS = {
+  appName: 'Trimly',
+  reminders: [
+    'Ajoutez vos depenses du jour pour garder votre budget a jour.',
+    'Petit point budget : verifiez vos categories avant ce soir.',
+    'Pensez a enregistrer vos mouvements recents.',
+    'Quelques entrees sont peut-etre en attente dans votre budget.',
+  ],
+  cancellationTitle: 'Suivi de resiliation',
+  cancellationBody: (name) => `Verifiez que ${name || 'cet abonnement'} est bien resilie.`,
+};
+
+function safeTranslate(t, key, fallback, options = {}) {
+  if (typeof t !== 'function') return typeof fallback === 'function' ? fallback(options) : fallback;
+  const value = t(key, options);
+  if (!value || value === key) return typeof fallback === 'function' ? fallback(options) : fallback;
+  return value;
+}
+
 // Configure how notifications appear when app is foregrounded
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -64,6 +83,8 @@ export async function scheduleAllSubscriptionNotifications(subscriptions, locale
       await Notifications.cancelScheduledNotificationAsync(notif.identifier);
     }
   }
+
+  if (!subscriptions || subscriptions.length === 0) return;
 
   const granted = await requestNotificationPermissions();
   if (!granted) return;
@@ -155,12 +176,12 @@ export async function scheduleAllSubscriptionNotifications(subscriptions, locale
       if (triggerDate > new Date()) {
         await Notifications.scheduleNotificationAsync({
           content: {
-            title: t('notifications.trialEndingTitle', { name: sub.name }),
-            body: t('notifications.trialEndingBody', { 
+            title: safeTranslate(t, 'notifications.trialEndingTitle', `${sub.name} : essai bientot termine`, { name: sub.name }),
+            body: safeTranslate(t, 'notifications.trialEndingBody', `Votre essai se termine bientot. Ensuite ${sub.amount.toFixed(2)} ${sub.currency || 'EUR'} sera facture.`, { 
               days: 3, 
               amount: sub.amount.toFixed(2), 
               currency: sub.currency || '€',
-              cycle: t(`subscriptions.cycles.${sub.cycle}Full`).toLowerCase() 
+              cycle: safeTranslate(t, `subscriptions.cycles.${sub.cycle}Full`, sub.cycle).toLowerCase() 
             }),
             data: { subscriptionId: sub.id, type: 'trial-ending' },
           },
@@ -174,6 +195,100 @@ export async function scheduleAllSubscriptionNotifications(subscriptions, locale
       }
     }
   }
+}
+
+export async function scheduleAppAccessNotifications({ trial, subscriptionPlan, proCurrentPeriodEnd, currency } = {}, locale = 'en') {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  for (const notif of scheduled) {
+    if (notif.identifier.startsWith('access-')) {
+      await Notifications.cancelScheduledNotificationAsync(notif.identifier);
+    }
+  }
+
+  const hasTrialTarget = !subscriptionPlan && trial?.active;
+  const hasProTarget = !!subscriptionPlan && !!proCurrentPeriodEnd;
+  if (!hasTrialTarget && !hasProTarget) return [];
+
+  const granted = await requestNotificationPermissions();
+  if (!granted) return [];
+
+  const isFr = String(locale || '').startsWith('fr');
+  const now = new Date();
+  const scheduledIds = [];
+
+  const scheduleDateNotification = async (identifier, date, title, body) => {
+    if (!date || Number.isNaN(date.getTime()) || date <= now) return;
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        data: { type: 'app-access', identifier },
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.DATE,
+        date,
+        channelId: 'reminders',
+      },
+      identifier,
+    });
+    scheduledIds.push(identifier);
+  };
+
+  if (!subscriptionPlan && trial?.active) {
+    const trialEnd = trial.endDate
+      ? new Date(trial.endDate)
+      : trial.startDate
+        ? new Date(trial.startDate)
+        : null;
+    if (trialEnd && !trial.endDate) {
+      trialEnd.setDate(trialEnd.getDate() + (trial.durationDays || 14));
+    }
+
+    if (trialEnd) {
+      const beforeTrialEnd = new Date(trialEnd);
+      beforeTrialEnd.setDate(beforeTrialEnd.getDate() - 2);
+      beforeTrialEnd.setHours(10, 0, 0, 0);
+
+      const trialEndMorning = new Date(trialEnd);
+      trialEndMorning.setHours(10, 0, 0, 0);
+
+      await scheduleDateNotification(
+        'access-trial-2days',
+        beforeTrialEnd,
+        isFr ? 'Votre essai Trimly se termine bientot' : 'Your Trimly trial ends soon',
+        isFr
+          ? 'Passez a Trimly Pro pour garder le scan email, les categories et les ajouts illimites.'
+          : 'Upgrade to Trimly Pro to keep email scan, categories and unlimited entries.',
+      );
+      await scheduleDateNotification(
+        'access-trial-end',
+        trialEndMorning,
+        isFr ? 'Essai Trimly termine aujourd hui' : 'Trimly trial ends today',
+        isFr
+          ? 'Les actions essentielles demanderont maintenant un plan Pro.'
+          : 'Essential actions now require a Pro plan.',
+      );
+    }
+  }
+
+  if (subscriptionPlan && proCurrentPeriodEnd) {
+    const periodEnd = new Date(proCurrentPeriodEnd);
+    const renewalReminder = new Date(periodEnd);
+    renewalReminder.setDate(renewalReminder.getDate() - 3);
+    renewalReminder.setHours(10, 0, 0, 0);
+
+    await scheduleDateNotification(
+      'access-pro-renewal',
+      renewalReminder,
+      isFr ? 'Renouvellement Trimly Pro' : 'Trimly Pro renewal',
+      isFr
+        ? `Votre plan ${subscriptionPlan} arrive a echeance bientot. Verifiez votre moyen de paiement.`
+        : `Your ${subscriptionPlan} plan renews soon. Check your payment method.`,
+    );
+  }
+
+  return scheduledIds;
 }
 
 /**
@@ -192,10 +307,10 @@ export async function scheduleDailyReminders(level, t) {
   if (level === 0) return;
 
   const messages = [
-    t('notifications.reminders.journal'),
-    t('notifications.reminders.budgetPoint'),
-    t('notifications.reminders.updateMovements'),
-    t('notifications.reminders.pendingEntries'),
+    safeTranslate(t, 'notifications.reminders.journal', FALLBACK_NOTIFICATIONS.reminders[0]),
+    safeTranslate(t, 'notifications.reminders.budgetPoint', FALLBACK_NOTIFICATIONS.reminders[1]),
+    safeTranslate(t, 'notifications.reminders.updateMovements', FALLBACK_NOTIFICATIONS.reminders[2]),
+    safeTranslate(t, 'notifications.reminders.pendingEntries', FALLBACK_NOTIFICATIONS.reminders[3]),
   ];
 
   const times = [
@@ -211,7 +326,7 @@ export async function scheduleDailyReminders(level, t) {
     const [hour, minute] = times[i];
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: t('common.appName'),
+        title: safeTranslate(t, 'common.appName', FALLBACK_NOTIFICATIONS.appName),
         body: messages[i % messages.length],
         data: { type: 'reminder' },
       },
@@ -247,8 +362,13 @@ export async function scheduleCancellationFollowUps(subscription, reminders = []
     await Notifications.cancelScheduledNotificationAsync(identifier).catch(() => {});
     await Notifications.scheduleNotificationAsync({
       content: {
-        title: reminder.title || t('notifications.cancellation.title'),
-        body: reminder.body || t('notifications.cancellation.body', { name: subscription.name }),
+        title: reminder.title || safeTranslate(t, 'notifications.cancellation.title', FALLBACK_NOTIFICATIONS.cancellationTitle),
+        body: reminder.body || safeTranslate(
+          t,
+          'notifications.cancellation.body',
+          FALLBACK_NOTIFICATIONS.cancellationBody(subscription.name),
+          { name: subscription.name },
+        ),
         data: { subscriptionId: subscription.id, type: 'cancellation-follow-up', key: reminder.key },
       },
       trigger: {

@@ -1,5 +1,5 @@
 // src/navigation/AppNavigator.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Pressable, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -13,9 +13,12 @@ import SubscriptionsScreen from '../screens/Subscriptions/SubscriptionsScreen';
 import SettingsScreen from '../screens/Settings/SettingsScreen';
 import OnboardingScreen from '../screens/Onboarding/OnboardingScreen';
 import LoginScreen from '../screens/Auth/LoginScreen';
-import AnimatedSplashScreen from '../screens/Splash/AnimatedSplashScreen';
+import AnimatedSplashScreen from '../screens/Splash/MinimalTrimlySplash';
+// import AnimatedSplashScreen from '../screens/Splash/PremiumTrimlySplash';
+// import AnimatedSplashScreen from '../screens/Splash/SimpleTrimlySplash';
 import EmailScannerModal from '../screens/Subscriptions/EmailScannerModal';
 import LockScreen from '../screens/Auth/LockScreen';
+import TrialExpiredModal from '../components/TrialExpiredModal';
 
 import { useApp } from '../context/AppContext';
 import { useTheme } from '../context/ThemeContext';
@@ -34,15 +37,20 @@ function LunaTabBar({ state, navigation }) {
   const { Colors, isDark } = useTheme();
   const { t } = useLanguage();
 
-  const activeCapBg = isDark ? Colors.surfaceAlt : '#1E293B'; // Sombre en dark, slate en light
+  const activeCapBg = isDark ? Colors.borderStrong : '#1E293B'; // Bleu ardoise clair en dark, slate en light
   const activeTextColor = Colors.pureWhite;
   const inactiveIconColor = isDark ? Colors.textSecondary : '#64748B'; // Gris adapté
 
-  const tabBarBg = isDark ? 'rgba(5, 11, 24, 0.65)' : 'rgba(255, 255, 255, 0.24)';
+  const tabBarBg = isDark ? 'rgba(10, 17, 40, 0.3)' : 'transparent';
   const tabBarBorder = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(15,23,42,0.12)';
 
   return (
-    <BlurView intensity={isDark ? 60 : 100} tint={isDark ? 'dark' : 'light'} style={[styles.tabBar, {
+    <BlurView
+      intensity={isDark ? 75 : 100}
+      tint={isDark ? 'dark' : 'default'}
+      experimentalBlurMethod={Platform.OS === 'android' ? 'dimezisBlurView' : undefined}
+      blurReductionFactor={Platform.OS === 'android' ? 2 : 4}
+      style={[styles.tabBar, {
       bottom: Math.max(insets.bottom, 16),
       backgroundColor: tabBarBg,
       borderWidth: 1,
@@ -168,18 +176,30 @@ function MainTabs() {
 export default function AppNavigator() {
   const { state, addSubscription, dismissAuthEmailScanPrompt } = useApp();
   const existingSubscriptionNames = (state.subscriptions || []).map((item) => item?.name).filter(Boolean);
-  const [showSplash, setShowSplash] = useState(true);
+  
+  // Toujours montrer le splash au premier render
+  const [splashVisible, setSplashVisible] = useState(true);
+  const hasShownSplashRef = useRef(false);
 
-  useEffect(() => {
-    // Le splash screen se cache automatiquement après l'animation
-    // Pas besoin de timer ici car AnimatedSplashScreen gère ça
-  }, []);
+  console.log('AppNavigator: Render - splashVisible:', splashVisible, 'hasShownSplash:', hasShownSplashRef.current, 'state.loaded:', state.loaded);
 
-  if (!state.loaded) return null;
+  // FORCER le splash à s'afficher (changez false en true pour tester)
+  const FORCE_SPLASH = false; // Mettez à true pour tester pendant le développement
+  
+  // MONTRER LE SPLASH au premier render, même si state n'est pas chargé
+  if ((splashVisible && !hasShownSplashRef.current) || FORCE_SPLASH) {
+    console.log('AppNavigator: Showing splash screen');
+    return <AnimatedSplashScreen onFinish={() => {
+      console.log('AppNavigator: Splash finished callback called');
+      hasShownSplashRef.current = true;
+      setSplashVisible(false);
+    }} />;
+  }
 
-  // Afficher le splash screen au premier chargement
-  if (showSplash) {
-    return <AnimatedSplashScreen onFinish={() => setShowSplash(false)} />;
+  // Attendre que state soit chargé APRÈS le splash
+  if (!state.loaded) {
+    console.log('AppNavigator: Waiting for state to load...');
+    return null;
   }
 
   if (state.isLocked) {
@@ -210,6 +230,7 @@ export default function AppNavigator() {
         autoPrompt
         existingSubscriptionNames={existingSubscriptionNames}
       />
+      <TrialExpiredModal />
     </NavigationContainer>
   );
 }

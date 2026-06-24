@@ -1,0 +1,163 @@
+Guide du Business Plan
+Guide du Business Plan — OFPPT · Page 1
+Business Plan Guide
+Document de 12 à 18 pages, basé sur des preuves / For students — 12–18 pages, evidence-based
+À quoi sert ce guide. Le business plan est le document écrit qui accompagne votre
+soutenance. Ce n'est pas un rapport théorique de 50 pages : c'est un document court et
+honnête qui prouve, chiffres et terrain à l'appui, que votre projet tient debout. Il doit raconter la
+même histoire que votre pitch ( le jury remarque immédiatement les contradictions )
+What this is. The written plan behind your pitch: short, honest, evidence-based and consistent
+with what you present.
+Les 3 règles d'or / The 3 golden rules
+• 	Chaque affirmation a une source : votre questionnaire, vos entretiens, ou une référence
+citée. « Le marché est énorme » sans preuve = zéro.
+• 	Les chiffres peuvent être approximatifs mais doivent être cohérents entre eux (prix ×
+ventes = revenus ; les mêmes chiffres partout, du résumé aux annexes).
+• 	Le plan et le pitch racontent la même histoire : mêmes chiffres, même cible, même
+positionnement.
+Vue d'ensemble / Structure at a glance
+# 	Section 	Pages 	Lié au pitch
+1 	Résumé exécutif / Executive summary 	1 	Tout le pitch
+2 	Problème & opportunité / Problem & opportunity 	1–2 	Slide 2
+3 	Solution & produit (MVP) / Solution & product 	2 	Slides 4–5
+4 	Étude de marché / Market study 	2–3 	Slides 3, 8
+5 	Stratégie marketing & commerciale / Marketing & sales 	2 	Slides 6, 9
+6 	Modèle économique & plan financier / Financials 	2–3 	Slide 7
+7 	Plan opérationnel / Operations 	1–2 	—
+8 	Équipe / Team 	½ 	Slide 11
+9 	Feuille de route & risques / Roadmap & risks 	1 	Slide 10
+10 	Annexes / Appendices 	libre 	—
+
+-- 1 of 5 --
+
+Guide du Business Plan
+Guide du Business Plan — OFPPT · Page 2
+Section par section / Section by section
+1. Résumé exécutif 	Executive summary 	1 page
+Objectif : Donner toute l'essence du projet en une page — c'est souvent la seule page lue en
+entier.
+À inclure :
+• 	Le projet en une phrase (qui, quoi, pour qui)
+• 	Le problème et la solution
+• 	Le marché cible et sa taille
+• 	Le modèle de revenus et 2–3 chiffres clés
+• 	L'état d'avancement (MVP, landing page, traction)
+• 	Ce que vous cherchez (la demande)
+À éviter : L'écrire en premier. Écrivez-le en DERNIER, quand tout le reste est solide.
+2. Problème & opportunité 	Problem & opportunity 	1–2 pages
+Objectif : Prouver que le problème est réel, fréquent et coûteux.
+À inclure :
+• 	Description précise du problème et de qui en souffre
+• 	Les preuves terrain : résultats de votre questionnaire, citations d'entretiens, observations
+• 	Le coût du problème (temps, argent, frustration)
+• 	Pourquoi maintenant : ce qui rend l'opportunité actuelle
+À éviter : Inventer des statistiques. Une enquête de 30 réponses honnête vaut mieux qu'un
+chiffre mondial copié sans source.
+3. Solution & produit (MVP) 	Solution & product 	2 pages
+Objectif : Décrire concrètement le produit et montrer qu'il existe déjà.
+À inclure :
+• 	Le produit ou service : ce qu'il fait, pour qui, comment
+• 	Produit physique ou service digital — précisez-le
+• 	L'état actuel du MVP avec photos ou captures d'écran réelles
+• 	Les 3 fonctionnalités/caractéristiques clés et le différenciateur
+• 	Ce qui reste à développer
+À éviter : Décrire le produit rêvé dans 5 ans au lieu du MVP réel d'aujourd'hui.
+4. Étude de marché 	Market study 	2–3 pages
+Objectif : Démontrer que vous connaissez votre marché mieux que le jury.
+À inclure :
+• 	Le persona client détaillé (profil, besoins, comportement d'achat)
+• 	La taille du marché : total, atteignable, premier segment — avec sources
+• 	Votre méthodologie : combien de personnes interrogées, comment
+
+-- 2 of 5 --
+
+Guide du Business Plan
+Guide du Business Plan — OFPPT · Page 3
+• 	Les concurrents : tableau comparatif (offre, prix, forces, faiblesses, vous)
+• 	Votre positionnement : la case que personne d'autre ne coche
+À éviter : « Nous n'avons pas de concurrents. » Il y a toujours une alternative, même le statu
+quo.
+5. Stratégie marketing & commerciale 	Marketing & sales strategy 	2 pages
+Objectif : Expliquer comment vous atteindrez et convaincrez vos clients.
+À inclure :
+• 	Le prix et sa justification (coûts, concurrence, valeur perçue)
+• 	Les canaux de distribution et d'acquisition (le n°1 en priorité)
+• 	La landing page : URL, objectif de conversion, résultats déjà obtenus (visites, leads)
+• 	Le plan de communication : message, supports, calendrier
+• 	Le plan pour les 10 premiers clients
+À éviter : Lister 6 canaux sans plan. Détaillez UN canal principal avec des actions concrètes.
+6. Modèle économique & plan financier 	Business model & financials 	2–3 pages
+Objectif : Prouver que le projet peut être rentable — la section la plus scrutée par le jury.
+À inclure :
+• 	Les sources de revenus et la politique de prix
+• 	Les coûts de démarrage (matériel, outils, stock initial)
+• 	Le coût unitaire et la marge par produit/client
+• 	Une prévision simple sur 12 mois : ventes, charges, trésorerie (un tableau)
+• 	Le seuil de rentabilité : combien de ventes pour couvrir les coûts
+• 	Vos hypothèses écrites noir sur blanc (« on suppose 10 ventes/mois dès le mois 3 »)
+À éviter : Des tableaux copiés d'Internet que vous ne savez pas expliquer. Chaque chiffre doit
+être défendable à l'oral.
+7. Plan opérationnel 	Operations plan 	1–2 pages
+Objectif : Montrer que vous savez produire et livrer concrètement.
+À inclure :
+• 	Comment le produit est fabriqué / le service délivré, étape par étape
+• 	Fournisseurs, outils, matériel nécessaires
+• 	La forme juridique envisagée (auto-entrepreneur, coopérative, SARL...)
+• 	Ce qu'il faut pour lancer réellement : budget minimum, autorisations éventuelles
+À éviter : Oublier les détails pratiques (livraison, stockage, SAV) qui font la différence au
+quotidien.
+8. Équipe 	Team 	½ page
+Objectif : Montrer que l'équipe peut exécuter ce plan.
+À inclure :
+• 	Chaque membre : rôle, contribution au projet, compétences
+
+-- 3 of 5 --
+
+Guide du Business Plan
+Guide du Business Plan — OFPPT · Page 4
+• 	La complémentarité de l'équipe
+• 	Les compétences manquantes et comment les combler
+À éviter : Des CV génériques. Dites ce que chacun a réellement fait sur CE projet.
+9. Feuille de route & risques 	Roadmap & risks 	1 page
+Objectif : Prouver votre lucidité : où vous allez et ce qui peut mal tourner.
+À inclure :
+• 	Les jalons à 3, 6 et 12 mois (mesurables)
+• 	Les 3 risques principaux (marché, technique, financier)
+• 	Pour chaque risque : votre plan de réponse
+À éviter : Ne lister aucun risque. Un plan sans risques n'est pas crédible.
+10. Annexes 	Appendices 	libre / as needed
+Objectif : Regrouper les preuves sans alourdir le corps du document.
+À inclure :
+• 	Questionnaire complet et résultats détaillés
+• 	Captures d'écran de la landing page et statistiques
+• 	Photos du prototype / MVP
+• 	Calculs financiers détaillés
+• 	Tout document cité dans le plan
+À éviter : Mettre en annexe des éléments essentiels qui devraient être dans le corps du texte.
+
+-- 4 of 5 --
+
+Guide du Business Plan
+Guide du Business Plan — OFPPT · Page 5
+Forme & présentation / Format & presentation
+• 	12 à 18 pages maximum (hors annexes) — la concision est notée.
+• 	Une police lisible (Arial ou Calibri 11–12), des titres clairs, des pages numérotées.
+• 	Page de garde : nom du projet, logo, équipe, filière, encadrant, date.
+• 	Sommaire automatique en page 2.
+• 	Un tableau ou un visuel vaut mieux qu'un long paragraphe — mais chaque visuel doit être
+commenté.
+• 	Zéro faute d'orthographe : faites relire par quelqu'un d'extérieur.
+• 	Citez vos sources en bas de page ou en annexe.
+Checklist avant de rendre / Before submitting
+• 	Le résumé exécutif tient en 1 page et a été écrit en dernier.
+• 	Chaque chiffre du plan correspond aux chiffres du pitch (slides).
+• 	Prix × ventes prévues = revenus prévus (cohérence vérifiée).
+• 	Le seuil de rentabilité est calculé et expliqué.
+• 	Les preuves terrain (questionnaire, entretiens) sont en annexe.
+• 	Les photos/captures du MVP et de la landing page sont incluses.
+• 	Les 3 risques et leurs réponses sont écrits.
+• 	Le document est relu, numéroté, avec sommaire.
+• 	Chaque membre de l'équipe peut défendre n'importe quelle section à l'oral.
+
+-- 5 of 5 --
+

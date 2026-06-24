@@ -32,7 +32,8 @@ export default function SubscriptionsScreen() {
     activeSubscriptions,
     addSubscription,
     updateSubscription,
-    cancelSubscription
+    cancelSubscription,
+    requireProAccess
   } = useApp();
   const { Colors, isDark } = useTheme();
   const { t, locale } = useLanguage();
@@ -71,6 +72,18 @@ export default function SubscriptionsScreen() {
     { key: 'cancelled', label: t('subscriptions.filters.cancelled'), activeColor: '#F59E0B' },
   ];
 
+  const openScanner = () => {
+    PremiumHaptics.click();
+    if (!requireProAccess('email_scan')) return;
+    setShowScanner(true);
+  };
+
+  const openAddSubscription = () => {
+    PremiumHaptics.click();
+    if (!requireProAccess('add_subscription')) return;
+    setShowAdd(true);
+  };
+
   const styles = makeStyles(Colors);
 
   return (
@@ -79,7 +92,7 @@ export default function SubscriptionsScreen() {
         <Text style={styles.title}>{t('subscriptions.plans')}</Text>
         <Pressable
           style={styles.scanBtnHeader}
-          onPress={() => { PremiumHaptics.click(); setShowScanner(true); }}
+          onPress={openScanner}
         >
           <Text style={styles.scanBtnTextHeader}>{t('subscriptions.scan')}</Text>
         </Pressable>
@@ -171,7 +184,7 @@ export default function SubscriptionsScreen() {
               <Text style={styles.emptyTxt}>{t('subscriptions.empty.message')}</Text>
               <Pressable 
                 style={styles.emptyScanBtn}
-                onPress={() => setShowScanner(true)}
+                onPress={openScanner}
               >
                 <Text style={styles.emptyScanBtnTxt}>{t('subscriptions.empty.scanButton')}</Text>
               </Pressable>
@@ -217,7 +230,7 @@ export default function SubscriptionsScreen() {
       {state.subscriptions?.length > 0 && (
         <Pressable
           style={styles.fab}
-          onPress={() => setShowAdd(true)}
+          onPress={openAddSubscription}
         >
           <Text style={styles.fabPlus}>+</Text>
         </Pressable>
@@ -227,6 +240,7 @@ export default function SubscriptionsScreen() {
         visible={showAdd}
         onClose={() => setShowAdd(false)}
         onSave={async (sub) => {
+          if (!requireProAccess('add_subscription')) return false;
           const ok = await addSubscription({ ...sub, active: true });
           if (ok) {
             setShowAdd(false);
@@ -275,6 +289,7 @@ export default function SubscriptionsScreen() {
         initialEmail={state.session?.user?.email || ''}
         existingSubscriptionNames={existingSubscriptionNames}
         onImport={async (sub) => {
+          if (!requireProAccess('email_scan_import')) return false;
           return await addSubscription(sub);
         }}
       />

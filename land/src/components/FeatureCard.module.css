@@ -1,0 +1,34 @@
+.featureCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--gap-8);
+  flex: 1;
+  min-width: 0;
+}
+
+.iconWrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon {
+  width: var(--height-80);
+  height: var(--height-80);
+  object-fit: contain;
+}
+
+.label {
+  font-weight: 700;
+  font-size: var(--fs-14);
+  letter-spacing: 0.05em;
+  color: inherit;
+  text-transform: uppercase;
+}
+
+.description {
+  font-size: var(--fs-13);
+  line-height: 1.5;
+  color: inherit;
+}

@@ -33,7 +33,8 @@
     "overspent": "Dépassement",
     "daysRemaining": "{{count}} jours restants",
     "leftLabel": "Restant",
-    "later": "Plus tard"
+    "later": "Plus tard",
+    "appName": "Trimly"
   },
   "navigation": {
     "home": "Bord",
@@ -424,6 +425,7 @@
     }
   },
   "scanner": {
+    "headerTitle": "Scan intelligent",
     "stages": {
       "connecting": "Connexion à la boîte mail",
       "searching": "Recherche de factures & reçus",
@@ -436,7 +438,13 @@
       "subtitle": "Flux Hybride",
       "description": "Trimly scan votre Gmail pour trouver vos emails d'abonnement et les importer automatiquement.",
       "pendingTitle": "Detections en attente",
-      "pendingDescription": "{{count}} abonnements attendent votre validation."
+      "pendingDescription": "{{count}} abonnements attendent votre validation.",
+      "secureTitle": "Connexion securisee",
+      "secureDesc": "Nous lisons seulement vos emails, sans les modifier ni les supprimer.",
+      "aiTitle": "Detection par IA",
+      "aiDesc": "Notre IA trouve les emails d'abonnement et extrait les details automatiquement.",
+      "quickTitle": "Import rapide",
+      "quickDesc": "Validez les abonnements detectes puis importez-les en un geste."
     },
     "manual": {
       "title": "Scan Manuel Gmail",
@@ -469,6 +477,7 @@
       "aiAlternatives": "Alternatives suggérées par l'IA",
       "noAlternatives": "Aucune alternative fiable pour ce service.",
       "import": "Importer",
+      "importSelected": "Importer {{count}} abonnements",
       "ignore": "Ignorer",
       "successTitle": "Succès",
       "successMessage": "{{count}} abonnements importés dans Trimly."

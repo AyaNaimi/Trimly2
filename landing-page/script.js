@@ -8,6 +8,17 @@
 
     // Initialize on DOM load
     document.addEventListener('DOMContentLoaded', function() {
+        // Vérifier si l'utilisateur préfère des animations réduites
+        const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        
+        if (prefersReducedMotion) {
+            console.log('Animations réduites activées pour l\'accessibilité');
+            // Réduire ou désactiver certaines animations
+            document.documentElement.style.setProperty('--transition-fast', '0.05s');
+            document.documentElement.style.setProperty('--transition-normal', '0.1s');
+            document.documentElement.style.setProperty('--transition-slow', '0.15s');
+        }
+        
         initTheme();
         initLanguage();
         initNavbar();
@@ -264,41 +275,121 @@
         });
     }
 
-    // Parallax effect
+    // Parallax effect (adapté pour mobile)
     function initParallax() {
         const hero = document.querySelector('.hero');
+        const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         
         if (hero) {
-            window.addEventListener('scroll', function() {
-                const scrolled = window.pageYOffset;
-                const parallaxElements = hero.querySelectorAll('.gradient-orb');
+            const parallaxElements = hero.querySelectorAll('.gradient-orb');
+            
+            if (isMobile) {
+                // Sur mobile, parallax plus subtil basé sur le scroll
+                let ticking = false;
                 
-                parallaxElements.forEach((element, index) => {
-                    const speed = 0.5 + (index * 0.2);
-                    element.style.transform = `translateY(${scrolled * speed}px)`;
+                window.addEventListener('scroll', function() {
+                    if (!ticking) {
+                        window.requestAnimationFrame(function() {
+                            const scrolled = window.pageYOffset;
+                            
+                            parallaxElements.forEach((element, index) => {
+                                const speed = 0.3 + (index * 0.1);
+                                element.style.transform = `translateY(${scrolled * speed}px) scale(${1 - scrolled * 0.0005})`;
+                            });
+                            
+                            ticking = false;
+                        });
+                        
+                        ticking = true;
+                    }
                 });
-            });
+                
+                // Optionnel: effet gyroscope sur mobile
+                if (window.DeviceOrientationEvent) {
+                    window.addEventListener('deviceorientation', function(e) {
+                        const beta = e.beta || 0;
+                        const gamma = e.gamma || 0;
+                        
+                        parallaxElements.forEach((element, index) => {
+                            const sensitivity = 0.5 + (index * 0.2);
+                            const scrolled = window.pageYOffset;
+                            element.style.transform = `
+                                translateY(${scrolled * (0.3 + index * 0.1)}px) 
+                                translateX(${gamma * sensitivity}px)
+                                scale(${1 - scrolled * 0.0005})
+                            `;
+                        });
+                    });
+                }
+            } else {
+                // Desktop: parallax classique
+                window.addEventListener('scroll', function() {
+                    const scrolled = window.pageYOffset;
+                    
+                    parallaxElements.forEach((element, index) => {
+                        const speed = 0.5 + (index * 0.2);
+                        element.style.transform = `translateY(${scrolled * speed}px)`;
+                    });
+                });
+            }
         }
     }
 
-    // Floating cards animation
+    // Floating cards animation (responsive pour mobile et desktop)
     function initFloatingCards() {
         const cards = document.querySelectorAll('.floating-card');
+        const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         
         cards.forEach((card, index) => {
-            let mouseX = 0;
-            let mouseY = 0;
+            let posX = 0;
+            let posY = 0;
             let cardX = 0;
             let cardY = 0;
             
-            document.addEventListener('mousemove', function(e) {
-                mouseX = e.clientX / window.innerWidth - 0.5;
-                mouseY = e.clientY / window.innerHeight - 0.5;
-            });
+            if (isMobile) {
+                // Mobile: Animation basée sur l'orientation de l'appareil (gyroscope)
+                if (window.DeviceOrientationEvent) {
+                    window.addEventListener('deviceorientation', function(e) {
+                        // Beta: inclinaison avant/arrière (-180 à 180)
+                        // Gamma: inclinaison gauche/droite (-90 à 90)
+                        const beta = e.beta || 0;
+                        const gamma = e.gamma || 0;
+                        
+                        posX = gamma / 90; // Normaliser entre -1 et 1
+                        posY = (beta - 90) / 90; // Normaliser (position neutre = 90)
+                    });
+                } else {
+                    // Fallback: animation basée sur le scroll
+                    window.addEventListener('scroll', function() {
+                        const scrollPercent = window.pageYOffset / (document.documentElement.scrollHeight - window.innerHeight);
+                        posX = Math.sin(scrollPercent * Math.PI * 2 + index) * 0.5;
+                        posY = Math.cos(scrollPercent * Math.PI * 2 + index) * 0.5;
+                    });
+                }
+                
+                // Touch interactions
+                let touchStartX = 0;
+                let touchStartY = 0;
+                
+                document.addEventListener('touchmove', function(e) {
+                    if (e.touches.length > 0) {
+                        const touch = e.touches[0];
+                        posX = (touch.clientX / window.innerWidth - 0.5) * 2;
+                        posY = (touch.clientY / window.innerHeight - 0.5) * 2;
+                    }
+                });
+            } else {
+                // Desktop: Animation basée sur la souris
+                document.addEventListener('mousemove', function(e) {
+                    posX = e.clientX / window.innerWidth - 0.5;
+                    posY = e.clientY / window.innerHeight - 0.5;
+                });
+            }
             
             function animate() {
-                cardX += (mouseX * 20 - cardX) * 0.1;
-                cardY += (mouseY * 20 - cardY) * 0.1;
+                const multiplier = isMobile ? 15 : 20;
+                cardX += (posX * multiplier - cardX) * 0.1;
+                cardY += (posY * multiplier - cardY) * 0.1;
                 
                 card.style.transform = `translate(${cardX}px, ${cardY}px)`;
                 requestAnimationFrame(animate);
@@ -308,46 +399,143 @@
         });
     }
 
-    // Feature cards hover effect
+    // Feature cards hover effect (desktop) and scroll-based effect (mobile)
     function initFeatureCards() {
         const featureCards = document.querySelectorAll('.feature-card');
+        const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         
-        featureCards.forEach(card => {
-            card.addEventListener('mouseenter', function() {
-                this.style.transition = 'all 0.3s ease';
+        if (isMobile) {
+            // Mobile: Animation basée sur la position dans le viewport
+            function updateCardAnimations() {
+                featureCards.forEach(card => {
+                    const rect = card.getBoundingClientRect();
+                    const cardCenter = rect.top + rect.height / 2;
+                    const screenCenter = window.innerHeight / 2;
+                    
+                    // Distance du centre de l'écran (-1 à 1)
+                    const distance = (cardCenter - screenCenter) / screenCenter;
+                    
+                    // Animation seulement si la carte est visible
+                    if (rect.top < window.innerHeight && rect.bottom > 0) {
+                        const scale = 1 - Math.abs(distance) * 0.1;
+                        const translateY = distance * -10;
+                        card.style.transform = `scale(${Math.max(0.9, scale)}) translateY(${translateY}px)`;
+                        card.style.opacity = Math.max(0.5, 1 - Math.abs(distance) * 0.5);
+                    }
+                });
+            }
+            
+            // Touch interactions pour effet de profondeur
+            featureCards.forEach(card => {
+                card.addEventListener('touchstart', function(e) {
+                    const touch = e.touches[0];
+                    const rect = this.getBoundingClientRect();
+                    const x = touch.clientX - rect.left;
+                    const y = touch.clientY - rect.top;
+                    
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    
+                    const rotateX = (y - centerY) / 15;
+                    const rotateY = (centerX - x) / 15;
+                    
+                    this.style.transition = 'all 0.3s ease';
+                    this.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(1.02)`;
+                });
+                
+                card.addEventListener('touchend', function() {
+                    this.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
+                });
             });
             
-            card.addEventListener('mousemove', function(e) {
-                const rect = this.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
-                
-                const centerX = rect.width / 2;
-                const centerY = rect.height / 2;
-                
-                const rotateX = (y - centerY) / 10;
-                const rotateY = (centerX - x) / 10;
-                
-                this.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
+            // Mise à jour au scroll
+            let scrollTimeout;
+            window.addEventListener('scroll', () => {
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(updateCardAnimations, 10);
             });
             
-            card.addEventListener('mouseleave', function() {
-                this.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateY(0)';
+            updateCardAnimations();
+        } else {
+            // Desktop: Animation hover classique
+            featureCards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transition = 'all 0.3s ease';
+                });
+                
+                card.addEventListener('mousemove', function(e) {
+                    const rect = this.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    
+                    const rotateX = (y - centerY) / 10;
+                    const rotateY = (centerX - x) / 10;
+                    
+                    this.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-8px)`;
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateY(0)';
+                });
             });
-        });
+        }
     }
 
-    // Pricing cards interaction
+    // Pricing cards interaction (avec effet ripple responsive)
     function initPricingCards() {
         const pricingCards = document.querySelectorAll('.pricing-card');
+        const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         
         pricingCards.forEach(card => {
             const btn = card.querySelector('.pricing-btn');
             
-            btn.addEventListener('click', function() {
+            // Effet hover/touch sur la carte
+            if (isMobile) {
+                card.addEventListener('touchstart', function(e) {
+                    const touch = e.touches[0];
+                    const rect = this.getBoundingClientRect();
+                    const x = touch.clientX - rect.left;
+                    const y = touch.clientY - rect.top;
+                    
+                    // Effet de mise en avant basé sur la position du toucher
+                    const centerX = rect.width / 2;
+                    const centerY = rect.height / 2;
+                    
+                    const tiltX = (y - centerY) / 20;
+                    const tiltY = (centerX - x) / 20;
+                    
+                    this.style.transform = `perspective(1000px) rotateX(${tiltX}deg) rotateY(${tiltY}deg) scale(1.02)`;
+                });
+                
+                card.addEventListener('touchend', function() {
+                    this.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
+                });
+            }
+            
+            // Ripple effect sur le bouton
+            const handleInteraction = function(e) {
                 // Add ripple effect
                 const ripple = document.createElement('span');
                 ripple.classList.add('ripple');
+                
+                // Position du ripple
+                const rect = this.getBoundingClientRect();
+                let x, y;
+                
+                if (e.type === 'touchstart') {
+                    x = e.touches[0].clientX - rect.left;
+                    y = e.touches[0].clientY - rect.top;
+                } else {
+                    x = e.clientX - rect.left;
+                    y = e.clientY - rect.top;
+                }
+                
+                ripple.style.left = x + 'px';
+                ripple.style.top = y + 'px';
+                
                 this.appendChild(ripple);
                 
                 setTimeout(() => {
@@ -357,11 +545,16 @@
                 // Show alert (replace with actual functionality)
                 const planName = card.querySelector('h3').textContent;
                 console.log(`Selected plan: ${planName}`);
-            });
+            };
+            
+            btn.addEventListener('click', handleInteraction);
+            if (isMobile) {
+                btn.addEventListener('touchstart', handleInteraction);
+            }
         });
     }
 
-    // Testimonials slider
+    // Testimonials slider (adapté pour touch et souris)
     function initTestimonialsSlider() {
         const slider = document.getElementById('testimonialsSlider');
         if (!slider) return;
@@ -369,22 +562,27 @@
         let isDown = false;
         let startX;
         let scrollLeft;
+        const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
         
+        // Support souris (desktop)
         slider.addEventListener('mousedown', (e) => {
             isDown = true;
             slider.classList.add('active');
             startX = e.pageX - slider.offsetLeft;
             scrollLeft = slider.scrollLeft;
+            slider.style.cursor = 'grabbing';
         });
         
         slider.addEventListener('mouseleave', () => {
             isDown = false;
             slider.classList.remove('active');
+            slider.style.cursor = 'grab';
         });
         
         slider.addEventListener('mouseup', () => {
             isDown = false;
             slider.classList.remove('active');
+            slider.style.cursor = 'grab';
         });
         
         slider.addEventListener('mousemove', (e) => {
@@ -394,6 +592,43 @@
             const walk = (x - startX) * 2;
             slider.scrollLeft = scrollLeft - walk;
         });
+        
+        // Support tactile (mobile)
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let scrollStartLeft = 0;
+        let isSwiping = false;
+        
+        slider.addEventListener('touchstart', (e) => {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+            scrollStartLeft = slider.scrollLeft;
+            isSwiping = false;
+        }, { passive: true });
+        
+        slider.addEventListener('touchmove', (e) => {
+            const touchCurrentX = e.touches[0].clientX;
+            const touchCurrentY = e.touches[0].clientY;
+            
+            const deltaX = touchCurrentX - touchStartX;
+            const deltaY = touchCurrentY - touchStartY;
+            
+            // Déterminer si c'est un swipe horizontal
+            if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+                isSwiping = true;
+                e.preventDefault(); // Empêcher le scroll vertical
+                slider.scrollLeft = scrollStartLeft - deltaX;
+            }
+        }, { passive: false });
+        
+        slider.addEventListener('touchend', () => {
+            isSwiping = false;
+        });
+        
+        // Style du curseur pour desktop
+        if (!isMobile) {
+            slider.style.cursor = 'grab';
+        }
     }
 
     // Cursor effect
@@ -623,6 +858,10 @@
             transform: scale(0);
             animation: ripple-animation 0.6s ease-out;
             pointer-events: none;
+            width: 20px;
+            height: 20px;
+            margin-left: -10px;
+            margin-top: -10px;
         }
         
         @keyframes ripple-animation {
@@ -693,6 +932,58 @@
             .custom-cursor,
             .cursor-follower {
                 display: none;
+            }
+        }
+        
+        /* Touch interactions - active states pour mobile */
+        @media (hover: none) and (pointer: coarse) {
+            .feature-card {
+                transition: all 0.3s ease;
+                will-change: transform;
+            }
+            
+            .feature-card:active {
+                transform: scale(0.98) !important;
+            }
+            
+            .pricing-card {
+                transition: all 0.3s ease;
+                will-change: transform;
+            }
+            
+            .pricing-card:active {
+                transform: scale(0.98) !important;
+            }
+            
+            .btn:active,
+            .cta-btn:active,
+            .pricing-btn:active {
+                transform: scale(0.95) !important;
+            }
+            
+            .testimonial-card {
+                transition: all 0.3s ease;
+            }
+            
+            .testimonial-card:active {
+                transform: scale(0.98);
+            }
+            
+            /* Smooth scrolling sur mobile */
+            html {
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            /* Touch feedback pour liens */
+            a:active,
+            button:active {
+                opacity: 0.8;
+                transition: opacity 0.15s ease;
+            }
+            
+            /* Désactiver certains effets hover sur tactile */
+            .nav-links a:hover::after {
+                width: 0;
             }
         }
     `;

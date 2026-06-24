@@ -663,6 +663,34 @@
                 font-size: 30px;
             }
         }
+
+        /* Custom Table Styling matching premium dark-mode */
+        .financials-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .financials-table th, .financials-table td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .financials-table th {
+            font-family: var(--font-display);
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.02);
+            font-size: 12px;
+        }
+
+        .financials-table tr:hover {
+            background: rgba(255, 255, 255, 0.01);
+        }
     </style>
 </head>
 <body>
@@ -685,6 +713,9 @@
             </li>
             <li class="nav-item" data-tab="solution">
                 <button><i class="fa-solid fa-lightbulb"></i>Solution & Tech Stack</button>
+            </li>
+            <li class="nav-item" data-tab="budgeting">
+                <button><i class="fa-solid fa-piggy-bank"></i>Budget & Finances</button>
             </li>
             <li class="nav-item" data-tab="bmc">
                 <button><i class="fa-solid fa-table-cells-large"></i>Business Model (BMC)</button>
@@ -711,21 +742,21 @@
             <header>
                 <div class="subtitle">Trimly Executive Summary</div>
                 <h1>Dossier Stratégique Trimly</h1>
-                <p class="header-desc">Une application mobile de gestion de finances personnelles focalisée sur la détection automatique, le suivi proactif et la résiliation des abonnements.</p>
+                <p class="header-desc">Une application mobile complète de <strong>gestion de budget personnel</strong> — suivi des revenus et dépenses, catégorisation intelligente, objectifs d'épargne — avec en plus la détection automatique, le suivi proactif et la résiliation des abonnements.</p>
             </header>
 
             <div class="metrics-grid">
                 <div class="metric-card">
-                    <div class="metric-value">4,99 €</div>
+                    <div class="metric-value">4,99 € / 50 DH</div>
                     <div class="metric-label">Pro Mensuel</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-value">29,99 €</div>
+                    <div class="metric-value">49,99 € / 500 DH</div>
                     <div class="metric-label">Pro Annuel</div>
                 </div>
                 <div class="metric-card">
-                    <div class="metric-value">7,99 €</div>
-                    <div class="metric-label">Marge LRAR (7,99 €)</div>
+                    <div class="metric-value">7,99 € / 80 DH</div>
+                    <div class="metric-label">Résiliation LRAR</div>
                 </div>
                 <div class="metric-card">
                     <div class="metric-value">14 Jours</div>
@@ -736,7 +767,7 @@
             <div class="card" style="margin-bottom: 24px;">
                 <h3 class="card-title">Vision Produit</h3>
                 <p class="card-desc" style="font-size: 15px; line-height: 1.7; margin-bottom: 12px;">
-                    Trimly résout le problème de la <strong>fatigue d'abonnement (*subscription fatigue*)</strong> par une approche automatisée : l'application connecte la boîte mail (Gmail/Outlook) via OAuth sécurisé, en extrait les contrats grâce à l'IA, alerte avant les échéances et prend en charge l'intégralité du processus de désabonnement, y compris l'envoi de lettres recommandées physiques.
+                    Trimly est une <strong>application mobile complète de finances personnelles</strong>, articulée autour de deux modules complémentaires : un <strong>module budgeting</strong> (suivi des revenus et dépenses, catégorisation, alertes budgétaires, objectifs d'épargne) et un <strong>module de gestion des abonnements</strong> (détection IA, alertes d'échéances, résiliation automatisée en 1 clic via lettre recommandée physique).
                 </p>
                 <p class="card-desc" style="font-size: 15px; line-height: 1.7;">
                     Conçu avec des technologies modernes (React Native 0.81, Supabase et n8n), le projet allie une infrastructure légère à forte valeur ajoutée, garantissant des marges brutes de service élevées et une expérience utilisateur sans friction bancaire.
@@ -789,7 +820,7 @@
             <header>
                 <div class="subtitle">Architecture Technique</div>
                 <h1>Solution Technologique & Sécurité</h1>
-                <p class="header-desc">Une implémentation robuste, local-first et respectueuse de la confidentialité des données.</p>
+                <p class="header-desc">Une implémentation robuste, local-first et respectueuse de la confidentialité des données — couvrant le budgeting ET la gestion d'abonnements.</p>
             </header>
 
             <div class="grid-2">
@@ -802,6 +833,29 @@
                     <div class="card-icon"><i class="fa-solid fa-server"></i></div>
                     <h3 class="card-title">Backend Serverless & Sync</h3>
                     <p class="card-desc">Utilisation de <strong>Supabase</strong> (PostgreSQL) pour l'authentification et la synchronisation cloud sécurisée. Les règles de sécurité au niveau des lignes (RLS - Row Level Security) garantissent que chaque utilisateur ne peut lire que ses propres données.</p>
+                </div>
+            </div>
+
+            <div class="grid-2" style="margin-top: 24px;">
+                <div class="card">
+                    <div class="card-icon" style="color: var(--success); background: rgba(16, 185, 129, 0.1);"><i class="fa-solid fa-piggy-bank"></i></div>
+                    <h3 class="card-title">Module Budgeting</h3>
+                    <ul class="tech-list" style="font-size: 13.5px;">
+                        <li class="tech-item"><i class="fa-solid fa-plus-minus"></i><span><strong>Saisie & Import de transactions :</strong> Ajout manuel ou import CSV des revenus et dépenses avec catégorisation automatique par IA.</span></li>
+                        <li class="tech-item"><i class="fa-solid fa-tags"></i><span><strong>Catégories personnalisées :</strong> Alimentation, Transport, Loisirs, Santé, Logement… avec icônes et couleurs.</span></li>
+                        <li class="tech-item"><i class="fa-solid fa-chart-pie"></i><span><strong>Tableaux de bord visuels :</strong> Graphiques circulaires et barres mensuelles pour visualiser les flux en temps réel.</span></li>
+                        <li class="tech-item"><i class="fa-solid fa-bullseye"></i><span><strong>Objectifs d'épargne :</strong> Création d'enveloppes d'épargne avec suivi de progression et alertes de dépassement.</span></li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="color: var(--accent); background: rgba(6, 182, 212, 0.1);"><i class="fa-solid fa-credit-card"></i></div>
+                    <h3 class="card-title">Module Abonnements</h3>
+                    <ul class="tech-list" style="font-size: 13.5px;">
+                        <li class="tech-item"><i class="fa-solid fa-robot"></i><span><strong>Scan IA (Llama 3 via Groq) :</strong> Détection automatique des abonnements depuis la boîte mail OAuth.</span></li>
+                        <li class="tech-item"><i class="fa-solid fa-bell"></i><span><strong>Alertes de renouvellement :</strong> Notifications push avant chaque prélèvement.</span></li>
+                        <li class="tech-item"><i class="fa-solid fa-envelope-open-text"></i><span><strong>Résiliation LRAR :</strong> Envoi physique automatisé via n8n + API La Poste en 1 clic.</span></li>
+                        <li class="tech-item"><i class="fa-solid fa-lightbulb"></i><span><strong>Suggestions d'alternatives :</strong> Recommandations d'offres moins chères par catégorie.</span></li>
+                    </ul>
                 </div>
             </div>
 
@@ -821,6 +875,80 @@
                         <span><strong>Mode Invité (Privacy Preserving) :</strong> Permet d'essayer l'application sans créer de compte, sans collecter d'identifiants et en effectuant des saisies manuelles stockées exclusivement en local.</span>
                     </li>
                 </ul>
+            </div>
+        </section>
+
+        <!-- 2B. BUDGETING MODULE DETAIL -->
+        <section id="budgeting-panel" class="tab-panel">
+            <header>
+                <div class="subtitle">Module Cœur de l'Application</div>
+                <h1>Trimly Budget — Gestion Financière Complète</h1>
+                <p class="header-desc">Bien au-delà de la gestion d'abonnements, Trimly est avant tout un outil de pilotage financier personnel — suivi des dépenses, catégorisation, objectifs d'épargne et insights IA.</p>
+            </header>
+
+            <div class="grid-3" style="margin-bottom: 24px;">
+                <div class="card">
+                    <div class="card-icon" style="color: var(--success); background: rgba(16, 185, 129, 0.1);"><i class="fa-solid fa-arrow-trend-up"></i></div>
+                    <h3 class="card-title">Suivi des Revenus</h3>
+                    <p class="card-desc">Enregistrement des revenus récurrents (salaires, freelance) et ponctuels. Vue mensuelle et annuelle avec comparaison N-1.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="color: var(--danger); background: rgba(239, 68, 68, 0.1);"><i class="fa-solid fa-arrow-trend-down"></i></div>
+                    <h3 class="card-title">Suivi des Dépenses</h3>
+                    <p class="card-desc">Saisie manuelle ou import CSV des dépenses. Catégorisation automatique par IA avec tags modifiables et mémo photo de reçu.</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="color: var(--warning); background: rgba(245, 158, 11, 0.1);"><i class="fa-solid fa-scale-balanced"></i></div>
+                    <h3 class="card-title">Solde & Cashflow</h3>
+                    <p class="card-desc">Calcul automatique du solde disponible en temps réel avec projection du cashflow sur les 30 prochains jours.</p>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="card">
+                    <div class="card-icon" style="color: var(--primary); background: var(--primary-glow);"><i class="fa-solid fa-tags"></i></div>
+                    <h3 class="card-title">Catégories & Enveloppes Budgétaires</h3>
+                    <p class="card-desc" style="margin-bottom: 12px;">Système d'enveloppes budgétaires inspiré de la méthode <strong>50/30/20</strong> :</p>
+                    <ul class="tech-list" style="font-size: 13.5px;">
+                        <li class="tech-item"><i class="fa-solid fa-house"></i><span><strong>Besoins (50%) :</strong> Loyer, alimentation, transports, factures.</span></li>
+                        <li class="tech-item"><i class="fa-solid fa-gamepad"></i><span><strong>Envies (30%) :</strong> Loisirs, restaurants, voyages, abonnements.</span></li>
+                        <li class="tech-item"><i class="fa-solid fa-piggy-bank"></i><span><strong>Épargne (20%) :</strong> Fonds d'urgence, projets, investissements.</span></li>
+                        <li class="tech-item"><i class="fa-solid fa-bell"></i><span><strong>Alertes de dépassement :</strong> Notification push dès qu'un seuil de catégorie est atteint.</span></li>
+                    </ul>
+                </div>
+                <div class="card">
+                    <div class="card-icon" style="color: var(--accent); background: var(--accent-glow);"><i class="fa-solid fa-bullseye"></i></div>
+                    <h3 class="card-title">Objectifs d'Épargne</h3>
+                    <p class="card-desc" style="margin-bottom: 12px;">Création et suivi d'objectifs financiers personnalisés :</p>
+                    <ul class="tech-list" style="font-size: 13.5px;">
+                        <li class="tech-item"><i class="fa-solid fa-flag-checkered"></i><span>Création d'un objectif avec montant cible et date butoir.</span></li>
+                        <li class="tech-item"><i class="fa-solid fa-chart-line"></i><span>Barre de progression visuelle et calcul de la contribution mensuelle nécessaire.</span></li>
+                        <li class="tech-item"><i class="fa-solid fa-robot"></i><span>Recommandations IA : « En annulant <em>Netflix</em> et <em>Disney+</em>, vous atteignez votre objectif 3 mois plus tôt. »</span></li>
+                        <li class="tech-item"><i class="fa-solid fa-trophy"></i><span>Système de récompenses (badges) pour encourager les comportements d'épargne.</span></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 24px;">
+                <h3 class="card-title">Insights & Rapports IA — La Connexion Abonnements → Budget</h3>
+                <p class="card-desc" style="margin-bottom: 16px;">Le véritable différenciateur de Trimly est la <strong>synergie entre les deux modules</strong> : le module abonnements se connecte directement au budget, ce qui permet à l'IA de générer des insights uniques :</p>
+                <div class="grid-3">
+                    <div style="background: var(--primary-glow); border-radius: 12px; padding: 18px; border: 1px solid rgba(99,102,241,0.2);">
+                        <div style="font-size: 22px; margin-bottom: 8px;">🔍</div>
+                        <div style="font-weight: 700; margin-bottom: 6px; font-size: 14px;">Détection des fuites</div>
+                        <div style="font-size: 13px; color: var(--text-secondary);">« Vos abonnements représentent 34% de votre budget Loisirs. Trimly a détecté 3 abonnements non utilisés ce mois-ci. »</div>
+                    </div>
+                    <div style="background: rgba(16, 185, 129, 0.08); border-radius: 12px; padding: 18px; border: 1px solid rgba(16,185,129,0.2);">
+                        <div style="font-size: 22px; margin-bottom: 8px;">💡</div>
+                        <div style="font-weight: 700; margin-bottom: 6px; font-size: 14px;">Simulation d'économies</div>
+                        <div style="font-size: 13px; color: var(--text-secondary);">« En résiliant Gym (45 DH/mois) et Duolingo Plus (30 DH/mois), vous économisez 900 DH/an — soit 75% de votre objectif Voyage. »</div>
+                    </div>
+                    <div style="background: rgba(245, 158, 11, 0.08); border-radius: 12px; padding: 18px; border: 1px solid rgba(245,158,11,0.2);">
+                        <div style="font-size: 22px; margin-bottom: 8px;">📊</div>
+                        <div style="font-weight: 700; margin-bottom: 6px; font-size: 14px;">Rapport mensuel</div>
+                        <div style="font-size: 13px; color: var(--text-secondary);">Rapport PDF mensuel automatique : revenus, dépenses par catégorie, solde, évolution des abonnements et économies réalisées.</div>
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -880,16 +1008,19 @@
 
                 <!-- Proposition de Valeur -->
                 <div class="bmc-cell vp" onclick="openBmcModal('Propositions de Valeur', [
-                    '<strong>Zéro friction de saisie :</strong> Scan d\'emails automatisé par IA éliminant la saisie manuelle laborieuse.',
-                    '<strong>Économies tangibles :</strong> Détection active d\'abonnements zombies et proposition automatique d\'alternatives moins chères.',
-                    '<strong>Prise en charge de la résiliation :</strong> Prise en charge automatique des résiliations postales en 1 clic grâce à n8n et La Poste.'
+                    '<strong>Budget complet en temps réel :</strong> Suivi des revenus et dépenses, catégorisation IA, enveloppes 50/30/20 et objectifs d\'épargne dans une seule application.',
+                    '<strong>Zéro friction de saisie :</strong> Scan d\'emails automatisé par IA éliminant la saisie manuelle laborieuse des abonnements.',
+                    '<strong>Économies tangibles :</strong> Détection active d\'abonnements zombies, simulation d\'économies et proposition automatique d\'alternatives moins chères.',
+                    '<strong>Prise en charge de la résiliation :</strong> Prise en charge automatique des résiliations postales en 1 clic grâce à n8n et La Poste.',
+                    '<strong>Insights IA uniques :</strong> Connexion directe budget ↔ abonnements pour des recommandations personnalisées d\'épargne.'
                 ])">
                     <div class="bmc-header"><i class="fa-solid fa-star"></i> Valeur Client</div>
                     <ul class="bmc-content">
+                        <li>Budget & catégorisation IA</li>
                         <li>Import automatique par scan IA</li>
                         <li>Notifications de renouvellement</li>
                         <li>Résiliation physique automatisée</li>
-                        <li>Suggestions d'alternatives</li>
+                        <li>Objectifs d'épargne & insights</li>
                     </ul>
                 </div>
 
@@ -953,18 +1084,19 @@
 
                 <!-- Revenue Streams -->
                 <div class="bmc-cell rev" onclick="openBmcModal('Flux de Revenus', [
-                    '<strong>Modèle Freemium :</strong> Version de base gratuite (locale, limitée à 5 abonnements manuels).',
-                    '<strong>Abonnement Pro Mensuel :</strong> 3,49 € / mois pour débloquer l\'illimité, les alertes et le scan IA.',
-                    '<strong>Abonnement Pro Annuel :</strong> 29,99 € / an (~2,50 € / mois, offre phare à forte valeur de conversion).',
-                    '<strong>Résiliation physique :</strong> 7,99 € par recommandé papier expédié (génère 2,49 € de marge brute).',
+                    '<strong>Modèle Freemium :</strong> Version gratuite avec budget limité (5 catégories, 5 abonnements manuels, sans scan IA).',
+                    '<strong>Abonnement Pro Mensuel :</strong> 4,99 € / 50 DH — budget illimité, scan IA, alertes avancées et exports PDF.',
+                    '<strong>Abonnement Pro Annuel :</strong> 49,99 € / 500 DH (~4,16 €/mois — offre phare à forte valeur de conversion).',
+                    '<strong>Résiliation physique LRAR :</strong> 7,99 € / 80 DH par recommandé papier expédié (marge brute : 2,49 €).',
                     '<strong>Affiliation :</strong> Commissions reversées par des partenaires en cas d\'abonnement à des alternatives recommandées.'
                 ])">
                     <div class="bmc-header"><i class="fa-solid fa-wallet"></i> Flux de Revenus</div>
                     <ul class="bmc-content">
-                        <li>Trimly Pro Mensuel (3,49 €)</li>
-                        <li>Trimly Pro Annuel (29,99 €)</li>
-                        <li>Facturation à l'acte LRAR (7,99 €)</li>
-                        <li>Commissions d'affiliation alternatives</li>
+                        <li>Freemium (budget & abonnements limités)</li>
+                        <li>Trimly Pro Mensuel (4,99 € / 50 DH)</li>
+                        <li>Trimly Pro Annuel (49,99 € / 500 DH)</li>
+                        <li>LRAR à l'acte (7,99 € / 80 DH)</li>
+                        <li>Commissions d'affiliation</li>
                     </ul>
                 </div>
             </div>
@@ -1055,14 +1187,75 @@ Payload:
                 <div class="card">
                     <div class="card-icon" style="color: var(--success); background: rgba(16, 185, 129, 0.1);"><i class="fa-solid fa-hand-holding-dollar"></i></div>
                     <h3 class="card-title">Marge et Payback Period</h3>
-                    <p class="card-desc" style="margin-bottom: 12px;"><strong>Projections sur un abonnement annuel à 29,99 € :</strong></p>
+                    <p class="card-desc" style="margin-bottom: 12px;"><strong>Projections sur un abonnement annuel à 49,99 € :</strong></p>
                     <ul class="tech-list" style="font-size: 13.5px;">
-                        <li><strong>Revenu Brut :</strong> 29,99 €</li>
-                        <li><strong>Commission Store (15% pour programme PME) :</strong> -4,50 €</li>
-                        <li><strong>TVA (20%) :</strong> -5,00 €</li>
+                        <li><strong>Revenu Brut :</strong> 49,99 €</li>
+                        <li><strong>Commission Store (15% pour programme PME) :</strong> -7,50 €</li>
+                        <li><strong>TVA (20%) :</strong> -8,33 €</li>
                         <li><strong>COGS d'infrastructure :</strong> -0,17 €</li>
-                        <li><strong>Marge Nette Trimly par abonnement Pro Annuel :</strong> **20,32 €** (Marge de 67,7%).</li>
+                        <li><strong>Marge Nette Trimly par abonnement Pro Annuel :</strong> **33,99 €** (Marge de 68.0%).</li>
                     </ul>
+                </div>
+            </div>
+
+            <div class="card" style="margin-top: 24px; margin-bottom: 24px;">
+                <h3 class="card-title">Tableau Prévisionnel (Exercice 1)</h3>
+                <p class="card-desc" style="margin-bottom: 18px;">Tous les montants sont exprimés en Euros (€) et en Dirhams (DH) sur la base d'une croissance de 300 à 6 000 utilisateurs actifs payants (avec 1 € = 10 DH).</p>
+                <div style="overflow-x: auto;">
+                    <table class="financials-table">
+                        <thead>
+                            <tr>
+                                <th>Indicateurs Financiers</th>
+                                <th>Trimestre 1</th>
+                                <th>Trimestre 2</th>
+                                <th>Trimestre 3</th>
+                                <th>Trimestre 4</th>
+                                <th style="color: var(--accent);">Total Année 1</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Abonnés Payants</strong> (fin de période)</td>
+                                <td>300</td>
+                                <td>1 200</td>
+                                <td>3 000</td>
+                                <td>6 000</td>
+                                <td style="font-weight: 700;">6 000</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Chiffre d'Affaires Brut</strong></td>
+                                <td>2 100 €<br><span style="font-size: 11px; color: var(--text-secondary);">(21 000 DH)</span></td>
+                                <td>8 400 €<br><span style="font-size: 11px; color: var(--text-secondary);">(84 000 DH)</span></td>
+                                <td>21 000 €<br><span style="font-size: 11px; color: var(--text-secondary);">(210 000 DH)</span></td>
+                                <td>42 000 €<br><span style="font-size: 11px; color: var(--text-secondary);">(420 000 DH)</span></td>
+                                <td style="font-weight: 700; color: var(--accent);">73 500 €<br><span style="font-size: 11px; color: var(--accent);">(735 000 DH)</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Coûts Variables (COGS)</strong></td>
+                                <td>480 €<br><span style="font-size: 11px; color: var(--text-secondary);">(4 800 DH)</span></td>
+                                <td>1 920 €<br><span style="font-size: 11px; color: var(--text-secondary);">(19 200 DH)</span></td>
+                                <td>4 800 €<br><span style="font-size: 11px; color: var(--text-secondary);">(48 000 DH)</span></td>
+                                <td>10 100 €<br><span style="font-size: 11px; color: var(--text-secondary);">(101 000 DH)</span></td>
+                                <td style="font-weight: 700;">17 300 €<br><span style="font-size: 11px; color: var(--text-secondary);">(173 000 DH)</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Charges Fixes</strong></td>
+                                <td>5 500 €<br><span style="font-size: 11px; color: var(--text-secondary);">(55 000 DH)</span></td>
+                                <td>4 000 €<br><span style="font-size: 11px; color: var(--text-secondary);">(40 000 DH)</span></td>
+                                <td>4 000 €<br><span style="font-size: 11px; color: var(--text-secondary);">(40 000 DH)</span></td>
+                                <td>4 000 €<br><span style="font-size: 11px; color: var(--text-secondary);">(40 000 DH)</span></td>
+                                <td style="font-weight: 700;">17 500 €<br><span style="font-size: 11px; color: var(--text-secondary);">(175 000 DH)</span></td>
+                            </tr>
+                            <tr style="background: rgba(99, 102, 241, 0.08);">
+                                <td><strong>Bénéfice Net (Avant Impôts)</strong></td>
+                                <td style="color: var(--danger);">-3 880 €<br><span style="font-size: 11px; color: var(--danger); font-weight: bold;">(-38 800 DH)</span></td>
+                                <td style="color: var(--success);">2 480 €<br><span style="font-size: 11px; color: var(--success); font-weight: bold;">(24 800 DH)</span></td>
+                                <td style="color: var(--success);">12 200 €<br><span style="font-size: 11px; color: var(--success); font-weight: bold;">(122 000 DH)</span></td>
+                                <td style="color: var(--success);">27 900 €<br><span style="font-size: 11px; color: var(--success); font-weight: bold;">(279 000 DH)</span></td>
+                                <td style="font-weight: 800; color: var(--success);">38 700 €<br><span style="font-size: 11px; color: var(--success); font-weight: bold;">(387 000 DH)</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 

@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Mobile - Trimly Animations</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+        
+        .test-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #6366f1;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+        
+        .test-section {
+            margin-bottom: 32px;
+            padding: 20px;
+            background: #f9fafb;
+            border-radius: 12px;
+        }
+        
+        .test-section h2 {
+            font-size: 18px;
+            margin-bottom: 16px;
+            color: #333;
+        }
+        
+        .test-result {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .test-result span {
+            font-size: 14px;
+        }
+        
+        .status {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status.pass {
+            background: #10b981;
+            color: white;
+        }
+        
+        .status.fail {
+            background: #ef4444;
+            color: white;
+        }
+        
+        .status.info {
+            background: #3b82f6;
+            color: white;
+        }
+        
+        .test-card {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            padding: 40px;
+            border-radius: 16px;
+            text-align: center;
+            margin: 24px 0;
+            touch-action: manipulation;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .test-card:active {
+            transform: scale(0.95);
+        }
+        
+        .gyro-demo {
+            width: 100px;
+            height: 100px;
+            background: #6366f1;
+            border-radius: 50%;
+            margin: 20px auto;
+            transition: transform 0.1s ease-out;
+        }
+        
+        .info-box {
+            background: #e0e7ff;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+            color: #4338ca;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .btn-test {
+            width: 100%;
+            padding: 16px;
+            background: #6366f1;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 12px;
+            touch-action: manipulation;
+        }
+        
+        .btn-test:active {
+            transform: scale(0.98);
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 Test des Animations Mobile</h1>
+        
+        <!-- Tests de détection -->
+        <div class="test-section">
+            <h2>📱 Détection de l'appareil</h2>
+            <div id="deviceTests"></div>
+        </div>
+        
+        <!-- Test tactile -->
+        <div class="test-section">
+            <h2>👆 Test d'interaction tactile</h2>
+            <div class="test-card" id="touchTestCard">
+                <h3>Touchez cette carte</h3>
+                <p>Elle devrait réagir à votre toucher</p>
+            </div>
+            <div class="test-result">
+                <span>Touches détectées:</span>
+                <span id="touchCount" class="status info">0</span>
+            </div>
+        </div>
+        
+        <!-- Test gyroscope -->
+        <div class="test-section">
+            <h2>🔄 Test du gyroscope</h2>
+            <div class="gyro-demo" id="gyroDemo"></div>
+            <button class="btn-test" id="enableGyro">Activer le gyroscope</button>
+            <div class="info-box">
+                <strong>Note:</strong> Sur iOS 13+, vous devez autoriser l'accès au gyroscope. Le cercle bleu devrait bouger quand vous inclinez votre appareil.
+            </div>
+            <div class="test-result">
+                <span>Gyroscope:</span>
+                <span id="gyroStatus" class="status fail">Non testé</span>
+            </div>
+        </div>
+        
+        <!-- Tests de performance -->
+        <div class="test-section">
+            <h2>⚡ Performance</h2>
+            <div id="performanceTests"></div>
+        </div>
+        
+        <!-- Instructions -->
+        <div class="test-section">
+            <h2>📝 Instructions</h2>
+            <div class="info-box">
+                <strong>Comment utiliser cette page:</strong><br>
+                1. Vérifiez que votre appareil est correctement détecté<br>
+                2. Touchez la carte violette pour tester le tactile<br>
+                3. Activez le gyroscope et inclinez votre appareil<br>
+                4. Tous les tests devraient passer ✅<br>
+                <br>
+                <strong>Retournez ensuite sur la page principale</strong> pour voir les animations en action!
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tests de détection
+        function runDeviceTests() {
+            const container = document.getElementById('deviceTests');
+            const tests = [
+                {
+                    name: 'Touch Support',
+                    check: 'ontouchstart' in window,
+                    expected: true
+                },
+                {
+                    name: 'Max Touch Points',
+                    check: navigator.maxTouchPoints > 0,
+                    expected: true
+                },
+                {
+                    name: 'Device Orientation',
+                    check: 'DeviceOrientationEvent' in window,
+                    expected: null // Optional
+                },
+                {
+                    name: 'Viewport Width',
+                    check: window.innerWidth <= 768,
+                    expected: null // Info only
+                }
+            ];
+            
+            tests.forEach(test => {
+                const div = document.createElement('div');
+                div.className = 'test-result';
+                
+                let status = 'info';
+                if (test.expected === true) {
+                    status = test.check ? 'pass' : 'fail';
+                } else if (test.expected === false) {
+                    status = test.check ? 'fail' : 'pass';
+                }
+                
+                const value = typeof test.check === 'boolean' 
+                    ? (test.check ? '✓' : '✗')
+                    : test.check;
+                
+                div.innerHTML = `
+                    <span>${test.name}</span>
+                    <span class="status ${status}">${value}</span>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
+        // Test tactile
+        let touchCount = 0;
+        const touchCard = document.getElementById('touchTestCard');
+        const touchCountSpan = document.getElementById('touchCount');
+        
+        function handleTouch() {
+            touchCount++;
+            touchCountSpan.textContent = touchCount;
+            touchCountSpan.className = 'status pass';
+            
+            // Animation feedback
+            touchCard.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                touchCard.style.transform = 'scale(1)';
+            }, 150);
+        }
+        
+        touchCard.addEventListener('touchstart', handleTouch);
+        touchCard.addEventListener('click', handleTouch);
+        
+        // Test gyroscope
+        const gyroDemo = document.getElementById('gyroDemo');
+        const gyroStatus = document.getElementById('gyroStatus');
+        const enableGyroBtn = document.getElementById('enableGyro');
+        
+        function handleOrientation(e) {
+            const beta = e.beta || 0;  // -180 à 180
+            const gamma = e.gamma || 0; // -90 à 90
+            
+            // Normaliser et animer
+            const x = gamma * 2;
+            const y = (beta - 90) * 2;
+            
+            gyroDemo.style.transform = `translate(${x}px, ${y}px)`;
+            
+            gyroStatus.textContent = 'Actif ✓';
+            gyroStatus.className = 'status pass';
+        }
+        
+        enableGyroBtn.addEventListener('click', async () => {
+            try {
+                // iOS 13+ nécessite une permission
+                if (typeof DeviceOrientationEvent !== 'undefined' && 
+                    typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    const permission = await DeviceOrientationEvent.requestPermission();
+                    if (permission === 'granted') {
+                        window.addEventListener('deviceorientation', handleOrientation);
+                        enableGyroBtn.textContent = 'Gyroscope activé!';
+                        enableGyroBtn.style.background = '#10b981';
+                    } else {
+                        gyroStatus.textContent = 'Permission refusée';
+                        gyroStatus.className = 'status fail';
+                    }
+                } else {
+                    // Android et autres
+                    window.addEventListener('deviceorientation', handleOrientation);
+                    enableGyroBtn.textContent = 'Gyroscope activé!';
+                    enableGyroBtn.style.background = '#10b981';
+                }
+            } catch (error) {
+                gyroStatus.textContent = 'Erreur: ' + error.message;
+                gyroStatus.className = 'status fail';
+            }
+        });
+        
+        // Tests de performance
+        function runPerformanceTests() {
+            const container = document.getElementById('performanceTests');
+            
+            const tests = [
+                {
+                    name: 'RequestAnimationFrame',
+                    check: 'requestAnimationFrame' in window
+                },
+                {
+                    name: 'Touch Action Support',
+                    check: CSS.supports('touch-action', 'manipulation')
+                },
+                {
+                    name: 'Will Change Support',
+                    check: CSS.supports('will-change', 'transform')
+                },
+                {
+                    name: 'Passive Events',
+                    check: (() => {
+                        let passive = false;
+                        try {
+                            const opts = Object.defineProperty({}, 'passive', {
+                                get: () => { passive = true; }
+                            });
+                            window.addEventListener('test', null, opts);
+                        } catch (e) {}
+                        return passive;
+                    })()
+                }
+            ];
+            
+            tests.forEach(test => {
+                const div = document.createElement('div');
+                div.className = 'test-result';
+                div.innerHTML = `
+                    <span>${test.name}</span>
+                    <span class="status ${test.check ? 'pass' : 'fail'}">
+                        ${test.check ? '✓' : '✗'}
+                    </span>
+                `;
+                container.appendChild(div);
+            });
+        }
+        
+        // Lancer tous les tests
+        runDeviceTests();
+        runPerformanceTests();
+        
+        // Info dans la console
+        console.log('=== Tests Mobile Trimly ===');
+        console.log('Is Mobile:', 'ontouchstart' in window);
+        console.log('Max Touch Points:', navigator.maxTouchPoints);
+        console.log('Screen Width:', window.innerWidth);
+        console.log('Device Orientation:', 'DeviceOrientationEvent' in window);
+        console.log('User Agent:', navigator.userAgent);
+    </script>
+</body>
+</html>

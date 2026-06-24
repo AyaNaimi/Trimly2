@@ -272,6 +272,76 @@
     "invalidInput": "Entrada inválida",
     "required": "Este campo é obrigatório"
   },
+  "scanner": {
+    "headerTitle": "Escaneamento inteligente",
+    "stages": {
+      "connecting": "Conectando \u00e0 caixa de e-mail",
+      "searching": "Procurando recibos e faturas",
+      "analyzing": "An\u00e1lise de valores com IA",
+      "preparing": "Preparando alternativas"
+    },
+    "choose": {
+      "title": "Detectar suas assinaturas",
+      "titleAuto": "Conecte sua caixa de e-mail",
+      "subtitle": "Fluxo h\u00edbrido",
+      "description": "Trimly escaneia seu Gmail para encontrar e-mails de assinatura e import\u00e1-los automaticamente.",
+      "pendingTitle": "Detec\u00e7\u00f5es pendentes",
+      "pendingDescription": "{{count}} assinaturas aguardam sua valida\u00e7\u00e3o.",
+      "secureTitle": "Conex\u00e3o segura",
+      "secureDesc": "Apenas lemos seus e-mails, sem modificar ou excluir nada.",
+      "aiTitle": "Detec\u00e7\u00e3o com IA",
+      "aiDesc": "Nossa IA encontra e-mails de assinatura e extrai os detalhes automaticamente.",
+      "quickTitle": "Importa\u00e7\u00e3o r\u00e1pida",
+      "quickDesc": "Revise as assinaturas detectadas e importe tudo com um toque."
+    },
+    "manual": {
+      "title": "Escaneamento manual do Gmail",
+      "subtitle": "Configura\u00e7\u00e3o IMAP",
+      "description": "Use uma \"senha de aplicativo\" do Google para permitir que Trimly leia seus e-mails de cobran\u00e7a com seguran\u00e7a.",
+      "emailLabel": "Endere\u00e7o de e-mail",
+      "passwordLabel": "Senha de aplicativo do Gmail",
+      "startButton": "Iniciar escaneamento manual"
+    },
+    "scanning": {
+      "title": "Escaneamento em andamento...",
+      "logs": {
+        "start": "Escaneando com {{provider}}...",
+        "mailbox": "Caixa: {{email}}",
+        "reading": "Lendo e-mails via API...",
+        "foundEmails": "{{count}} e-mails relevantes encontrados",
+        "analyzed": "{{count}} e-mails analisados em detalhe",
+        "foundSubs": "{{count}} assinaturas encontradas",
+        "error": "Erro: {{message}}"
+      }
+    },
+    "review": {
+      "detected": "Detectadas",
+      "monthlyTotal": "Total mensal",
+      "emptyTitle": "Nada encontrado",
+      "emptyDescription": "Nenhuma assinatura foi detectada nos e-mails analisados. Tente outro per\u00edodo ou outra conta.",
+      "retry": "Tentar novamente",
+      "actions": "A\u00e7\u00f5es",
+      "close": "Fechar",
+      "aiAlternatives": "Alternativas sugeridas por IA",
+      "noAlternatives": "Nenhuma alternativa confi\u00e1vel para este servi\u00e7o.",
+      "import": "Importar",
+      "importSelected": "Importar {{count}} assinaturas",
+      "ignore": "Ignorar",
+      "successTitle": "Sucesso",
+      "successMessage": "{{count}} assinaturas importadas para o Trimly."
+    },
+    "errors": {
+      "loginRequired": "Entre na sua conta primeiro.",
+      "gmailOnly": "Por enquanto, apenas o escaneamento do Gmail via Google est\u00e1 configurado.",
+      "noTokens": "Nenhum token do Gmail encontrado. Conecte-se com Google e tente novamente.",
+      "emailRequired": "Informe um endere\u00e7o de e-mail.",
+      "passwordRequired": "Informe uma senha de aplicativo do Gmail.",
+      "importFailed": "N\u00e3o foi poss\u00edvel importar esta assinatura.",
+      "dismissFailed": "N\u00e3o foi poss\u00edvel ignorar esta assinatura.",
+      "networkReach": "N\u00e3o foi poss\u00edvel acessar o servi\u00e7o de escaneamento. Verifique a URL do backend ou o endere\u00e7o IP.",
+      "timeout": "O escaneamento come\u00e7ou, mas expirou. Verifique os logs do backend ou tente menos e-mails."
+    }
+  },
   "modals": {
     "addTransaction": {
       "title": "Adicionar transação",

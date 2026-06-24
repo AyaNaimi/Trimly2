@@ -24,6 +24,10 @@ export interface Profile {
   stripe_subscription_status?: string | null;
   stripe_price_id?: string | null;
   subscription_current_period_end?: string | null;
+  trial_end_date?: string | null;
+  pro_started_at?: string | null;
+  pro_current_period_start?: string | null;
+  pro_current_period_end?: string | null;
 }
 
 export function jsonResponse(payload: unknown, status = 200) {
@@ -114,14 +118,22 @@ export function normalizeBillingProfile(input: {
   priceId?: string | null;
   customerId?: string | null;
   subscriptionId?: string | null;
+  currentPeriodStart?: number | string | null;
   currentPeriodEnd?: number | string | null;
+  trialEnd?: number | string | null;
+  created?: number | string | null;
 }) {
   const status = input.status || null;
   const activePlan = isActiveStripeStatus(status) ? input.plan || null : null;
+  const toIso = (value?: number | string | null) => {
+    if (!value) return null;
+    return typeof value === "number" ? new Date(value * 1000).toISOString() : value;
+  };
+  const currentPeriodStart = toIso(input.currentPeriodStart);
   const currentPeriodEnd =
-    typeof input.currentPeriodEnd === "number"
-      ? new Date(input.currentPeriodEnd * 1000).toISOString()
-      : input.currentPeriodEnd || null;
+    toIso(input.currentPeriodEnd);
+  const createdAt = toIso(input.created);
+  const trialEnd = toIso(input.trialEnd);
 
   return {
     subscription_plan: activePlan,
@@ -130,6 +142,10 @@ export function normalizeBillingProfile(input: {
     stripe_subscription_status: status,
     stripe_price_id: input.priceId || null,
     subscription_current_period_end: currentPeriodEnd,
+    pro_started_at: activePlan ? createdAt || currentPeriodStart || new Date().toISOString() : undefined,
+    pro_current_period_start: activePlan ? currentPeriodStart || createdAt : null,
+    pro_current_period_end: activePlan ? currentPeriodEnd : null,
+    trial_end_date: trialEnd || undefined,
   };
 }
 
@@ -219,7 +235,10 @@ export function getSubscriptionBillingPayload(subscription: StripeSubscription |
     priceId,
     customerId: typeof subscription.customer === "string" ? subscription.customer : customerId || null,
     subscriptionId: subscription.id,
+    currentPeriodStart: subscription.current_period_start,
     currentPeriodEnd: subscription.current_period_end,
+    trialEnd: subscription.trial_end,
+    created: subscription.created,
   });
 }
 
@@ -316,7 +335,9 @@ export interface StripeSubscription {
   id: string;
   customer: string;
   status: string;
+  current_period_start?: number;
   current_period_end?: number;
+  trial_end?: number | null;
   created?: number;
   metadata?: Record<string, string>;
   items?: {

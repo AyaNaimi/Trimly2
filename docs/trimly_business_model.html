@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Trimly - Analyse projet, solution et Business Model Canvas</title>
+  <style>
+    :root {
+      --ink: #101828;
+      --muted: #667085;
+      --line: #d9e2ec;
+      --paper: #ffffff;
+      --soft: #f6f8fb;
+      --brand: #5b3bf5;
+      --brand-dark: #33208f;
+      --green: #079455;
+      --amber: #dc6803;
+      --red: #d92d20;
+      --blue: #175cd3;
+      --shadow: 0 18px 45px rgba(16, 24, 40, 0.10);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(91, 59, 245, 0.14), transparent 34rem),
+        linear-gradient(180deg, #f8fafc 0%, #eef2f7 100%);
+      line-height: 1.55;
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 42px 0 70px;
+    }
+
+    .hero {
+      background: linear-gradient(135deg, #111827 0%, #241858 54%, #5b3bf5 100%);
+      color: #fff;
+      border-radius: 28px;
+      padding: clamp(32px, 5vw, 58px);
+      box-shadow: var(--shadow);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero:after {
+      content: "";
+      position: absolute;
+      right: -80px;
+      top: -90px;
+      width: 330px;
+      height: 330px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.10);
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+    }
+
+    .kicker {
+      margin: 0 0 14px;
+      color: #c7d2fe;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    h1, h2, h3 { margin: 0; line-height: 1.1; }
+
+    h1 {
+      font-size: clamp(38px, 6vw, 72px);
+      letter-spacing: -0.04em;
+      max-width: 760px;
+    }
+
+    .hero p {
+      max-width: 760px;
+      color: rgba(255, 255, 255, 0.78);
+      font-size: clamp(17px, 2vw, 21px);
+      margin: 22px 0 0;
+    }
+
+    .meta-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 30px;
+    }
+
+    .meta {
+      background: rgba(255, 255, 255, 0.10);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 16px;
+      padding: 16px;
+      backdrop-filter: blur(10px);
+    }
+
+    .meta strong {
+      display: block;
+      font-size: 13px;
+      color: #fff;
+      margin-bottom: 5px;
+    }
+
+    .meta span {
+      color: rgba(255, 255, 255, 0.72);
+      font-size: 13px;
+    }
+
+    .section {
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: 0 8px 28px rgba(16, 24, 40, 0.05);
+      padding: clamp(24px, 4vw, 38px);
+      margin-top: 22px;
+    }
+
+    .section-head {
+      display: flex;
+      gap: 18px;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+      padding-bottom: 18px;
+    }
+
+    .section h2 {
+      font-size: clamp(26px, 3vw, 38px);
+      letter-spacing: -0.03em;
+    }
+
+    .section-lead {
+      max-width: 620px;
+      color: var(--muted);
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 18px;
+    }
+
+    .tile {
+      background: var(--soft);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+    }
+
+    .tile h3 {
+      font-size: 18px;
+      margin-bottom: 10px;
+      letter-spacing: -0.01em;
+    }
+
+    .tile p, .tile li { color: var(--muted); }
+
+    .tile p { margin: 0; }
+
+    ul {
+      padding-left: 20px;
+      margin: 10px 0 0;
+    }
+
+    li { margin: 7px 0; }
+
+    .accent { color: var(--brand); }
+    .green { color: var(--green); }
+    .amber { color: var(--amber); }
+    .red { color: var(--red); }
+    .blue { color: var(--blue); }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .step {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      min-height: 126px;
+    }
+
+    .step small {
+      display: inline-flex;
+      width: 28px;
+      height: 28px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: rgba(91, 59, 245, 0.10);
+      color: var(--brand);
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+
+    .step strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    .step span {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .bmc {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    .bmc-card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 16px;
+      min-height: 190px;
+    }
+
+    .bmc-card h3 {
+      font-size: 15px;
+      margin-bottom: 10px;
+      color: var(--brand-dark);
+    }
+
+    .bmc-card li {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 6px 0;
+    }
+
+    .bmc-wide {
+      grid-column: span 2;
+    }
+
+    .table-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      overflow: hidden;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: #fff;
+    }
+
+    th, td {
+      text-align: left;
+      padding: 15px 16px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    th {
+      background: #f1f4f9;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    td { color: var(--muted); }
+    tr:last-child td { border-bottom: 0; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 12px;
+      font-weight: 800;
+      background: rgba(91, 59, 245, 0.10);
+      color: var(--brand-dark);
+      margin: 3px 5px 3px 0;
+    }
+
+    .footer {
+      color: var(--muted);
+      text-align: center;
+      margin-top: 28px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 980px) {
+      .meta-grid, .grid-3, .flow, .bmc { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .bmc-wide { grid-column: span 1; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 620px) {
+      .page { width: min(100% - 20px, 1180px); padding-top: 18px; }
+      .hero, .section { border-radius: 18px; }
+      .meta-grid, .grid-3, .flow, .bmc { grid-template-columns: 1fr; }
+      .section-head { display: block; }
+      .section-lead { margin-top: 12px; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      .page { width: 100%; padding: 0; }
+      .hero, .section { box-shadow: none; break-inside: avoid; }
+      .section { margin-top: 14px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="hero-content">
+        <p class="kicker">Dossier stratégique produit</p>
+        <h1>Trimly, gestion intelligente du budget, des abonnements et des résiliations</h1>
+        <p>
+          Analyse complète du besoin, de la solution, de la valeur ajoutée, des enjeux produit et du Business Model Canvas.
+          Le projet répond à un problème simple mais coûteux : les utilisateurs perdent de l'argent par manque de visibilité,
+          d'alertes et d'outils concrets pour agir sur leurs abonnements.
+        </p>
+        <div class="meta-grid">
+          <div class="meta"><strong>Produit</strong><span>Application mobile Expo / React Native</span></div>
+          <div class="meta"><strong>Backend</strong><span>Supabase, Edge Functions, données synchronisées</span></div>
+          <div class="meta"><strong>Automatisation</strong><span>n8n, SMTP Brevo, webhook de résiliation</span></div>
+          <div class="meta"><strong>Monétisation</strong><span>Essai gratuit puis abonnement Trimly Pro</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>1. Problématique</h2>
+        <p class="section-lead">
+          La gestion des dépenses est rarement un problème de calcul. C'est surtout un problème de visibilité,
+          de friction et de suivi dans le temps.
+        </p>
+      </div>
+      <div class="grid-3">
+        <article class="tile">
+          <h3 class="red">Abonnements invisibles</h3>
+          <p>
+            Les paiements récurrents sont dispersés entre emails, cartes bancaires, stores mobiles et comptes fournisseurs.
+            Beaucoup d'utilisateurs découvrent un abonnement seulement au moment du prélèvement.
+          </p>
+        </article>
+        <article class="tile">
+          <h3 class="amber">Résiliation compliquée</h3>
+          <p>
+            Les services n'utilisent pas les mêmes parcours : bouton caché, chat, support email, appel, banque.
+            Sans preuve écrite et relance, l'utilisateur reste exposé aux prélèvements suivants.
+          </p>
+        </article>
+        <article class="tile">
+          <h3 class="blue">Budget sans action</h3>
+          <p>
+            Les apps de budget montrent des chiffres mais aident peu à agir. Trimly transforme le diagnostic en actions :
+            scanner, importer, suivre, alerter, résilier et vérifier.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>2. Solution Trimly</h2>
+        <p class="section-lead">
+          Trimly combine le suivi budgétaire quotidien et la maîtrise des abonnements, avec une couche d'automatisation
+          pour réduire la charge mentale.
+        </p>
+      </div>
+      <div class="flow">
+        <div class="step"><small>1</small><strong>Onboarding</strong><span>L'utilisateur définit revenu, devise, catégories et préférence linguistique.</span></div>
+        <div class="step"><small>2</small><strong>Budget</strong><span>Suivi hebdomadaire ou mensuel, transactions rapides et progression par catégorie.</span></div>
+        <div class="step"><small>3</small><strong>Scan email</strong><span>Connexion Gmail, détection des services, prix, cycles et prochaines échéances.</span></div>
+        <div class="step"><small>4</small><strong>Abonnements</strong><span>Projection à 12 mois, alertes, essais gratuits et état de résiliation.</span></div>
+        <div class="step"><small>5</small><strong>Résiliation</strong><span>Génération d'une lettre, envoi email via n8n, copie utilisateur et suivi.</span></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>3. Valeur ajoutée</h2>
+        <p class="section-lead">
+          La valeur principale de Trimly est d'aider l'utilisateur à économiser en supprimant l'oubli,
+          l'imprécision et la friction administrative.
+        </p>
+      </div>
+      <div class="grid-2">
+        <article class="tile">
+          <h3>Pour l'utilisateur</h3>
+          <ul>
+            <li>Vision claire du budget réel, pas seulement des dépenses manuelles.</li>
+            <li>Identification automatique des abonnements depuis les emails.</li>
+            <li>Alertes avant prélèvement et avant fin d'essai gratuit.</li>
+            <li>Lettre ou guide de résiliation prêt à envoyer.</li>
+            <li>Suivi de statut : demandé, en attente, confirmé, annulé.</li>
+          </ul>
+        </article>
+        <article class="tile">
+          <h3>Pour le business</h3>
+          <ul>
+            <li>Fonctionnalité premium à forte intention de paiement : éviter les prélèvements inutiles.</li>
+            <li>Différenciation nette face aux apps de budget classiques.</li>
+            <li>Possibilité d'étendre vers recommandations, comparateurs et partenariats.</li>
+            <li>Rétention naturelle grâce aux alertes et au suivi récurrent.</li>
+            <li>Positionnement clair : économiser plus que le prix de l'abonnement Trimly Pro.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>4. Architecture fonctionnelle</h2>
+        <p class="section-lead">
+          Le projet repose sur un triptyque mobile, données synchronisées et automatisations externes.
+        </p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Bloc</th>
+              <th>Rôle</th>
+              <th>Points d'attention</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>App mobile</strong></td>
+              <td>Expérience utilisateur : budget, transactions, abonnements, rapports, paramètres Pro.</td>
+              <td>UX fluide, verrouillage trial cohérent, textes multilingues, performance mobile.</td>
+            </tr>
+            <tr>
+              <td><strong>Supabase</strong></td>
+              <td>Authentification, profils, synchronisation, stockage abonnements et metadata email.</td>
+              <td>RLS, migrations, confidentialité, cohérence entre local et cloud.</td>
+            </tr>
+            <tr>
+              <td><strong>Scan Gmail</strong></td>
+              <td>Analyse des emails pour détecter abonnements, montants, cycles, dates et contacts support.</td>
+              <td>Consentement OAuth, scopes read-only, robustesse de parsing, erreurs réseau.</td>
+            </tr>
+            <tr>
+              <td><strong>n8n + SMTP</strong></td>
+              <td>Génération du pack de résiliation, envoi au support ou à l'utilisateur, callback de statut.</td>
+              <td>Brevo exige un expéditeur vérifié. L'email utilisateur doit être en Reply-To, pas From réel.</td>
+            </tr>
+            <tr>
+              <td><strong>Stripe</strong></td>
+              <td>Checkout, portail client, statut d'abonnement et fin d'essai gratuit.</td>
+              <td>Webhooks fiables, état Pro synchronisé, messages clairs après trial.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>5. Enjeux principaux</h2>
+        <p class="section-lead">
+          Les risques ne sont pas seulement techniques. Ils touchent aussi la confiance, la conformité et la promesse business.
+        </p>
+      </div>
+      <div class="grid-3">
+        <article class="tile">
+          <h3>Confiance</h3>
+          <p>L'utilisateur connecte une boîte email et confie des données financières. Il faut expliquer ce qui est lu, pourquoi, et comment c'est protégé.</p>
+        </article>
+        <article class="tile">
+          <h3>Livrabilité</h3>
+          <p>Pour Brevo et les SMTP sérieux, le From doit appartenir au domaine vérifié. La bonne solution est From Trimly, Reply-To utilisateur, copie utilisateur.</p>
+        </article>
+        <article class="tile">
+          <h3>Conversion</h3>
+          <p>Le paywall doit apparaître au moment de valeur : scan, ajout, sauvegarde, résiliation. Il doit être informatif, pas punitif.</p>
+        </article>
+        <article class="tile">
+          <h3>Exactitude</h3>
+          <p>La détection d'abonnements doit accepter l'incertitude : confiance, validation utilisateur et possibilité d'éditer avant import.</p>
+        </article>
+        <article class="tile">
+          <h3>Suivi</h3>
+          <p>La résiliation n'est pas finie à l'envoi. Il faut garder preuve, rappel 48h, vérification avant prélèvement et statut en base.</p>
+        </article>
+        <article class="tile">
+          <h3>Scalabilité</h3>
+          <p>Plus le scan et l'automatisation grandissent, plus il faut journaliser les erreurs et isoler les intégrations externes.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>6. Business Model Canvas</h2>
+        <p class="section-lead">
+          Le modèle repose sur une promesse simple : Trimly Pro doit coûter moins cher que les économies générées ou sécurisées.
+        </p>
+      </div>
+      <div class="bmc">
+        <article class="bmc-card">
+          <h3>Segments clients</h3>
+          <ul>
+            <li>Jeunes actifs avec plusieurs abonnements numériques.</li>
+            <li>Étudiants et freelances sensibles au budget mensuel.</li>
+            <li>Familles qui partagent des dépenses récurrentes.</li>
+            <li>Utilisateurs ayant oublié des essais gratuits ou abonnements.</li>
+          </ul>
+        </article>
+        <article class="bmc-card bmc-wide">
+          <h3>Propositions de valeur</h3>
+          <ul>
+            <li>Détecter automatiquement les abonnements depuis les emails.</li>
+            <li>Visualiser l'impact mensuel et annuel.</li>
+            <li>Prévenir avant prélèvement ou fin d'essai.</li>
+            <li>Réduire la friction de résiliation avec lettre, guide et suivi.</li>
+          </ul>
+        </article>
+        <article class="bmc-card">
+          <h3>Canaux</h3>
+          <ul>
+            <li>App stores iOS et Android.</li>
+            <li>Landing page SEO finance personnelle.</li>
+            <li>Contenu social sur économies cachées.</li>
+            <li>Parrainage utilisateur.</li>
+          </ul>
+        </article>
+        <article class="bmc-card">
+          <h3>Relation client</h3>
+          <ul>
+            <li>Onboarding guidé.</li>
+            <li>Alertes personnalisées.</li>
+            <li>Support pour résiliations difficiles.</li>
+            <li>Tableau de bord simple et récurrent.</li>
+          </ul>
+        </article>
+        <article class="bmc-card">
+          <h3>Revenus</h3>
+          <ul>
+            <li>Abonnement mensuel Trimly Pro.</li>
+            <li>Abonnement annuel avec remise.</li>
+            <li>Options futures : rapports PDF, comptes partagés, offres partenaires.</li>
+          </ul>
+        </article>
+        <article class="bmc-card">
+          <h3>Ressources clés</h3>
+          <ul>
+            <li>Application mobile React Native.</li>
+            <li>Base Supabase et Edge Functions.</li>
+            <li>Détection email et normalisation abonnements.</li>
+            <li>Workflow n8n de résiliation.</li>
+          </ul>
+        </article>
+        <article class="bmc-card">
+          <h3>Activités clés</h3>
+          <ul>
+            <li>Améliorer la précision du scan.</li>
+            <li>Optimiser conversion trial vers Pro.</li>
+            <li>Maintenir livrabilité email.</li>
+            <li>Gérer conformité et sécurité.</li>
+          </ul>
+        </article>
+        <article class="bmc-card">
+          <h3>Partenaires clés</h3>
+          <ul>
+            <li>Supabase.</li>
+            <li>Stripe.</li>
+            <li>Google OAuth / Gmail API.</li>
+            <li>Brevo ou SMTP transactionnel.</li>
+            <li>n8n pour automatisation.</li>
+          </ul>
+        </article>
+        <article class="bmc-card bmc-wide">
+          <h3>Structure de coûts</h3>
+          <ul>
+            <li>Infrastructure Supabase, stockage et edge functions.</li>
+            <li>Envoi d'emails transactionnels.</li>
+            <li>Frais Stripe.</li>
+            <li>Maintenance mobile, tests, publication stores.</li>
+            <li>Support client et conformité données personnelles.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>7. Parcours paywall après essai</h2>
+        <p class="section-lead">
+          Le verrouillage doit protéger la valeur Pro tout en restant compréhensible pour l'utilisateur.
+        </p>
+      </div>
+      <div class="grid-2">
+        <article class="tile">
+          <h3>Actions à verrouiller</h3>
+          <span class="badge">Scan email</span>
+          <span class="badge">Ajout transaction</span>
+          <span class="badge">Ajout abonnement</span>
+          <span class="badge">Création catégorie</span>
+          <span class="badge">Sauvegarde catégorie</span>
+          <p style="margin-top:12px">
+            Ces actions créent de la valeur directe. Après fin d'essai, elles déclenchent une page Pro qui explique
+            la fin du trial et propose le plan mensuel ou annuel.
+          </p>
+        </article>
+        <article class="tile">
+          <h3>Actions à laisser accessibles</h3>
+          <ul>
+            <li>Consultation des données existantes.</li>
+            <li>Accès aux paramètres du compte.</li>
+            <li>Ouverture de Stripe pour gérer son plan.</li>
+            <li>Mises à jour techniques nécessaires au suivi d'une résiliation déjà lancée.</li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="section-head">
+        <h2>8. Recommandations</h2>
+        <p class="section-lead">
+          Pour rendre Trimly robuste et monétisable, la priorité est de sécuriser les points où l'utilisateur attend un résultat concret.
+        </p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Priorité</th>
+              <th>Action</th>
+              <th>Impact attendu</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>P0</strong></td>
+              <td>Valider le workflow n8n en production avec un email support réel, From vérifié et Reply-To utilisateur.</td>
+              <td>Résiliation réellement utilisable, moins d'erreurs SMTP, meilleure confiance.</td>
+            </tr>
+            <tr>
+              <td><strong>P0</strong></td>
+              <td>Tester le paywall après expiration de trial sur scan, ajout transaction, ajout abonnement et catégorie.</td>
+              <td>Conversion Pro cohérente et absence d'accès gratuit aux fonctions premium.</td>
+            </tr>
+            <tr>
+              <td><strong>P1</strong></td>
+              <td>Ajouter un écran "historique de résiliation" avec statut, preuve envoyée, date de relance et email cible.</td>
+              <td>Le service devient un vrai assistant de suivi, pas seulement un générateur d'email.</td>
+            </tr>
+            <tr>
+              <td><strong>P1</strong></td>
+              <td>Mesurer les KPI : scans lancés, abonnements importés, résiliations demandées, conversion trial, économies estimées.</td>
+              <td>Pilotage business et amélioration produit basée sur données.</td>
+            </tr>
+            <tr>
+              <td><strong>P2</strong></td>
+              <td>Créer des templates de résiliation par fournisseur populaire.</td>
+              <td>Meilleure pertinence, moins d'emails génériques, taux de succès plus élevé.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <p class="footer">
+      Document préparé pour Trimly - version professionnelle HTML, prête à partager ou imprimer.
+    </p>
+  </main>
+</body>
+</html>

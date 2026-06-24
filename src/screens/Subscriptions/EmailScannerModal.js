@@ -87,6 +87,7 @@ export default function EmailScannerModal({
     saveEmailScanResult,
     importDetectedSubscription,
     dismissDetectedSubscription,
+    requireProAccess,
   } = useApp();
   const { t, locale } = useLanguage();
 
@@ -256,38 +257,28 @@ export default function EmailScannerModal({
   };
 
   const getGoogleTokensForScan = async (session) => {
+    const savedConnection = getStoredConnectionForProvider('gmail', session?.user?.email);
+    const storedTokens = await getStoredGoogleProviderTokens({
+      userId: session?.user?.id,
+      email: session?.user?.email,
+    });
     const liveTokens = {
       accessToken: session?.provider_token || null,
       refreshToken: session?.provider_refresh_token || null,
     };
 
-    if (liveTokens.accessToken || liveTokens.refreshToken) {
-      return liveTokens;
-    }
-
-    const storedTokens = await getStoredGoogleProviderTokens();
-    if (storedTokens?.accessToken || storedTokens?.refreshToken) {
-      return {
-        accessToken: storedTokens.accessToken || null,
-        refreshToken: storedTokens.refreshToken || null,
-      };
-    }
-
-    const savedConnection = getStoredConnectionForProvider('gmail', session?.user?.email);
-    if (savedConnection?.access_token || savedConnection?.refresh_token) {
-      return {
-        accessToken: savedConnection.access_token || null,
-        refreshToken: savedConnection.refresh_token || null,
-      };
-    }
-
     return {
-      accessToken: null,
-      refreshToken: null,
+      accessToken: liveTokens.accessToken || storedTokens?.accessToken || savedConnection?.access_token || null,
+      refreshToken: liveTokens.refreshToken || storedTokens?.refreshToken || savedConnection?.refresh_token || null,
     };
   };
 
   const startOAuthScan = async (selectedProvider) => {
+    if (!requireProAccess('email_scan')) {
+      onClose?.();
+      return;
+    }
+
     setProvider(selectedProvider);
     setLoading(true);
     setError(null);
@@ -360,7 +351,7 @@ export default function EmailScannerModal({
       openReview(persisted?.detectedSubscriptions || scanResult.subscriptions);
     } catch (scanError) {
       console.error('Scan Error:', scanError);
-      setError(scanError.message || t('errors.generic'));
+      setError(buildFriendlyNetworkError(scanError));
       setStep('choose');
     } finally {
       setLoading(false);
@@ -512,8 +503,8 @@ export default function EmailScannerModal({
             <Text style={styles.featureIcon}>🔒</Text>
           </View>
           <View style={styles.featureTextWrap}>
-            <Text style={styles.featureTitle}>{t('scanner.choose.secureTitle') || 'Secure connection'}</Text>
-            <Text style={styles.featureDesc}>{t('scanner.choose.secureDesc') || 'We only read your emails, never modify or delete anything'}</Text>
+            <Text style={styles.featureTitle}>{t('scanner.choose.secureTitle')}</Text>
+            <Text style={styles.featureDesc}>{t('scanner.choose.secureDesc')}</Text>
           </View>
         </View>
 
@@ -522,8 +513,8 @@ export default function EmailScannerModal({
             <Text style={styles.featureIcon}>🤖</Text>
           </View>
           <View style={styles.featureTextWrap}>
-            <Text style={styles.featureTitle}>{t('scanner.choose.aiTitle') || 'AI-powered detection'}</Text>
-            <Text style={styles.featureDesc}>{t('scanner.choose.aiDesc') || 'Our AI finds subscription emails and extracts the details automatically'}</Text>
+            <Text style={styles.featureTitle}>{t('scanner.choose.aiTitle')}</Text>
+            <Text style={styles.featureDesc}>{t('scanner.choose.aiDesc')}</Text>
           </View>
         </View>
 
@@ -532,8 +523,8 @@ export default function EmailScannerModal({
             <Text style={styles.featureIcon}>⚡</Text>
           </View>
           <View style={styles.featureTextWrap}>
-            <Text style={styles.featureTitle}>{t('scanner.choose.quickTitle') || 'Quick import'}</Text>
-            <Text style={styles.featureDesc}>{t('scanner.choose.quickDesc') || 'Review detected subscriptions and import them in one tap'}</Text>
+            <Text style={styles.featureTitle}>{t('scanner.choose.quickTitle')}</Text>
+            <Text style={styles.featureDesc}>{t('scanner.choose.quickDesc')}</Text>
           </View>
         </View>
       </View>
@@ -603,13 +594,13 @@ export default function EmailScannerModal({
   const renderReviewStep = () => (
     <View style={{ flex: 1 }}>
       <View style={styles.summaryCard}>
-        <View>
-          <Text style={styles.summaryValue}>{found.length}</Text>
+        <View style={styles.summaryMetric}>
+          <Text style={styles.summaryValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{found.length}</Text>
           <Text style={styles.summaryLabel}>{t('scanner.review.detected')}</Text>
         </View>
         <View style={styles.summaryDivider} />
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text style={styles.summaryValue}>{total.toFixed(2)}{state.currency || '€'}</Text>
+        <View style={styles.summaryMetricRight}>
+          <Text style={styles.summaryValue} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{total.toFixed(2)}{state.currency || '€'}</Text>
           <Text style={styles.summaryLabel}>{t('scanner.review.monthlyTotal')}</Text>
         </View>
       </View>
@@ -681,7 +672,7 @@ export default function EmailScannerModal({
                     </View>
 
                     <View style={styles.resultAmountWrap}>
-                      <Text style={styles.resultAmount}>{Number(item.displayAmount ?? item.amount).toFixed(2)} {state.currency || '€'}</Text>
+                      <Text style={styles.resultAmount} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>{Number(item.displayAmount ?? item.amount).toFixed(2)} {state.currency || '€'}</Text>
                       <Text style={styles.expandHint}>{isExpanded ? t('scanner.review.close') : t('scanner.review.actions')}</Text>
                     </View>
                   </View>
@@ -737,7 +728,7 @@ export default function EmailScannerModal({
             onPress={handleImport}
             disabled={loading}
           >
-            <Text style={styles.primaryButtonText}>Importer {selected.size} abonnements</Text>
+            <Text style={styles.primaryButtonText}>{t('scanner.review.importSelected', { count: selected.size })}</Text>
           </TouchableOpacity>
         </View>
       ) : null}
@@ -754,7 +745,9 @@ export default function EmailScannerModal({
             <TouchableOpacity onPress={resetAndClose} style={styles.closeBtn}>
               <Text style={styles.closeTxt}>✕</Text>
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Scan intelligent</Text>
+            <Text style={styles.headerTitle} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.82}>
+              {t('scanner.headerTitle')}
+            </Text>
             <View style={{ width: 34 }} />
           </View>
 
@@ -780,7 +773,7 @@ function makeStyles(Colors, isDark) {
       borderBottomColor: Colors.border,
       backgroundColor: Colors.surface,
     },
-    headerTitle: { ...Fonts.primary, ...Fonts.bold, fontSize: 17, color: Colors.text },
+    headerTitle: { ...Fonts.primary, ...Fonts.bold, flex: 1, minWidth: 0, textAlign: 'center', fontSize: 17, color: Colors.text },
     closeBtn: { padding: 8, marginLeft: -8 },
     closeTxt: { fontSize: 20, color: Colors.textSecondary },
     content: { flex: 1 },
@@ -854,6 +847,7 @@ function makeStyles(Colors, isDark) {
     },
     featureTextWrap: {
       flex: 1,
+      minWidth: 0,
     },
     featureTitle: {
       ...Fonts.primary,
@@ -861,12 +855,14 @@ function makeStyles(Colors, isDark) {
       fontSize: 15,
       color: Colors.income,
       marginBottom: 3,
+      flexShrink: 1,
     },
     featureDesc: {
       ...Fonts.primary,
       fontSize: 13,
       color: Colors.textSecondary,
       lineHeight: 19,
+      flexShrink: 1,
     },
     scanButton: {
       flexDirection: 'row',
@@ -877,12 +873,16 @@ function makeStyles(Colors, isDark) {
       paddingVertical: 18,
       paddingHorizontal: 22,
       marginBottom: 12,
+      gap: 12,
     },
     scanButtonText: {
       ...Fonts.primary,
       ...Fonts.bold,
       fontSize: 16,
       color: '#FFFFFF',
+      flex: 1,
+      minWidth: 0,
+      flexShrink: 1,
     },
     scanButtonArrow: {
       ...Fonts.primary,
@@ -897,6 +897,7 @@ function makeStyles(Colors, isDark) {
       justifyContent: 'center',
       backgroundColor: Colors.income,
       marginTop: 18,
+      paddingHorizontal: 16,
     },
     primaryButtonText: {
       ...Fonts.primary,
@@ -904,6 +905,8 @@ function makeStyles(Colors, isDark) {
       fontSize: 14,
       color: Colors.pureWhite,
       textTransform: 'uppercase',
+      textAlign: 'center',
+      flexShrink: 1,
     },
     secondaryButton: {
       height: 50,
@@ -925,7 +928,7 @@ function makeStyles(Colors, isDark) {
       backgroundColor: Colors.surfaceAlt,
       marginBottom: 8,
     },
-    scanningTitle: { ...Fonts.primary, ...Fonts.bold, fontSize: 20, color: Colors.text, marginTop: 16 },
+    scanningTitle: { ...Fonts.primary, ...Fonts.bold, fontSize: 20, color: Colors.text, marginTop: 16, textAlign: 'center' },
     scanningText: {
       ...Fonts.primary,
       fontSize: 13,
@@ -933,6 +936,8 @@ function makeStyles(Colors, isDark) {
       textAlign: 'center',
       marginTop: 8,
       lineHeight: 20,
+      maxWidth: '100%',
+      flexShrink: 1,
     },
     skeletonCard: {
       width: '100%',
@@ -983,10 +988,13 @@ function makeStyles(Colors, isDark) {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
+      gap: 16,
       ...Shadow.medium,
     },
-    summaryValue: { ...Fonts.primary, ...Fonts.black, fontSize: 26, color: Colors.pureWhite },
-    summaryLabel: { ...Fonts.primary, fontSize: 10, color: isDark ? '#A7F3D0' : '#D1FAE5', marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
+    summaryValue: { ...Fonts.primary, ...Fonts.black, fontSize: 26, color: Colors.pureWhite, maxWidth: '100%' },
+    summaryLabel: { ...Fonts.primary, fontSize: 10, color: isDark ? '#A7F3D0' : '#D1FAE5', marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5, flexShrink: 1 },
+    summaryMetric: { flex: 1, minWidth: 0 },
+    summaryMetricRight: { flex: 1, minWidth: 0, alignItems: 'flex-end' },
     summaryDivider: { width: 1, height: 44, backgroundColor: isDark ? '#34D399' : '#6EE7B7' },
     resultList: { gap: 10, paddingHorizontal: 24, paddingBottom: 16 },
     resultCard: {
@@ -997,7 +1005,7 @@ function makeStyles(Colors, isDark) {
       borderColor: Colors.borderStrong,
     },
     resultCardSelected: { borderColor: Colors.income, backgroundColor: Colors.surface },
-    resultTopRow: { flexDirection: 'row', alignItems: 'center' },
+    resultTopRow: { flexDirection: 'row', alignItems: 'flex-start' },
     checkbox: {
       width: 22,
       height: 22,
@@ -1020,20 +1028,20 @@ function makeStyles(Colors, isDark) {
       marginRight: 12,
     },
     resultIcon: { fontSize: 20 },
-    resultTextWrap: { flex: 1 },
-    resultTitle: { ...Fonts.primary, ...Fonts.bold, fontSize: 15, color: Colors.text },
-    resultBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
+    resultTextWrap: { flex: 1, minWidth: 0 },
+    resultTitle: { ...Fonts.primary, ...Fonts.bold, fontSize: 15, color: Colors.text, lineHeight: 20, flexShrink: 1 },
+    resultBadgeRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginTop: 6 },
     confidenceBadge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999 },
-    confidenceBadgeText: { ...Fonts.primary, ...Fonts.bold, fontSize: 10, textTransform: 'uppercase' },
+    confidenceBadgeText: { ...Fonts.primary, ...Fonts.bold, fontSize: 10, textTransform: 'uppercase', flexShrink: 1 },
     confidenceValue: { ...Fonts.primary, ...Fonts.bold, fontSize: 11, color: Colors.textSecondary },
-    resultStatusText: { ...Fonts.primary, ...Fonts.medium, fontSize: 11, color: Colors.textSecondary, marginTop: 3 },
+    resultStatusText: { ...Fonts.primary, ...Fonts.medium, fontSize: 11, color: Colors.textSecondary, marginTop: 3, lineHeight: 16, flexShrink: 1 },
     resultSubtitle: { ...Fonts.primary, fontSize: 0, color: 'transparent', marginTop: 0, lineHeight: 0, height: 0 },
-    resultSourceSubject: { ...Fonts.primary, fontSize: 11, color: Colors.textMuted, marginTop: 4 },
-    resultMeta: { ...Fonts.primary, fontSize: 11, color: Colors.textSecondary, marginTop: 4 },
+    resultSourceSubject: { ...Fonts.primary, fontSize: 11, color: Colors.textMuted, marginTop: 4, lineHeight: 16, flexShrink: 1 },
+    resultMeta: { ...Fonts.primary, fontSize: 11, color: Colors.textSecondary, marginTop: 4, lineHeight: 16, flexShrink: 1 },
     resultAltText: { ...Fonts.primary, fontSize: 11, color: Colors.accent, marginTop: 4 },
-    resultAmountWrap: { alignItems: 'flex-end', marginLeft: 10, maxWidth: 88 },
-    resultAmount: { ...Fonts.primary, ...Fonts.bold, fontSize: 14, color: Colors.text, textAlign: 'right' },
-    expandHint: { ...Fonts.primary, ...Fonts.bold, fontSize: 10, color: Colors.textMuted, marginTop: 6, textTransform: 'uppercase' },
+    resultAmountWrap: { alignItems: 'flex-end', marginLeft: 10, width: 86, flexShrink: 0 },
+    resultAmount: { ...Fonts.primary, ...Fonts.bold, fontSize: 14, color: Colors.text, textAlign: 'right', maxWidth: '100%' },
+    expandHint: { ...Fonts.primary, ...Fonts.bold, fontSize: 10, color: Colors.textMuted, marginTop: 6, textTransform: 'uppercase', textAlign: 'right' },
     resultExpanded: {
       marginTop: 14,
       paddingTop: 14,

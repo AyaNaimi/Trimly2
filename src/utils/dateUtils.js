@@ -339,41 +339,47 @@ export function isLeapDaySubscription(dateString) {
 export function getNotificationMessage(sub, daysUntil, locale = 'en', t, currency = 'EUR') {
   const billing = getNextBilling(sub, locale, t);
   const amount = Number(billing.nextChargeAmount ?? sub.amount ?? 0).toFixed(2);
+  const isFr = String(locale || '').startsWith('fr');
+  const tr = (key, fallback, options = {}) => {
+    if (typeof t !== 'function') return fallback;
+    const value = t(key, options);
+    return !value || value === key ? fallback : value;
+  };
   
-  const cycle = t ? t(`subscriptions.cycles.${sub.cycle}`) : sub.cycle;
+  const cycle = tr(`subscriptions.cycles.${sub.cycle}`, sub.cycle);
   const targetDate = formatDateFull(billing.nextChargeDate, locale);
 
   if (billing.isTrial) {
     if (daysUntil <= 0) {
       return {
-        title: t ? t('notifications.trialEndingTodayTitle', { name: sub.name }) : `${sub.name} ends trial today`,
-        body: t ? t('notifications.trialEndingTodayBody', { amount, currency, cycle }) : `Trial ends today. Then ${amount} ${currency} ${cycle}.`,
+        title: tr('notifications.trialEndingTodayTitle', isFr ? `${sub.name} : essai termine aujourd'hui` : `${sub.name} ends trial today`, { name: sub.name }),
+        body: tr('notifications.trialEndingTodayBody', isFr ? `L'essai se termine aujourd'hui. Ensuite ${amount} ${currency} ${cycle}.` : `Trial ends today. Then ${amount} ${currency} ${cycle}.`, { amount, currency, cycle }),
       };
     }
 
     return {
-      title: t ? t('notifications.trialEndingSoonTitle', { name: sub.name, days: daysUntil }) : `${sub.name} trial ends in ${daysUntil} days`,
-      body: t ? t('notifications.trialEndingSoonBody', { date: targetDate, amount, currency, cycle }) : `Free trial until ${targetDate}, then ${amount} ${currency} ${cycle}.`,
+      title: tr('notifications.trialEndingSoonTitle', isFr ? `${sub.name} : essai dans ${daysUntil}j` : `${sub.name} trial ends in ${daysUntil} days`, { name: sub.name, days: daysUntil }),
+      body: tr('notifications.trialEndingSoonBody', isFr ? `Essai gratuit jusqu'au ${targetDate}, puis ${amount} ${currency} ${cycle}.` : `Free trial until ${targetDate}, then ${amount} ${currency} ${cycle}.`, { date: targetDate, amount, currency, cycle }),
     };
   }
 
   if (daysUntil <= 0) {
     return {
-      title: t ? t('notifications.paymentTodayTitle', { name: sub.name }) : `${sub.name} today`,
-      body: t ? t('notifications.paymentTodayBody', { date: targetDate, amount, currency, cycle }) : `Charge scheduled today (${targetDate}): ${amount} ${currency}, ${cycle} cycle.`,
+      title: tr('notifications.paymentTodayTitle', isFr ? `${sub.name} aujourd'hui` : `${sub.name} today`, { name: sub.name }),
+      body: tr('notifications.paymentTodayBody', isFr ? `Prelevement prevu aujourd'hui (${targetDate}) : ${amount} ${currency}, cycle ${cycle}.` : `Charge scheduled today (${targetDate}): ${amount} ${currency}, ${cycle} cycle.`, { date: targetDate, amount, currency, cycle }),
     };
   }
 
   if (daysUntil === 1) {
     return {
-      title: t ? t('notifications.paymentTomorrowTitle', { name: sub.name }) : `${sub.name} tomorrow`,
-      body: t ? t('notifications.paymentTomorrowBody', { date: targetDate, amount, currency, cycle }) : `Reminder: ${amount} ${currency} will be charged tomorrow (${targetDate}), ${cycle} subscription.`,
+      title: tr('notifications.paymentTomorrowTitle', isFr ? `${sub.name} demain` : `${sub.name} tomorrow`, { name: sub.name }),
+      body: tr('notifications.paymentTomorrowBody', isFr ? `Rappel : ${amount} ${currency} sera preleve demain (${targetDate}), abonnement ${cycle}.` : `Reminder: ${amount} ${currency} will be charged tomorrow (${targetDate}), ${cycle} subscription.`, { date: targetDate, amount, currency, cycle }),
     };
   }
 
   return {
-    title: t ? t('notifications.paymentUpcomingTitle', { name: sub.name, days: daysUntil }) : `${sub.name} in ${daysUntil} days`,
-    body: t ? t('notifications.paymentUpcomingBody', { date: targetDate, amount, currency, cycle }) : `Charge scheduled on ${targetDate}: ${amount} ${currency}, ${cycle} subscription.`,
+    title: tr('notifications.paymentUpcomingTitle', isFr ? `${sub.name} dans ${daysUntil}j` : `${sub.name} in ${daysUntil} days`, { name: sub.name, days: daysUntil }),
+    body: tr('notifications.paymentUpcomingBody', isFr ? `Prelevement prevu le ${targetDate} : ${amount} ${currency}, abonnement ${cycle}.` : `Charge scheduled on ${targetDate}: ${amount} ${currency}, ${cycle} subscription.`, { date: targetDate, amount, currency, cycle }),
   };
 }
 
@@ -517,4 +523,3 @@ export function getPeriodRange(period) {
     end: new Date(year, month, endDay, 23, 59, 59)
   };
 }
-

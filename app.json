@@ -10,9 +10,9 @@
     "splash": {
       "image": "./assets/logo.png",
       "resizeMode": "contain",
-      "backgroundColor": "#0A0E27"
+      "backgroundColor": "#000814"
     },
-    "backgroundColor": "#0A0E27",
+    "backgroundColor": "#000814",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.trimly.app",
@@ -28,13 +28,16 @@
               "com.googleusercontent.apps.572874464830-be4rip5fsce1ku3nrep481uhvmuja0to"
             ]
           }
-        ]
+        ],
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true
+        }
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/logo.png",
-        "backgroundColor": "#0A0E27"
+        "backgroundColor": "#000814"
       },
       "package": "com.trimly.app",
       "permissions": [
@@ -58,15 +61,16 @@
             "DEFAULT"
           ]
         }
-      ]
+      ],
+      "usesCleartextTraffic": true
     },
     "web": {
       "favicon": "./assets/logo.png",
       "shortName": "Trimly",
       "name": "Trimly",
       "display": "standalone",
-      "backgroundColor": "#0A0E27",
-      "themeColor": "#0A0E27"
+      "backgroundColor": "#000814",
+      "themeColor": "#000814"
     },
     "plugins": [
       [

@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trimly ✦ Pitch Deck Officiel</title>
+    <!-- Google Fonts for Vintage Russian Academic Look -->
+    <link href="https://fonts.googleapis.com/css2?family=Forum&family=Playfair+Display:ital,wght@0,600;0,700;1,400;1,600&family=EB+Garamond:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            /* Palette copied directly from the uploaded presentation */
+            --bg-slate: #5b6e7a;            /* Vintage slate blue-grey background */
+            --bg-cream: #ece5d8;            /* Aged cream paper background */
+            --text-dark: #232221;           /* Charcoal black for cream slides */
+            --text-light: #ece5d8;          /* Cream text for slate slides */
+            --accent-red: #a34839;          /* Rust/Red ink accent */
+            --accent-gold: #c3ad86;         /* Gold/Bronze ink accent */
+            --font-display: 'Forum', serif; /* Tall, condensed, stamp-like serif font */
+            --font-cursive: 'Playfair Display', serif; /* Elegant cursive/script */
+            --font-body: 'EB Garamond', serif; /* Classic serif body text */
+            
+            --transition-speed: 0.5s;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: #1e252b; /* Neutral dark desk container background */
+            color: var(--text-dark);
+            font-family: var(--font-body);
+            min-height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            user-select: none;
+        }
+
+        /* Ambient music & presentation control bar */
+        .control-bar {
+            background: rgba(15, 20, 25, 0.95);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 12px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 100;
+            font-family: var(--font-display);
+            letter-spacing: 1px;
+            font-size: 14px;
+        }
+
+        .control-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .control-left h1 {
+            font-size: 18px;
+            font-weight: normal;
+            border-right: 1px solid rgba(255,255,255,0.2);
+            padding-right: 15px;
+            color: var(--bg-cream);
+        }
+
+        .control-center {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            background: none;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: #fff;
+            padding: 6px 14px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: var(--font-display);
+            font-size: 12px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .btn:hover {
+            background: #fff;
+            color: #000;
+            border-color: #fff;
+        }
+
+        .btn.active {
+            background: var(--bg-cream);
+            color: var(--text-dark);
+            border-color: var(--bg-cream);
+        }
+
+        .control-right {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Presentation Container */
+        .deck-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        /* Presentation modes */
+        /* 1. SLIDESHOW VIEW */
+        .slideshow-mode .slide {
+            position: absolute;
+            width: 100%;
+            max-width: 960px;
+            height: 540px; /* 16:9 Aspect Ratio */
+            opacity: 0;
+            transform: scale(0.95) translateY(20px);
+            pointer-events: none;
+            transition: opacity var(--transition-speed) ease, 
+                        transform var(--transition-speed) cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            z-index: 1;
+        }
+
+        .slideshow-mode .slide.active {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+            pointer-events: auto;
+            z-index: 10;
+        }
+
+        /* 2. GRID ALBUM VIEW (Exactly like the prompt image!) */
+        .grid-mode {
+            overflow-y: auto;
+            align-items: flex-start;
+            padding: 40px 20px;
+        }
+
+        .grid-mode .deck-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 30px;
+            max-width: 1100px;
+            margin: 0 auto;
+            overflow: visible;
+        }
+
+        .grid-mode .slide {
+            position: relative;
+            width: 100%;
+            height: 295px; /* Scaled down 16:9 */
+            opacity: 1;
+            transform: none !important;
+            pointer-events: auto;
+            cursor: pointer;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .grid-mode .slide:hover {
+            transform: scale(1.03) !important;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.5);
+            outline: 2px solid var(--accent-gold);
+        }
+
+        /* Individual Slide Base Styles */
+        .slide {
+            border-radius: 2px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 35px;
+            box-sizing: border-box;
+            background-color: var(--bg-cream); /* default */
+            color: var(--text-dark);
+            position: relative;
+        }
+
+        /* Textures & Background Patterns */
+        /* Paper Grain overlay */
+        .slide::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.08;
+            background-image: radial-gradient(#000 1px, transparent 0),
+                              radial-gradient(#000 1px, transparent 0);
+            background-size: 8px 8px;
+            background-position: 0 0, 4px 4px;
+            z-index: 5;
+        }
+
+        /* Slate Blue Slide Variant */
+        .slide.slate {
+            background-color: var(--bg-slate);
+            color: var(--text-light);
+        }
+        
+        .slide.slate::after {
+            background-image: radial-gradient(#fff 1.5px, transparent 0);
+            background-size: 10px 10px;
+            opacity: 0.05;
+        }
+
+        /* Slide Inner Layout Elements */
+        .slide-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            z-index: 2;
+        }
+
+        .slide-title {
+            font-family: var(--font-display);
+            font-size: 38px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            line-height: 1.1;
+        }
+
+        /* Slate specific title color */
+        .slate .slide-title {
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .slide-subtitle {
+            font-family: var(--font-cursive);
+            font-style: italic;
+            font-size: 20px;
+            color: var(--accent-red);
+            margin-top: 4px;
+        }
+
+        .slate .slide-subtitle {
+            color: var(--accent-gold);
+        }
+
+        .slide-number {
+            font-family: var(--font-display);
+            font-size: 16px;
+            border: 1px solid rgba(0,0,0,0.15);
+            padding: 2px 8px;
+            border-radius: 50%;
+        }
+
+        .slate .slide-number {
+            border-color: rgba(255,255,255,0.25);
+            color: var(--text-light);
+        }
+
+        .slide-body {
+            flex: 1;
+            display: flex;
+            gap: 25px;
+            align-items: center;
+            margin: 20px 0;
+            z-index: 2;
+            overflow: hidden;
+        }
+
+        .slide-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            font-family: var(--font-display);
+            font-size: 12px;
+            letter-spacing: 1.5px;
+            color: rgba(0,0,0,0.5);
+            border-top: 1px solid rgba(0,0,0,0.08);
+            padding-top: 10px;
+            z-index: 2;
+        }
+
+        .slate .slide-footer {
+            color: rgba(255,255,255,0.5);
+            border-top-color: rgba(255,255,255,0.1);
+        }
+
+        /* Slide Content Components */
+        .content-left {
+            flex: 1.2;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .content-right {
+            flex: 0.8;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* Vintage Engraving Illustration Frame */
+        .illustration-frame {
+            width: 100%;
+            height: 100%;
+            max-height: 280px;
+            border: 1px solid rgba(0,0,0,0.12);
+            padding: 6px;
+            background: #fff;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .slate .illustration-frame {
+            border-color: rgba(255,255,255,0.15);
+            background: #4a5a65;
+            box-shadow: 2px 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .illustration-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: sepia(0.2) contrast(1.1);
+        }
+
+        .slate .illustration-frame img {
+            filter: sepia(0.3) brightness(0.9) contrast(1.1);
+        }
+
+        /* Torn border effect for images */
+        .torn-border {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            box-shadow: inset 0 0 15px rgba(236, 229, 216, 0.9);
+            pointer-events: none;
+        }
+        .slate .torn-border {
+            box-shadow: inset 0 0 15px rgba(91, 110, 122, 0.9);
+        }
+
+        /* List Styling - Vintage Academic Style */
+        .vintage-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .vintage-list li {
+            position: relative;
+            padding-left: 20px;
+            font-size: 15px;
+            line-height: 1.45;
+        }
+
+        .vintage-list li::before {
+            content: "■";
+            position: absolute;
+            left: 0;
+            top: 2px;
+            color: var(--accent-red);
+            font-size: 10px;
+        }
+
+        .slate .vintage-list li::before {
+            color: var(--accent-gold);
+        }
+
+        .vintage-list li strong {
+            font-family: var(--font-display);
+            font-size: 17px;
+            letter-spacing: 0.5px;
+            font-weight: normal;
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        /* Large highlight metrics */
+        .highlight-box {
+            background: rgba(163, 72, 57, 0.06);
+            border-left: 3px solid var(--accent-red);
+            padding: 12px 15px;
+            font-style: italic;
+            font-size: 15px;
+            line-height: 1.5;
+        }
+
+        .slate .highlight-box {
+            background: rgba(195, 173, 134, 0.1);
+            border-left-color: var(--accent-gold);
+        }
+
+        /* ========================================= */
+        /* SLIDE SPECIFIC LAYOUTS                    */
+        /* ========================================= */
+
+        /* SLIDE 1: TITLE SLIDE (Slate Blue) */
+        .slide-title-layout {
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 40px;
+        }
+
+        .slide-title-layout .slide-body {
+            flex-direction: column;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .title-brand {
+            font-family: var(--font-display);
+            font-size: 72px;
+            letter-spacing: 8px;
+            line-height: 1;
+            color: #fff;
+            margin-bottom: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .title-subtitle {
+            font-family: var(--font-cursive);
+            font-style: italic;
+            font-size: 24px;
+            color: var(--accent-gold);
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+
+        .title-frame {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-gold);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255,255,255,0.05);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+            margin-bottom: 15px;
+        }
+
+        .title-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: sepia(0.3) brightness(0.95);
+        }
+
+        /* SLIDE 3: ANATOMY LABEL OVERLAY */
+        .anatomy-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        .anatomy-label {
+            position: absolute;
+            background: rgba(236, 229, 216, 0.9);
+            border: 1px solid var(--accent-red);
+            padding: 3px 8px;
+            font-size: 11px;
+            font-family: var(--font-display);
+            color: var(--accent-red);
+            pointer-events: none;
+            box-shadow: 1px 1px 4px rgba(0,0,0,0.1);
+        }
+
+        .anatomy-label::after {
+            content: "";
+            position: absolute;
+            width: 25px;
+            height: 1px;
+            background: var(--accent-red);
+        }
+
+        /* Anatomy pointer lines positioning */
+        .lbl-netflix { top: 20%; left: 0%; }
+        .lbl-netflix::after { top: 50%; left: 100%; transform: rotate(15deg); width: 40px; }
+
+        .lbl-spotify { top: 45%; left: -5%; }
+        .lbl-spotify::after { top: 50%; left: 100%; transform: rotate(0deg); width: 45px; }
+
+        .lbl-gym { top: 70%; left: 2%; }
+        .lbl-gym::after { top: 50%; left: 100%; transform: rotate(-15deg); width: 35px; }
+
+        .lbl-vpn { top: 15%; right: 0%; }
+        .lbl-vpn::after { top: 50%; right: 100%; transform: rotate(-20deg); width: 45px; }
+
+        .lbl-cloud { top: 50%; right: -5%; }
+        .lbl-cloud::after { top: 50%; right: 100%; transform: rotate(0deg); width: 50px; }
+
+        .lbl-chatgpt { top: 78%; right: 2%; }
+        .lbl-chatgpt::after { top: 50%; right: 100%; transform: rotate(25deg); width: 40px; }
+
+        /* SLIDE 9: QUOTE LAYOUT */
+        .quote-slide-body {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 30px;
+        }
+
+        .quote-text-container {
+            flex: 1.2;
+            padding-right: 20px;
+        }
+
+        .quote-symbol {
+            font-family: var(--font-display);
+            font-size: 60px;
+            color: var(--accent-red);
+            line-height: 0.1;
+            margin-bottom: 20px;
+        }
+
+        .quote-main {
+            font-family: var(--font-cursive);
+            font-style: italic;
+            font-size: 24px;
+            line-height: 1.45;
+            color: var(--text-dark);
+            margin-bottom: 15px;
+        }
+
+        .quote-author {
+            font-family: var(--font-display);
+            font-size: 14px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            text-align: right;
+            color: rgba(0,0,0,0.6);
+        }
+
+        /* Slide footer signatures style */
+        .signature-text {
+            font-family: var(--font-cursive);
+            font-style: italic;
+            font-size: 16px;
+            color: var(--text-dark);
+        }
+        .slate .signature-text {
+            color: var(--accent-gold);
+        }
+
+        /* Slide layout styles adjustments for grid */
+        .grid-mode .slide-title { font-size: 22px; }
+        .grid-mode .slide-subtitle { font-size: 12px; }
+        .grid-mode .vintage-list li { font-size: 9px; }
+        .grid-mode .vintage-list li::before { font-size: 6px; top: 1px; }
+        .grid-mode .vintage-list li strong { font-size: 10px; margin-bottom: 0; }
+        .grid-mode .highlight-box { font-size: 9px; padding: 6px 8px; }
+        .grid-mode .slide-footer { font-size: 8px; padding-top: 4px; }
+        .grid-mode .title-brand { font-size: 36px; letter-spacing: 4px; }
+        .grid-mode .title-subtitle { font-size: 12px; margin-bottom: 10px; }
+        .grid-mode .title-frame { width: 90px; height: 90px; margin-bottom: 5px; }
+        .grid-mode .anatomy-label { font-size: 6px; padding: 1px 4px; }
+        .grid-mode .anatomy-label::after { display: none; }
+        .grid-mode .quote-symbol { font-size: 30px; margin-bottom: 10px; }
+        .grid-mode .quote-main { font-size: 13px; line-height: 1.3; margin-bottom: 8px; }
+        .grid-mode .quote-author { font-size: 8px; }
+        .grid-mode .signature-text { font-size: 10px; }
+
+        /* Full Screen & Key Instruction overlay */
+        .toast-info {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.85);
+            color: #fff;
+            padding: 10px 18px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-family: var(--font-display);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            pointer-events: none;
+            opacity: 0.9;
+        }
+
+        /* Slide navigation overlay buttons on desktop */
+        .nav-overlay-btn {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            background: rgba(15, 20, 25, 0.8);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            cursor: pointer;
+            z-index: 90;
+            font-size: 20px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-overlay-btn:hover {
+            background: #fff;
+            color: #000;
+        }
+
+        .nav-overlay-left { left: 30px; }
+        .nav-overlay-right { right: 30px; }
+
+        .slideshow-mode .nav-overlay-btn { display: flex; }
+        .grid-mode .nav-overlay-btn { display: none; }
+
+        /* Print styling for exports */
+        @media print {
+            body { background: #fff !important; overflow: visible !important; }
+            .control-bar, .nav-overlay-btn, .toast-info { display: none !important; }
+            .deck-container { display: flex !important; flex-direction: column !important; gap: 40px !important; overflow: visible !important; }
+            .slide { position: relative !important; display: flex !important; width: 100% !important; max-width: 960px !important; height: 540px !important; page-break-after: always !important; opacity: 1 !important; transform: none !important; box-shadow: none !important; border: 1px solid #ccc !important; }
+        }
+    </style>
+</head>
+<body class="slideshow-mode">
+
+    <!-- Top control bar -->
+    <nav class="control-bar">
+        <div class="control-left">
+            <h1>TRIMLY ✦ DOSSIER DE PITCH</h1>
+            <div class="signature-text" style="color: var(--accent-gold); font-size: 13px;">Aya Naimi</div>
+        </div>
+        <div class="control-center">
+            <button class="btn active" id="btnSlideshow" onclick="setMode('slideshow')"><i class="fa-solid fa-play"></i> Mode Présentation</button>
+            <button class="btn" id="btnGrid" onclick="setMode('grid')"><i class="fa-solid fa-grip"></i> Vue Album (10 Slides)</button>
+        </div>
+        <div class="control-right">
+            <button class="btn" onclick="prevSlide()"><i class="fa-solid fa-chevron-left"></i> Précédent</button>
+            <span id="slideCounter" style="min-width: 45px; text-align: center;">1 / 10</span>
+            <button class="btn" onclick="nextSlide()">Suivant <i class="fa-solid fa-chevron-right"></i></button>
+            <button class="btn" onclick="window.print()"><i class="fa-solid fa-print"></i> PDF</button>
+        </div>
+    </nav>
+
+    <!-- Navigation Overlay Buttons for presentation mode -->
+    <div class="nav-overlay-btn nav-overlay-left" onclick="prevSlide()"><i class="fa-solid fa-chevron-left"></i></div>
+    <div class="nav-overlay-btn nav-overlay-right" onclick="nextSlide()"><i class="fa-solid fa-chevron-right"></i></div>
+
+    <!-- Main Deck Workspace -->
+    <main class="deck-container" id="deckContainer">
+
+        <!-- SLIDE 1: PITCH COVER -->
+        <article class="slide slate active" id="slide-1" onclick="onGridSlideClick(1)">
+            <div class="slide-header">
+                <div style="text-align: left;">
+                    <div style="font-family: var(--font-display); font-size: 12px; letter-spacing: 2px;">DOSSIER DE PITCH</div>
+                </div>
+                <div class="slide-number">I</div>
+            </div>
+            
+            <div class="slide-body slide-title-layout">
+                <div class="title-frame">
+                    <img src="./assets/vintage_scissors.png" alt="Trimly vintage scissors logo">
+                </div>
+                <h2 class="title-brand">TRIMLY</h2>
+                <div class="title-subtitle">L'Art d'Élaguer l'Inutile & Préserver l'Essentiel</div>
+            </div>
+
+            <div class="slide-footer">
+                <span>CONÇU POUR L'EXCELLENCE FINANCIÈRE</span>
+                <span class="signature-text">Aya Naimi</span>
+            </div>
+        </article>
+
+
+        <!-- SLIDE 2: LE CONSTAT & LE MARCHÉ -->
+        <article class="slide" id="slide-2" onclick="onGridSlideClick(2)">
+            <div class="slide-header">
+                <div>
+                    <h2 class="slide-title">LE CONSTAT</h2>
+                    <div class="slide-subtitle">L'économie de l'abonnement en plein essor</div>
+                </div>
+                <div class="slide-number">II</div>
+            </div>
+            
+            <div class="slide-body">
+                <div class="content-left">
+                    <ul class="vintage-list">
+                        <li>
+                            <strong>Croissance Systémique (18% / An)</strong>
+                            L'abonnement s'impose comme le modèle dominant de consommation de services, des loisirs (Netflix, Spotify) au bien-être (sport) et aux outils pro.
+                        </li>
+                        <li>
+                            <strong>Dispersion des Flux Financiers</strong>
+                            Le foyer moyen européen cumule entre 5 et 10 abonnements actifs, représentant une dépense mensuelle fragmentée de 60 € à 120 €.
+                        </li>
+                    </ul>
+                    <div class="highlight-box">
+                        Une perte d'attention induite : le consommateur perd de vue la somme cumulée de ses engagements financiers au fil de l'année.
+                    </div>
+                </div>
+                <div class="content-right">
+                    <div class="illustration-frame">
+                        <img src="./assets/vintage_scale.png" alt="Vintage balance scale">
+                        <div class="torn-border"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slide-footer">
+                <span>TRIMLY ✦ CONTEXTE DU MARCHÉ</span>
+                <span>DOSSIER DE RECHERCHE</span>
+            </div>
+        </article>
+
+
+        <!-- SLIDE 3: LE PROBLÈME (Subscription Fatigue) -->
+        <article class="slide" id="slide-3" onclick="onGridSlideClick(3)">
+            <div class="slide-header">
+                <div>
+                    <h2 class="slide-title">LE PROBLÈME</h2>
+                    <div class="slide-subtitle">La fatigue de l'abonnement & les fuites de capital</div>
+                </div>
+                <div class="slide-number">III</div>
+            </div>
+            
+            <div class="slide-body">
+                <div class="content-left">
+                    <ul class="vintage-list">
+                        <li>
+                            <strong>Abonnements "Zombies"</strong>
+                            Environ 15% à 20% des contrats d'abonnement actifs ne sont pas utilisés ou sont oubliés.
+                        </li>
+                        <li>
+                            <strong>Coûts Silencieux Importants</strong>
+                            Cela induit une fuite nette de capital de 120 € à 300 € par an et par consommateur.
+                        </li>
+                        <li>
+                            <strong>Friction à la Résiliation</strong>
+                            Les prestataires complexifient délibérément le processus de départ, exigeant souvent l'envoi de courriers recommandés physiques complexes.
+                        </li>
+                    </ul>
+                </div>
+                <div class="content-right">
+                    <div class="illustration-frame" style="background: #f7f3eb; border-color: rgba(0,0,0,0.08);">
+                        <div class="anatomy-container">
+                            <img src="./assets/vintage_anatomy.png" alt="Vintage human brain anatomy" style="opacity: 0.65; object-fit: contain;">
+                            <!-- Label indicators mirroring the Sechenov medical diagram style -->
+                            <div class="anatomy-label lbl-netflix">Netflix 15.99€</div>
+                            <div class="anatomy-label lbl-spotify">Spotify 10.99€</div>
+                            <div class="anatomy-label lbl-gym">Gym 49.99€</div>
+                            <div class="anatomy-label lbl-vpn">NordVPN 9.99€</div>
+                            <div class="anatomy-label lbl-cloud">iCloud 2.99€</div>
+                            <div class="anatomy-label lbl-chatgpt">ChatGPT 24.00€</div>
+                        </div>
+                        <div class="torn-border"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slide-footer">
+                <span>TRIMLY ✦ PATHOLOGIE FINANCIÈRE</span>
+                <span>FATIGUE DE L'ABONNEMENT</span>
+            </div>
+        </article>
+
+
+        <!-- SLIDE 4: LA SOLUTION -->
+        <article class="slide slate" id="slide-4" onclick="onGridSlideClick(4)">
+            <div class="slide-header">
+                <div>
+                    <h2 class="slide-title">LA SOLUTION</h2>
+                    <div class="slide-subtitle">Trimly - Le portefeuille de clarté financière</div>
+                </div>
+                <div class="slide-number">IV</div>
+            </div>
+            
+            <div class="slide-body">
+                <div class="content-left">
+                    <ul class="vintage-list">
+                        <li>
+                            <strong>Détection & Centralisation</strong>
+                            Importation sans friction. Aucun compte bancaire à connecter : l'IA extrait les abonnements à partir de votre boîte mail ou de numérisations de factures.
+                        </li>
+                        <li>
+                            <strong>Alerte & Surveillance Active</strong>
+                            Rappels automatisés paramétrables (de 1 à 3 jours avant le prélèvement) pour éviter les reconductions non désirées.
+                        </li>
+                        <li>
+                            <strong>Élagage en Un Clic</strong>
+                            Prise en charge complète de la procédure de résiliation, y compris l'envoi légal postal.
+                        </li>
+                    </ul>
+                </div>
+                <div class="content-right">
+                    <div class="illustration-frame">
+                        <img src="./assets/vintage_scissors.png" alt="Ornate shears engraving">
+                        <div class="torn-border"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slide-footer">
+                <span>TRIMLY ✦ ARCHITECTURE SOUVERAINE</span>
+                <span class="signature-text">Économie Tangible</span>
+            </div>
+        </article>
+
+
+        <!-- SLIDE 5: LE SCANNER IA -->
+        <article class="slide" id="slide-5" onclick="onGridSlideClick(5)">
+            <div class="slide-header">
+                <div>
+                    <h2 class="slide-title">LE SCANNER IA</h2>
+                    <div class="slide-subtitle">Importation et extraction automatisée des factures</div>
+                </div>
+                <div class="slide-number">V</div>
+            </div>
+            
+            <div class="slide-body">
+                <div class="content-left">
+                    <ul class="vintage-list">
+                        <li>
+                            <strong>Authentification OAuth Sécurisée</strong>
+                            Connexion aux boîtes Gmail ou Outlook via les APIs officielles avec des permissions de lecture restreintes (`readonly`).
+                        </li>
+                        <li>
+                            <strong>Classification par Modèle de Langage</strong>
+                            Notre IA (Groq Cloud/Llama 3) analyse le contenu textuel des messages pour identifier le marchand, la fréquence de facturation, le tarif et la date du prochain débit.
+                        </li>
+                    </ul>
+                    <div class="highlight-box" style="margin-top: 5px;">
+                        Zéro saisie manuelle laborieuse : les abonnements sont indexés et formatés automatiquement dans le portefeuille.
+                    </div>
+                </div>
+                <div class="content-right">
+                    <div class="illustration-frame">
+                        <img src="./assets/vintage_letters.png" alt="Stack of letters engraving">
+                        <div class="torn-border"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slide-footer">
+                <span>TRIMLY ✦ EXTRACTION DOCUMENTAIRE</span>
+                <span>MÉTHODOLOGIE TECHNIQUE</span>
+            </div>
+        </article>
+
+
+        <!-- SLIDE 6: L'AUTOMATISATION & WORKFLOW N8N -->
+        <article class="slide" id="slide-6" onclick="onGridSlideClick(6)">
+            <div class="slide-header">
+                <div>
+                    <h2 class="slide-title">L'AUTOMATISATION</h2>
+                    <div class="slide-subtitle">Workflow n8n pour les résiliations postales</div>
+                </div>
+                <div class="slide-number">VI</div>
+            </div>
+            
+            <div class="slide-body">
+                <div class="content-left">
+                    <ul class="vintage-list">
+                        <li>
+                            <strong>Déclenchement Sécurisé par Webhook</strong>
+                            L'application mobile émet une requête d'action de désabonnement, vérifiée via le jeton de sécurité Supabase de l'utilisateur.
+                        </li>
+                        <li>
+                            <strong>Orchestration du Courrier Physique</strong>
+                            n8n convertit la demande en PDF réglementaire et fait appel à l'API Maileva/La Poste pour imprimer, plier et expédier un recommandé papier officiel (LRAR).
+                        </li>
+                        <li>
+                            <strong>Notification & Synchronisation</strong>
+                            L'API renvoie le numéro de suivi postal, mis à jour dans Supabase et notifié via Expo Push.
+                        </li>
+                    </ul>
+                </div>
+                <div class="content-right">
+                    <div class="illustration-frame">
+                        <!-- We reuse the letters illustration or visual representation of postal workflow -->
+                        <img src="./assets/vintage_letters.png" alt="Letters stack illustration">
+                        <div class="torn-border"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slide-footer">
+                <span>TRIMLY ✦ ORCHESTRATION DES COMPOSANTS</span>
+                <span>ROUTAGE POSTAL AUTOMATIQUE</span>
+            </div>
+        </article>
+
+
+        <!-- SLIDE 7: SÉCURITÉ & CONFIDENTIALITÉ -->
+        <article class="slide" id="slide-7" onclick="onGridSlideClick(7)">
+            <div class="slide-header">
+                <div>
+                    <h2 class="slide-title">SÉCURITÉ</h2>
+                    <div class="slide-subtitle">Respect de la vie privée & souveraineté locale</div>
+                </div>
+                <div class="slide-number">VII</div>
+            </div>
+            
+            <div class="slide-body">
+                <div class="content-left">
+                    <ul class="vintage-list">
+                        <li>
+                            <strong>Chiffrement Keychain Local</strong>
+                            Les clés et jetons de rafraîchissement d'emails ne transitent jamais en clair. Ils sont stockés de manière sécurisée dans l'enclave matérielle de l'appareil.
+                        </li>
+                        <li>
+                            <strong>Row-Level Security (RLS)</strong>
+                            L'infrastructure Supabase garantit un cloisonnement hermétique de la base Postgres.
+                        </li>
+                        <li>
+                            <strong>Mode Invité 100% Hors-Ligne</strong>
+                            Pour les utilisateurs soucieux de leur anonymat : persistance locale exclusive via AsyncStorage, sans synchronisation cloud.
+                        </li>
+                    </ul>
+                </div>
+                <div class="content-right">
+                    <div class="illustration-frame">
+                        <img src="./assets/vintage_scale.png" alt="Vintage scale for security weight">
+                        <div class="torn-border"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slide-footer">
+                <span>TRIMLY ✦ CONFORMITÉ RGPD</span>
+                <span>PROTECTION DES COMPTES</span>
+            </div>
+        </article>
+
+
+        <!-- SLIDE 8: LE MODÈLE ÉCONOMIQUE -->
+        <article class="slide" id="slide-8" onclick="onGridSlideClick(8)">
+            <div class="slide-header">
+                <div>
+                    <h2 class="slide-title">BUSINESS MODEL</h2>
+                    <div class="slide-subtitle">Monétisation transparente & sans publicité</div>
+                </div>
+                <div class="slide-number">VIII</div>
+            </div>
+            
+            <div class="slide-body">
+                <div class="content-left">
+                    <ul class="vintage-list">
+                        <li>
+                            <strong>Abonnement Pro (Freemium)</strong>
+                            Version d'essai de 14 jours. Accès Pro mensuel à 4,99 € ou annuel à 49,99 € pour débloquer le scan mail IA automatique et les alertes illimitées.
+                        </li>
+                        <li>
+                            <strong>Facturation à l'acte LRAR</strong>
+                            Chaque envoi de lettre de résiliation en recommandé physique est facturé 7,99 € unitairement (coût brut postal de ~5,50 €).
+                        </li>
+                        <li>
+                            <strong>Affiliation d'Alternatives</strong>
+                            Partenariat avec des services alternatifs recommandés in-app lors de la détection de tarifs trop élevés.
+                        </li>
+                    </ul>
+                </div>
+                <div class="content-right">
+                    <div class="illustration-frame">
+                        <img src="./assets/vintage_scale.png" alt="Scales of balance">
+                        <div class="torn-border"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="slide-footer">
+                <span>TRIMLY ✦ STRUCTURES DES FLUX</span>
+                <span>RENTABILITÉ COMMERCIALSE</span>
+            </div>
+        </article>
+
+
+        <!-- SLIDE 9: RENTABILITÉ & PROJECTIONS -->
+        <article class="slide" id="slide-9" onclick="onGridSlideClick(9)">
+            <div class="slide-header">
+                <div>
+                    <h2 class="slide-title">RENTABILITÉ</h2>
+                    <div class="slide-subtitle">Unit Economics & Viabilité Financière</div>
+                </div>
+                <div class="slide-number">IX</div>
+            </div>
+            
+            <div class="slide-body quote-slide-body">
+                <div class="quote-text-container">
+                    <div class="quote-symbol">“</div>
+                    <p class="quote-main">
+                        Il faut avoir le courage d'éliminer le superflu pour cultiver la santé de ses finances et la paix d'esprit.
+                    </p>
+                    <p class="quote-author">— MAXIME D'AFFAIRES TRIMLY</p>
+                </div>
+                <div class="content-left" style="flex: 0.95;">
+                    <ul class="vintage-list" style="gap: 5px;">
+                        <li>
+                            <strong>Forte Marge sur l'Abonnement</strong>
+                            Marge nette de 68.0% sur le forfait Pro Annuel (33,99 € nets après TVA et commissions Google/Apple).
+                        </li>
+                        <li>
+                            <strong>Faibles Coûts Variables</strong>
+                            COGS annuel de seulement 0,17 € par utilisateur actif (infras Supabase & APIs d'IA).
+                        </li>
+                        <li>
+                            <strong>Marge LRAR Positive (31%)</strong>
+                            Génère 2,49 € de marge additionnelle par lettre, accélérant l'atteinte du point mort.
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="slide-footer">
+                <span>TRIMLY ✦ UNIT ECONOMICS</span>
+                <span class="signature-text">Optimisation Financière</span>
+            </div>
+        </article>
+
+
+        <!-- SLIDE 10: MERCI / CONTACT -->
+        <article class="slide slate" id="slide-10" onclick="onGridSlideClick(10)">
+            <div class="slide-header">
+                <div style="text-align: left;">
+                    <div style="font-family: var(--font-display); font-size: 12px; letter-spacing: 2px;">REJOINDRE LA RÉVOLUTION</div>
+                </div>
+                <div class="slide-number">X</div>
+            </div>
+            
+            <div class="slide-body slide-title-layout">
+                <div class="title-frame" style="border-radius: 12px; border: 1px solid var(--accent-gold); width: 140px; height: 140px; padding: 10px; background: #fff;">
+                    <!-- A placeholder QR code that fits the vintage style perfectly -->
+                    <i class="fa-solid fa-qrcode" style="font-size: 115px; color: var(--text-dark);"></i>
+                </div>
+                <h2 class="title-brand" style="font-size: 46px; letter-spacing: 4px;">MERCI</h2>
+                <div class="title-subtitle" style="font-size: 20px; color: var(--accent-gold);">Pour votre attention & votre confiance</div>
+                <p style="font-size: 15px; color: rgba(255,255,255,0.7); max-width: 500px; margin: 0 auto; line-height: 1.5; font-family: var(--font-body);">
+                    Trimly — Élaguer l'inutile, préserver l'essentiel.<br>
+                    Pour en savoir plus : <strong>contact@trimly.app</strong>
+                </p>
+            </div>
+
+            <div class="slide-footer">
+                <span>TRIMLY V1.3 ✦ TOUS DROITS RÉSERVÉS</span>
+                <span class="signature-text">Aya Naimi</span>
+            </div>
+        </article>
+
+    </main>
+
+    <!-- Navigation guide info -->
+    <div class="toast-info" id="toastInfo">
+        <i class="fa-solid fa-keyboard"></i>
+        <span>Utilisez les flèches du clavier <strong>Gauche / Droite</strong> ou <strong>Espace</strong> pour naviguer.</span>
+    </div>
+
+    <!-- JavaScript code for slide behavior and grid toggle -->
+    <script>
+        let currentSlide = 1;
+        const totalSlides = 10;
+        let activeMode = 'slideshow'; // 'slideshow' or 'grid'
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (activeMode !== 'slideshow') return;
+            
+            if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
+                nextSlide();
+            } else if (e.key === 'ArrowLeft' || e.key === 'Backspace') {
+                prevSlide();
+            }
+        });
+
+        // Set Slide View Mode
+        function setMode(mode) {
+            activeMode = mode;
+            const body = document.body;
+            const btnSlideshow = document.getElementById('btnSlideshow');
+            const btnGrid = document.getElementById('btnGrid');
+            const toastInfo = document.getElementById('toastInfo');
+            
+            if (mode === 'slideshow') {
+                body.className = 'slideshow-mode';
+                btnSlideshow.classList.add('active');
+                btnGrid.classList.remove('active');
+                toastInfo.style.display = 'flex';
+                updateSlideCounter();
+            } else {
+                body.className = 'grid-mode';
+                btnSlideshow.classList.remove('active');
+                btnGrid.classList.add('active');
+                toastInfo.style.display = 'none';
+            }
+        }
+
+        // Navigate Slides
+        function showSlide(index) {
+            if (index < 1) index = 1;
+            if (index > totalSlides) index = totalSlides;
+            
+            currentSlide = index;
+            
+            // Remove active from all slides
+            for (let i = 1; i <= totalSlides; i++) {
+                const slide = document.getElementById(`slide-${i}`);
+                if (slide) {
+                    slide.classList.remove('active');
+                }
+            }
+            
+            // Set active slide
+            const activeSlide = document.getElementById(`slide-${currentSlide}`);
+            if (activeSlide) {
+                activeSlide.classList.add('active');
+            }
+            
+            updateSlideCounter();
+        }
+
+        function nextSlide() {
+            if (currentSlide < totalSlides) {
+                showSlide(currentSlide + 1);
+            }
+        }
+
+        function prevSlide() {
+            if (currentSlide > 1) {
+                showSlide(currentSlide - 1);
+            }
+        }
+
+        function updateSlideCounter() {
+            const counter = document.getElementById('slideCounter');
+            if (counter) {
+                counter.textContent = `${currentSlide} / ${totalSlides}`;
+            }
+        }
+
+        // Grid Click behavior
+        function onGridSlideClick(slideIndex) {
+            if (activeMode === 'grid') {
+                // Switch to slideshow mode and show this slide
+                showSlide(slideIndex);
+                setMode('slideshow');
+            }
+        }
+
+        // Auto fadeout instruction toast after 6 seconds
+        setTimeout(() => {
+            const toast = document.getElementById('toastInfo');
+            if (toast) {
+                toast.style.transition = 'opacity 1s ease';
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 1000);
+            }
+        }, 6000);
+    </script>
+</body>
+</html>

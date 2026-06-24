@@ -28,8 +28,10 @@ export default function CategoryDetailModal({
   currency,
   periodRange,
   onClose,
+  onRequestUpdateCategory,
   onUpdateCategory,
   onDeleteCategory,
+  onRequestAddTransaction,
   onAddTransaction,
 }) {
   const { Colors } = useTheme();
@@ -68,6 +70,7 @@ export default function CategoryDetailModal({
               <Pressable
                 onPress={() => {
                   PremiumHaptics.selection();
+                  if (onRequestUpdateCategory && onRequestUpdateCategory() === false) return;
                   setShowEditModal(true);
                 }}
                 style={styles.actionCircle}
@@ -130,6 +133,7 @@ export default function CategoryDetailModal({
         <Pressable
           onPress={() => {
             PremiumHaptics.selection();
+            if (onRequestAddTransaction && onRequestAddTransaction() === false) return;
             setShowAddTransaction(true);
           }}
           style={styles.fab}
@@ -142,9 +146,9 @@ export default function CategoryDetailModal({
           mode="edit"
           initialValues={category}
           onClose={() => setShowEditModal(false)}
-          onSave={(nextCategory) => {
-            onUpdateCategory(nextCategory);
-            setShowEditModal(false);
+          onSave={async (nextCategory) => {
+            const ok = await onUpdateCategory(nextCategory);
+            if (ok !== false) setShowEditModal(false);
           }}
           onDelete={() => {
             onDeleteCategory(category.id);
@@ -158,9 +162,9 @@ export default function CategoryDetailModal({
           onClose={() => setShowAddTransaction(false)}
           categories={categories}
           initialCategoryId={category.id}
-          onSave={(tx) => {
-            onAddTransaction(tx);
-            setShowAddTransaction(false);
+          onSave={async (tx) => {
+            const ok = await onAddTransaction(tx);
+            if (ok !== false) setShowAddTransaction(false);
           }}
         />
       </KeyboardAvoidingView>

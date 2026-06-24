@@ -1,0 +1,16 @@
+/* HeroSection — delegates all positioning to LandingPage.module.css class names */
+/* This file exists for any future HeroSection-scoped overrides. */
+.heroSection {
+  display: contents;
+}
+
+.downloadBtn,
+.demoBtn {
+  /* Button classes are controlled by LandingPage.module.css via className prop */
+}
+
+.tagBadge,
+.tagFrame,
+.economiser {
+  /* Controlled by parent layout */
+}

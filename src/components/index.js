@@ -43,9 +43,13 @@ const lightenForDark = (hex) => {
 };
 import { usePressScale } from '../hooks/usePressScale';
 
-export function ServiceLogo({ logo, icon, color, size = 32, borderRadius = null, style }) {
+export function ServiceLogo({ logo, icon, color, size = 32, borderRadius = null, style, senderPhotoUrl }) {
   const [logoError, setLogoError] = useState(false);
-  const showLogo = logo && !logoError;
+  const [senderPhotoError, setSenderPhotoError] = useState(false);
+  
+  // Priorité : photo de l'expéditeur > logo du service > icône
+  const showSenderPhoto = senderPhotoUrl && !senderPhotoError;
+  const showLogo = !showSenderPhoto && logo && !logoError;
   const r = borderRadius != null ? borderRadius : size / 2;
 
   return (
@@ -61,7 +65,14 @@ export function ServiceLogo({ logo, icon, color, size = 32, borderRadius = null,
       },
       style,
     ]}>
-      {showLogo ? (
+      {showSenderPhoto ? (
+        <Image
+          source={{ uri: senderPhotoUrl }}
+          style={{ width: size, height: size, borderRadius: r }}
+          resizeMode="cover"
+          onError={() => setSenderPhotoError(true)}
+        />
+      ) : showLogo ? (
         <Image
           source={{ uri: logo }}
           style={{ width: size, height: size, borderRadius: r }}
@@ -384,6 +395,7 @@ export function SubCard({ sub, billing, onPress, onLongPress, onDelete }) {
               icon={sub.icon}
               color={sub.color || Colors.accent}
               size={32}
+              senderPhotoUrl={sub.senderPhotoUrl}
             />
             
             <Text 

@@ -155,7 +155,10 @@ const LockScreen = () => {
             />
           </View>
           
-          <Text style={[styles.appName, { color: Colors.text }]}>TRIMLY</Text>
+          <Text style={[styles.appName, { color: Colors.text }]}>
+            trimly
+            <Text style={styles.appDot}>.</Text>
+          </Text>
           
           <View style={[styles.statusBadge, { backgroundColor: Colors.accent + '20', borderColor: Colors.accent + '40' }]}>
             <ShieldCheck size={12} color={Colors.accent} style={{ marginRight: 4 }} />
@@ -249,9 +252,12 @@ const styles = StyleSheet.create({
   appName: {
     fontSize: 22,
     fontWeight: '800',
-    letterSpacing: 4,
+    letterSpacing: -0.5,
     marginBottom: 8,
     ...Fonts.primary,
+  },
+  appDot: {
+    color: '#FF9100', // Premium Logo Orange
   },
   statusBadge: {
     flexDirection: 'row',
