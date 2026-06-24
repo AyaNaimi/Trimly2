@@ -226,22 +226,22 @@ export default function EmailScannerModal({
 
   const getConfidenceColor = (item) => {
     if (isDark) {
-      if (item.reviewStatus === 'confirmed') return '#6EE7B7';
-      if (item.reviewStatus === 'probable') return '#FCD34D';
+      if (item.reviewStatus === 'confirmed') return '#67E8F9'; // Cyan lumineux
+      if (item.reviewStatus === 'probable') return '#FCD34D';  // Jaune lumineux
       return '#FDA4AF';
     }
-    if (item.reviewStatus === 'confirmed') return '#047857';
-    if (item.reviewStatus === 'probable') return '#B45309';
+    if (item.reviewStatus === 'confirmed') return '#0891B2'; // Cyan foncé
+    if (item.reviewStatus === 'probable') return '#B45309';  // Orange foncé
     return '#B91C1C';
   };
 
   const getConfidenceBg = (item) => {
     if (isDark) {
-      if (item.reviewStatus === 'confirmed') return 'rgba(110, 231, 183, 0.12)';
-      if (item.reviewStatus === 'probable') return 'rgba(252, 211, 77, 0.12)';
-      return 'rgba(253, 164, 175, 0.12)';
+      if (item.reviewStatus === 'confirmed') return 'rgba(103, 232, 249, 0.15)';
+      if (item.reviewStatus === 'probable') return 'rgba(252, 211, 77, 0.15)';
+      return 'rgba(253, 164, 175, 0.15)';
     }
-    if (item.reviewStatus === 'confirmed') return '#D1FAE5';
+    if (item.reviewStatus === 'confirmed') return '#CFFAFE';
     if (item.reviewStatus === 'probable') return '#FEF3C7';
     return '#FEE2E2';
   };
@@ -761,6 +761,13 @@ export default function EmailScannerModal({
 }
 
 function makeStyles(Colors, isDark) {
+  // Palette multi-couleurs pour le scan: Optimisée pour clair ET sombre
+  const SCAN_COLOR_PRIMARY = isDark ? '#67E8F9' : '#06B6D4';   // Cyan (plus lumineux en dark)
+  const SCAN_COLOR_SECONDARY = isDark ? '#93C5FD' : '#3B82F6'; // Bleu (plus doux en dark)
+  const SCAN_COLOR_ACCENT = isDark ? '#FCD34D' : '#F59E0B';    // Orange (plus lumineux en dark)
+  const SCAN_COLOR_LIGHT = isDark ? '#0C4A6E' : '#E0F2FE';     // Adapté au mode
+  const SCAN_DIVIDER = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(6, 182, 212, 0.3)';
+  
   return StyleSheet.create({
     container: { flex: 1, backgroundColor: Colors.bg },
     header: {
@@ -853,7 +860,7 @@ function makeStyles(Colors, isDark) {
       ...Fonts.primary,
       ...Fonts.bold,
       fontSize: 15,
-      color: Colors.income,
+      color: SCAN_COLOR_PRIMARY,
       marginBottom: 3,
       flexShrink: 1,
     },
@@ -868,7 +875,7 @@ function makeStyles(Colors, isDark) {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      backgroundColor: Colors.income,
+      backgroundColor: SCAN_COLOR_PRIMARY,
       borderRadius: Radius.xl,
       paddingVertical: 18,
       paddingHorizontal: 22,
@@ -895,7 +902,7 @@ function makeStyles(Colors, isDark) {
       borderRadius: Radius.xl,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: Colors.income,
+      backgroundColor: SCAN_COLOR_SECONDARY,
       marginTop: 18,
       paddingHorizontal: 16,
     },
@@ -982,7 +989,7 @@ function makeStyles(Colors, isDark) {
     summaryCard: {
       margin: 24,
       marginBottom: 14,
-      backgroundColor: Colors.income,
+      backgroundColor: SCAN_COLOR_ACCENT,
       borderRadius: Radius.xl,
       padding: 24,
       flexDirection: 'row',
@@ -992,10 +999,10 @@ function makeStyles(Colors, isDark) {
       ...Shadow.medium,
     },
     summaryValue: { ...Fonts.primary, ...Fonts.black, fontSize: 26, color: Colors.pureWhite, maxWidth: '100%' },
-    summaryLabel: { ...Fonts.primary, fontSize: 10, color: isDark ? '#A7F3D0' : '#D1FAE5', marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5, flexShrink: 1 },
+    summaryLabel: { ...Fonts.primary, fontSize: 10, color: SCAN_COLOR_LIGHT, marginTop: 4, textTransform: 'uppercase', letterSpacing: 0.5, flexShrink: 1 },
     summaryMetric: { flex: 1, minWidth: 0 },
     summaryMetricRight: { flex: 1, minWidth: 0, alignItems: 'flex-end' },
-    summaryDivider: { width: 1, height: 44, backgroundColor: isDark ? '#34D399' : '#6EE7B7' },
+    summaryDivider: { width: 1, height: 44, backgroundColor: 'rgba(255, 255, 255, 0.3)' },
     resultList: { gap: 10, paddingHorizontal: 24, paddingBottom: 16 },
     resultCard: {
       backgroundColor: Colors.surface,
@@ -1004,7 +1011,7 @@ function makeStyles(Colors, isDark) {
       borderWidth: 1.5,
       borderColor: Colors.borderStrong,
     },
-    resultCardSelected: { borderColor: Colors.income, backgroundColor: Colors.surface },
+    resultCardSelected: { borderColor: SCAN_COLOR_PRIMARY, backgroundColor: Colors.surface },
     resultTopRow: { flexDirection: 'row', alignItems: 'flex-start' },
     checkbox: {
       width: 22,
@@ -1016,7 +1023,7 @@ function makeStyles(Colors, isDark) {
       alignItems: 'center',
       justifyContent: 'center',
     },
-    checkboxActive: { backgroundColor: Colors.income, borderColor: Colors.income },
+    checkboxActive: { backgroundColor: SCAN_COLOR_SECONDARY, borderColor: SCAN_COLOR_SECONDARY },
     checkboxMark: { color: Colors.white, fontSize: 12, fontWeight: 'bold' },
     resultIconWrap: {
       width: 42,
@@ -1080,7 +1087,7 @@ function makeStyles(Colors, isDark) {
       borderWidth: 1,
       borderColor: Colors.borderStrong,
     },
-    inlineActionPrimary: { backgroundColor: Colors.income, borderColor: Colors.income },
+    inlineActionPrimary: { backgroundColor: SCAN_COLOR_PRIMARY, borderColor: SCAN_COLOR_PRIMARY },
     inlineActionText: { ...Fonts.primary, ...Fonts.bold, fontSize: 12, color: Colors.text, textTransform: 'uppercase' },
     inlineActionPrimaryText: { ...Fonts.primary, ...Fonts.bold, fontSize: 12, color: Colors.pureWhite, textTransform: 'uppercase' },
     emptyBox: { padding: 24, alignItems: 'center' },

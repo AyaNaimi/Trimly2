@@ -1025,6 +1025,13 @@ export function AppProvider({ children }) {
     if (!requireProAccess('add_category')) return false;
 
     try {
+      // Check if category with same name already exists
+      const existingCategory = state.categories.find(c => c.name === cat.name);
+      if (existingCategory) {
+        console.log(`Category "${cat.name}" already exists, skipping addition.`);
+        return true; // Return true to not block the flow, but don't add duplicate
+      }
+
       if (state.session) {
         const cloudCat = await DatabaseService.addCategory(state.session.user.id, cat);
         dispatch({ type: 'ADD_CATEGORY', payload: cloudCat });
@@ -1033,6 +1040,11 @@ export function AppProvider({ children }) {
       }
       return true;
     } catch (error) {
+      // Check if error is due to duplicate key constraint
+      if (error?.code === '23505' || error?.message?.includes('duplicate key')) {
+        console.log(`Category "${cat.name}" already exists in database, skipping.`);
+        return true; // Don't treat as error since category exists
+      }
       console.error('Error adding category:', error);
       return false;
     }

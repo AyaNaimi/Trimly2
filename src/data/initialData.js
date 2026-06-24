@@ -108,50 +108,38 @@ export const DEFAULT_CATEGORIES = [
 // Onboarding category suggestions grouped by section (like Luna)
 export const ONBOARDING_CAT_GROUPS = [
   {
-    label: 'Essentiels',
-    color: '#FF2D78',
+    label: 'Maison & Alimentation',
     items: [
-      { name: 'Loyer', icon: '🏠', color: '#6B7280', cycle: 'monthly' },
-      { name: 'Électricité', icon: '💡', color: '#F59E0B', cycle: 'monthly' },
-      { name: 'Forfait mobile', icon: '📱', color: '#3B82F6', cycle: 'monthly' },
-      { name: 'Internet', icon: '🌐', color: '#FF2D78', cycle: 'monthly' },
-      { name: 'Assurance', icon: '🛡️', color: '#6B7280', cycle: 'monthly' },
+      { name: 'Loyer/Prêt', icon: '🏠', color: '#8B5CF6', cycle: 'monthly' },
+      { name: 'Courses', icon: '🛒', color: '#10B981', cycle: 'monthly' },
+      { name: 'Restaurant', icon: '🍕', color: '#F59E0B', cycle: 'monthly' },
+      { name: 'Factures', icon: '⚡', color: '#EF4444', cycle: 'monthly' },
     ],
   },
   {
-    label: 'Alimentation',
-    color: '#FF9500',
+    label: 'Mobilité & Voyage',
     items: [
-      { name: 'Café', icon: '☕', color: '#92400E', cycle: 'weekly' },
-      { name: 'Restaurants', icon: '🍽️', color: '#FF2D78', cycle: 'weekly' },
-      { name: 'Courses', icon: '🛒', color: '#EF4444', cycle: 'monthly' },
+      { name: 'Transport', icon: '🚆', color: '#3B82F6', cycle: 'monthly' },
+      { name: 'Carburant', icon: '⛽', color: '#6366F1', cycle: 'monthly' },
+      { name: 'Voyage', icon: '✈️', color: '#14B8A6', cycle: 'monthly' },
     ],
   },
   {
-    label: 'Transport',
-    color: '#5B3BF5',
+    label: 'Loisirs & Style de vie',
     items: [
-      { name: 'Essence', icon: '⛽', color: '#22C55E', cycle: 'monthly' },
-      { name: 'Uber/Taxi', icon: '🚗', color: '#000', cycle: 'weekly' },
-      { name: 'Transports', icon: '🚇', color: '#3B82F6', cycle: 'monthly' },
+      { name: 'Sorties', icon: '🎬', color: '#EC4899', cycle: 'monthly' },
+      { name: 'Abonnements', icon: '📱', color: '#8B5CF6', cycle: 'monthly' },
+      { name: 'Shopping', icon: '👕', color: '#F97316', cycle: 'monthly' },
+      { name: 'Sport', icon: '💪', color: '#06B6D4', cycle: 'monthly' },
     ],
   },
   {
-    label: 'Divertissement & Loisirs',
-    color: '#FF2D78',
+    label: 'Finance & Bien-être',
     items: [
-      { name: 'Sorties', icon: '🎉', color: '#5B3BF5', cycle: 'monthly' },
-      { name: 'Sport', icon: '🏋️', color: '#22C55E', cycle: 'monthly' },
-      { name: 'Jeux', icon: '🎮', color: '#5B3BF5', cycle: 'monthly' },
-    ],
-  },
-  {
-    label: 'Santé & Bien-être',
-    color: '#22C55E',
-    items: [
-      { name: 'Pharmacie', icon: '💊', color: '#F59E0B', cycle: 'monthly' },
-      { name: 'Médecin', icon: '🏥', color: '#EF4444', cycle: 'monthly' },
-      { name: 'Soins perso', icon: '🧴', color: '#22C55E', cycle: 'monthly' },
+      { name: 'Santé', icon: '🏥', color: '#EF4444', cycle: 'monthly' },
+      { name: 'Épargne', icon: '📈', color: '#10B981', cycle: 'monthly' },
+      { name: 'Imprévus', icon: '🆘', color: '#F59E0B', cycle: 'monthly' },
+      { name: 'Cadeaux', icon: '🎁', color: '#EC4899', cycle: 'monthly' },
     ],
   },
 ];

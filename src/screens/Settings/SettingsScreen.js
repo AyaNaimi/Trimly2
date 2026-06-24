@@ -10,7 +10,7 @@ import { SettingsRow, Toggle, PrimaryButton, SecondaryButton } from '../../compo
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { requestNotificationPermissions, scheduleDailyReminders } from '../../utils/notifications';
+import { requestNotificationPermissions, scheduleDailyReminders, areNotificationsEnabled } from '../../utils/notifications';
 import { supabase } from '../../utils/supabase';
 
 const currencyOptions = ['€', '$', '£', 'MAD'];
@@ -39,7 +39,21 @@ export default function SettingsScreen() {
   const [enableFaceIdAfterPin, setEnableFaceIdAfterPin] = useState(false);
   const [billingLoading, setBillingLoading] = useState(false);
   const [draftIncome, setDraftIncome] = useState(state.income.toString());
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const lottieRef = useRef(null);
+
+  // Check notification permissions on mount and when screen is focused
+  useEffect(() => {
+    const checkNotifPermissions = async () => {
+      const enabled = await areNotificationsEnabled();
+      setNotificationsEnabled(enabled);
+    };
+    checkNotifPermissions();
+    
+    // Re-check when returning to screen
+    const interval = setInterval(checkNotifPermissions, 2000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Contrôler l'animation Lottie en fonction du thème
   useEffect(() => {
@@ -90,13 +104,65 @@ export default function SettingsScreen() {
 
   async function handleSetNotifLevel(level) {
     PremiumHaptics.selection();
+    
+    // Check if notifications are enabled before setting level
+    const enabled = await areNotificationsEnabled();
+    
+    if (level > 0 && !enabled) {
+      // Ask user to enable notifications first
+      Alert.alert(
+        t('settings.notifications'),
+        t('settings.notificationPermission') || 'Les notifications ne sont pas activées. Voulez-vous les activer maintenant ?',
+        [
+          { 
+            text: t('common.cancel'), 
+            style: 'cancel',
+            onPress: () => {
+              // Set level to 0 if user cancels
+              setNotifLevel(0);
+            }
+          },
+          { 
+            text: t('settings.enable') || 'Activer', 
+            onPress: async () => {
+              const granted = await requestNotificationPermissions();
+              if (granted) {
+                const ok = await setNotifLevel(level);
+                if (ok) {
+                  await scheduleDailyReminders(level);
+                  setNotificationsEnabled(true);
+                }
+              } else {
+                Alert.alert(
+                  t('settings.notifications'),
+                  t('settings.openSettings') || 'Veuillez activer les notifications dans les paramètres système.',
+                  [
+                    { text: t('common.cancel'), style: 'cancel' },
+                    { 
+                      text: t('settings.openSystemSettings') || 'Ouvrir les paramètres', 
+                      onPress: () => Linking.openSettings() 
+                    }
+                  ]
+                );
+              }
+            }
+          }
+        ]
+      );
+      return;
+    }
+    
     const ok = await setNotifLevel(level);
     if (ok) {
-      const granted = await requestNotificationPermissions();
-      if (granted) {
-        scheduleDailyReminders(level);
-      } else if (level > 0) {
-        Alert.alert(t('settings.notifications'), t('settings.notificationPermission'));
+      if (level > 0) {
+        const granted = await requestNotificationPermissions();
+        if (granted) {
+          await scheduleDailyReminders(level);
+          setNotificationsEnabled(true);
+        }
+      } else {
+        // Cancel all notifications when level is 0
+        await scheduleDailyReminders(0);
       }
     }
   }
@@ -370,6 +436,13 @@ export default function SettingsScreen() {
           <SettingsRow
             title={t('settings.notifications')}
             value={notifLabels[state.notifLevel ?? 0]}
+            badge={
+              state.notifLevel > 0 
+                ? notificationsEnabled 
+                  ? { text: '✓', color: '#10B981' } 
+                  : { text: '!', color: '#F59E0B' }
+                : null
+            }
             onPress={() => {
               Alert.alert(t('settings.reminders'), t('settings.frequency'), [
                 { text: t('settings.notificationLevels.silent'), onPress: () => handleSetNotifLevel(0) },

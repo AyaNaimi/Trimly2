@@ -16,6 +16,7 @@ import { Fonts, Layout, Radius, Shadow } from '../../theme';
 import { PremiumHaptics } from '../../utils/haptics';
 import { useApp } from '../../context/AppContext';
 import { useTheme } from '../../context/ThemeContext';
+import { requestNotificationPermissions } from '../../utils/notifications';
 
 const { width } = Dimensions.get('window');
 
@@ -23,36 +24,36 @@ const ONBOARDING_CAT_GROUPS = [
   {
     label: 'Maison & Alimentation',
     items: [
-      { name: 'Loyer/Prêt', icon: '🏠' },
-      { name: 'Courses', icon: '🛒' },
-      { name: 'Restaurant', icon: '🍕' },
-      { name: 'Factures', icon: '⚡' },
+      { name: 'Loyer/Prêt', icon: '🏠', color: '#8B5CF6' },
+      { name: 'Courses', icon: '🛒', color: '#10B981' },
+      { name: 'Restaurant', icon: '🍕', color: '#F59E0B' },
+      { name: 'Factures', icon: '⚡', color: '#EF4444' },
     ],
   },
   {
     label: 'Mobilité & Voyage',
     items: [
-      { name: 'Transport', icon: '🚆' },
-      { name: 'Carburant', icon: '⛽' },
-      { name: 'Voyage', icon: '✈️' },
+      { name: 'Transport', icon: '🚆', color: '#3B82F6' },
+      { name: 'Carburant', icon: '⛽', color: '#6366F1' },
+      { name: 'Voyage', icon: '✈️', color: '#14B8A6' },
     ],
   },
   {
     label: 'Loisirs & Style de vie',
     items: [
-      { name: 'Sorties', icon: '🎬' },
-      { name: 'Abonnements', icon: '📱' },
-      { name: 'Shopping', icon: '👕' },
-      { name: 'Sport', icon: '💪' },
+      { name: 'Sorties', icon: '🎬', color: '#EC4899' },
+      { name: 'Abonnements', icon: '📱', color: '#8B5CF6' },
+      { name: 'Shopping', icon: '👕', color: '#F97316' },
+      { name: 'Sport', icon: '💪', color: '#06B6D4' },
     ],
   },
   {
     label: 'Finance & Bien-être',
     items: [
-      { name: 'Santé', icon: '🏥' },
-      { name: 'Épargne', icon: '📈' },
-      { name: 'Imprévus', icon: '🆘' },
-      { name: 'Cadeaux', icon: '🎁' },
+      { name: 'Santé', icon: '🏥', color: '#EF4444' },
+      { name: 'Épargne', icon: '📈', color: '#10B981' },
+      { name: 'Imprévus', icon: '🆘', color: '#F59E0B' },
+      { name: 'Cadeaux', icon: '🎁', color: '#EC4899' },
     ],
   },
 ];
@@ -89,7 +90,10 @@ const StepCategories = ({ selectedCats, toggleCat, styles }) => (
                 <Pressable
                   key={item.name}
                   onPress={() => toggleCat(item.name)}
-                  style={[styles.chip, sel && styles.chipSel]}
+                  style={[
+                    styles.chip, 
+                    sel && { backgroundColor: item.color, borderColor: item.color }
+                  ]}
                 >
                   <Text style={{ fontSize: 20 }}>{item.icon}</Text>
                   <Text style={[styles.chipText, sel && styles.chipTextSel]}>{item.name}</Text>
@@ -276,7 +280,21 @@ const StepNotifications = ({ notifLevel, setNotifLevel, Colors, styles }) => {
   return (
     <View style={[styles.unifiedCard, { margin: 10 }]}>
       <Text style={[styles.h1, { ...Fonts.serif, marginBottom: 8 }]}>Notifications</Text>
-      <Text style={[styles.sub, { marginBottom: 28 }]}>Choisissez le style d'accompagnement qui vous convient.</Text>
+      <Text style={[styles.sub, { marginBottom: 12 }]}>Choisissez le style d'accompagnement qui vous convient.</Text>
+      
+      {/* Info box about notifications */}
+      <View style={{ 
+        backgroundColor: Colors.surface, 
+        borderRadius: 12, 
+        padding: 14, 
+        marginBottom: 20,
+        borderLeftWidth: 3,
+        borderLeftColor: Colors.accent
+      }}>
+        <Text style={{ ...Fonts.sans, fontSize: 12, color: Colors.textSecondary, lineHeight: 18 }}>
+          💡 Les notifications vous aident à rester sur la bonne voie. Vous pourrez toujours modifier ce choix dans les paramètres.
+        </Text>
+      </View>
       
       <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }}>
         <View style={{ gap: 14 }}>
@@ -432,7 +450,8 @@ export default function OnboardingScreen({ navigation }) {
     setNotifLevel: setNotifLevelSync, 
     setCurrency: setCurrencySync,
     completeOnboarding,
-    addCategory, 
+    addCategory,
+    updateCategory,
     state 
   } = useApp();
   const { Colors } = useTheme();
@@ -460,20 +479,53 @@ export default function OnboardingScreen({ navigation }) {
       await setCurrencySync(currency);
       await setNotifLevelSync(notifLevel);
 
-      // 2. Persist Categories to Cloud
+      // Request notification permissions if level > 0
+      if (notifLevel > 0) {
+        await requestNotificationPermissions();
+      }
+
+      // 2. Persist Categories to Cloud (only if they don't exist, or update budget if they do)
       const allCats = ONBOARDING_CAT_GROUPS.flatMap(g => g.items);
       const selectedItems = allCats.filter(c => selectedCats.includes(c.name));
+      
+      // Get existing categories to check for duplicates
+      const existingCategories = state.categories || [];
 
       for (const item of selectedItems) {
-        await addCategory({
-          name: item.name,
-          icon: item.icon,
-          budget: parseFloat(budgets[item.name]) || 0,
-          spent: 0,
-          cycle: 'monthly',
-          color: Colors.accent,
-          active: true
-        });
+        // Check if category already exists
+        const existingCategory = existingCategories.find(cat => cat.name === item.name);
+        
+        if (existingCategory) {
+          // Category exists - update its budget instead of skipping
+          console.log(`Category "${item.name}" already exists, updating budget...`);
+          const newBudget = parseFloat(budgets[item.name]) || 0;
+          
+          try {
+            await updateCategory(existingCategory.id, {
+              budget: newBudget,
+              icon: item.icon,
+              color: item.color || existingCategory.color,
+            });
+          } catch (updateError) {
+            console.warn(`Failed to update category "${item.name}":`, updateError);
+          }
+        } else {
+          // Category doesn't exist - add it
+          try {
+            await addCategory({
+              name: item.name,
+              icon: item.icon,
+              budget: parseFloat(budgets[item.name]) || 0,
+              spent: 0,
+              cycle: 'monthly',
+              color: item.color || Colors.accent,
+              active: true
+            });
+          } catch (catError) {
+            // Log but don't stop the process if one category fails
+            console.warn(`Failed to add category "${item.name}":`, catError);
+          }
+        }
       }
 
       // 3. Mark Onboarding as complete in Cloud & Local

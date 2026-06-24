@@ -1170,9 +1170,17 @@ export default function LoginScreen() {
                 <Text style={styles.landingTitlePart1}>Prenez le contrôle</Text>
                 <View style={styles.landingTitleRow}>
                   <Text style={styles.landingTitlePart2}>de vos </Text>
-                  <Animated.View style={[styles.dreamCapsule, { transform: [{ scale: capsulePulseAnim }] }]}>
-                    <Text style={styles.dreamText}>Finances</Text>
-                  </Animated.View>
+                  <View style={styles.financesCapsuleWrapper}>
+                    <View style={styles.dreamCapsule}>
+                      <Text style={styles.dreamText}>Finances</Text>
+                    </View>
+                    {/* Sparkles décoratifs */}
+                    <View style={styles.sparklesContainer}>
+                      <View style={[styles.sparkle, styles.sparkle1]} />
+                      <View style={[styles.sparkle, styles.sparkle2]} />
+                      <View style={[styles.sparkle, styles.sparkle3]} />
+                    </View>
+                  </View>
                 </View>
                 <Text style={styles.landingTitlePart1}>dès aujourd'hui</Text>
                 
@@ -1273,6 +1281,17 @@ export default function LoginScreen() {
                         fadeDuration={0}
                       />
 
+                      {/* Icône décorative en haut à gauche */}
+                      <View style={styles.decorativeIcon}>
+                        <Svg width="21" height="18" viewBox="0 0 21 18" fill="none">
+                          <Image
+                            source={{ uri: 'data:image/png;base64,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' }}
+                            width="21"
+                            height="18"
+                          />
+                        </Svg>
+                      </View>
+
                       {/* Stack de notifications groupées (iOS style) */}
                       {/* Notification 3 (arrière-plan - la plus ancienne) */}
                       <Animated.View
@@ -1357,7 +1376,7 @@ export default function LoginScreen() {
                             <View style={styles.lockNotifLogoBg}>
                               <Image
                                 source={require('../../../assets/logo.png')}
-                                style={{ width: '100%', height: '100%', resizeMode: 'contain', borderRadius: alertPhoneWidth * 0.03, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }}
+                                style={styles.lockNotifLogoImage}
                               />
                             </View>
                             <View style={styles.lockNotifTextCol}>
@@ -1382,16 +1401,16 @@ export default function LoginScreen() {
                           },
                         ]}
                       >
-                        <Svg width="60" height="70" viewBox="0 0 60 70">
+                        <Svg width="80" height="85" viewBox="0 0 80 85">
                           <Path
-                            d="M 50 10 Q 35 30, 30 60"
+                            d="M 70 15 Q 55 38, 25 65"
                             stroke={isDark ? '#10B981' : '#059669'}
                             strokeWidth="3"
                             fill="none"
                             strokeLinecap="round"
                           />
                           <Path
-                            d="M 30 60 L 26 53 M 30 60 L 35 54"
+                            d="M 25 65 L 33 62 M 25 65 L 27 57"
                             stroke={isDark ? '#10B981' : '#059669'}
                             strokeWidth="3"
                             strokeLinecap="round"
@@ -2132,7 +2151,7 @@ function makeStyles(Colors, isDark) {
       flexWrap: 'wrap',
     },
     alertDreamCapsule: {
-      backgroundColor: Colors.accent,
+      backgroundColor: '#F7A95A',
       borderRadius: 8,
       paddingHorizontal: 9,
       paddingVertical: 1,
@@ -2177,14 +2196,52 @@ function makeStyles(Colors, isDark) {
       letterSpacing: -0.5,
     },
     dreamCapsule: {
-      backgroundColor: Colors.accent,
+      backgroundColor: '#8F9B2B',
       borderRadius: 10,
       paddingHorizontal: 12,
       paddingVertical: 2,
       borderWidth: 1.5,
-      borderColor: Colors.accent,
+      borderColor: '#8F9B2B',
       justifyContent: 'center',
       alignItems: 'center',
+    },
+    financesCapsuleWrapper: {
+      position: 'relative',
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    sparklesContainer: {
+      position: 'absolute',
+      right: -28,
+      top: 2,
+      width: 24,
+      height: 20,
+    },
+    sparkle: {
+      position: 'absolute',
+      backgroundColor: '#8F9B2B',
+      borderRadius: 1.5,
+    },
+    sparkle1: {
+      width: 14,
+      height: 2.5,
+      top: 0,
+      right: 6,
+      transform: [{ rotate: '-48deg' }],
+    },
+    sparkle2: {
+      width: 14,
+      height: 2.5,
+      top: 7,
+      right: 2,
+      transform: [{ rotate: '-18deg' }],
+    },
+    sparkle3: {
+      width: 14,
+      height: 2.5,
+      top: 14,
+      right: 4,
+      transform: [{ rotate: '25deg' }],
     },
     dreamText: {
       ...Fonts.primary,
@@ -2324,6 +2381,12 @@ function makeStyles(Colors, isDark) {
       shadowRadius: 30,
       elevation: 20,
     },
+    decorativeIcon: {
+      position: 'absolute',
+      left: -35,
+      top: alertPhoneHeight * 0.05,
+      zIndex: 30,
+    },
     mockPhoneInner: {
       position: 'absolute',
       top: '1.5%',
@@ -2462,6 +2525,14 @@ function makeStyles(Colors, isDark) {
       flexShrink: 0,
       overflow: 'hidden',
     },
+    lockNotifLogoImage: {
+      width: '100%',
+      height: '100%',
+      resizeMode: 'contain',
+      borderRadius: alertPhoneWidth * 0.03,
+      borderWidth: 1,
+      borderColor: 'rgba(255,255,255,0.3)',
+    },
     lockNotifTextCol: {
       flex: 1,
     },
@@ -2525,8 +2596,8 @@ function makeStyles(Colors, isDark) {
     // Flèche pointant vers l'écran du téléphone
     phoneArrow: {
       position: 'absolute',
-      right: -62,
-      top: alertPhoneHeight * 0.38,
+      right: -85,
+      top: alertPhoneHeight * 0.32,
       zIndex: 25,
     },
     lockScreenFooter: {

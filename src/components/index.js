@@ -515,7 +515,7 @@ export function SubCard({ sub, billing, onPress, onLongPress, onDelete }) {
   );
 }
 
-export function SettingsRow({ title, value, onPress, children, danger, colors: colorsProp }) {
+export function SettingsRow({ title, value, onPress, children, danger, badge, colors: colorsProp }) {
   const { Colors: themeColors } = useTheme();
   const Colors = colorsProp || themeColors;
   const { scale, onPressIn, onPressOut } = usePressScale();
@@ -530,6 +530,18 @@ export function SettingsRow({ title, value, onPress, children, danger, colors: c
       }, { transform: [{ scale }] }]}>
         <Text style={[{ ...Fonts.primary, ...Fonts.medium, fontSize: 15, color: Colors.text }, danger && { color: Colors.error }]}>{title}</Text>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+          {badge && (
+            <View style={{ 
+              width: 20, 
+              height: 20, 
+              borderRadius: 10, 
+              backgroundColor: badge.color || Colors.accent, 
+              alignItems: 'center', 
+              justifyContent: 'center' 
+            }}>
+              <Text style={{ fontSize: 12, color: '#FFF', fontWeight: 'bold' }}>{badge.text}</Text>
+            </View>
+          )}
           {value ? <Text style={{ ...Fonts.primary, fontSize: 13, color: Colors.textSecondary }}>{value}</Text> : null}
           {children}
           {onPress && !children ? <Text style={{ fontSize: 18, color: Colors.textMuted, marginLeft: 4 }}>›</Text> : null}

@@ -35,6 +35,23 @@ Notifications.setNotificationHandler({
 });
 
 /**
+ * Check if notifications are enabled
+ */
+export async function areNotificationsEnabled() {
+  if (!Device.isDevice) {
+    return false;
+  }
+
+  try {
+    const { status } = await Notifications.getPermissionsAsync();
+    return status === 'granted';
+  } catch (error) {
+    console.error('Error checking notification permissions:', error);
+    return false;
+  }
+}
+
+/**
  * Request notification permissions
  * Returns true if granted
  */
@@ -87,7 +104,10 @@ export async function scheduleAllSubscriptionNotifications(subscriptions, locale
   if (!subscriptions || subscriptions.length === 0) return;
 
   const granted = await requestNotificationPermissions();
-  if (!granted) return;
+  if (!granted) {
+    console.log('Notification permissions not granted, skipping subscription notifications');
+    return;
+  }
 
   for (const sub of subscriptions) {
     if (!sub.active) continue;
@@ -304,7 +324,14 @@ export async function scheduleDailyReminders(level, t) {
     }
   }
 
+  // If level is 0 or notifications not enabled, return early
   if (level === 0) return;
+
+  const enabled = await areNotificationsEnabled();
+  if (!enabled) {
+    console.log('Notifications not enabled, skipping daily reminders');
+    return;
+  }
 
   const messages = [
     safeTranslate(t, 'notifications.reminders.journal', FALLBACK_NOTIFICATIONS.reminders[0]),
