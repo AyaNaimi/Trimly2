@@ -1273,7 +1273,68 @@ export default function LoginScreen() {
                         fadeDuration={0}
                       />
 
-                      {/* Notification card — overlays the whole mockup */}
+                      {/* Stack de notifications groupées (iOS style) */}
+                      {/* Notification 3 (arrière-plan - la plus ancienne) */}
+                      <Animated.View
+                        style={[
+                          styles.lockNotifCard,
+                          styles.lockNotifStackBack,
+                          {
+                            opacity: alertCardEntranceAnims[0].interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0, 0.4],
+                            }),
+                            transform: [
+                              {
+                                translateY: alertCardEntranceAnims[0].interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [14, -8],
+                                }),
+                              },
+                              {
+                                scale: alertCardEntranceAnims[0].interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [1, 0.96],
+                                }),
+                              },
+                            ],
+                          },
+                        ]}
+                      >
+                        <BlurView intensity={60} tint="dark" style={styles.lockNotifBlur} />
+                      </Animated.View>
+
+                      {/* Notification 2 (milieu) */}
+                      <Animated.View
+                        style={[
+                          styles.lockNotifCard,
+                          styles.lockNotifStackMiddle,
+                          {
+                            opacity: alertCardEntranceAnims[0].interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [0, 0.6],
+                            }),
+                            transform: [
+                              {
+                                translateY: alertCardEntranceAnims[0].interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [14, -4],
+                                }),
+                              },
+                              {
+                                scale: alertCardEntranceAnims[0].interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [1, 0.98],
+                                }),
+                              },
+                            ],
+                          },
+                        ]}
+                      >
+                        <BlurView intensity={70} tint="dark" style={styles.lockNotifBlur} />
+                      </Animated.View>
+
+                      {/* Notification 1 (premier plan - la plus récente) */}
                       <Animated.View
                         style={[
                           styles.lockNotifCard,
@@ -1290,23 +1351,25 @@ export default function LoginScreen() {
                           },
                         ]}
                       >
-                        {/* Single row: square icon left + all text stacked right */}
-                        <View style={styles.lockNotifRow}>
-                          <View style={styles.lockNotifLogoBg}>
-                            <Image
-                              source={require('../../../assets/logo.png')}
-                              style={{ width: '80%', height: '80%', resizeMode: 'contain' }}
-                            />
-                          </View>
-                          <View style={styles.lockNotifTextCol}>
-                            <View style={styles.lockNotifNameRow}>
-                              <Text style={styles.lockNotifAppName}>Trimly</Text>
-                              <Text style={styles.lockNotifTimestamp}>maintenant</Text>
+                        <BlurView intensity={80} tint="dark" style={styles.lockNotifBlur}>
+                          {/* Single row: square icon left + all text stacked right */}
+                          <View style={styles.lockNotifRow}>
+                            <View style={styles.lockNotifLogoBg}>
+                              <Image
+                                source={require('../../../assets/logo.png')}
+                                style={{ width: '100%', height: '100%', resizeMode: 'contain', borderRadius: alertPhoneWidth * 0.03, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }}
+                              />
                             </View>
-                            <Text style={styles.lockNotifTitle}>Rappel : Netflix.</Text>
-                            <Text style={styles.lockNotifBody}>{'Renouvellement prévu dans 2 jours\n(18,99€)'}</Text>
+                            <View style={styles.lockNotifTextCol}>
+                              <View style={styles.lockNotifNameRow}>
+                                <Text style={styles.lockNotifAppName}>Trimly 🚀</Text>
+                                <Text style={styles.lockNotifTimestamp}>maintenant</Text>
+                              </View>
+                              <Text style={styles.lockNotifTitle}>Rappel : Netflix</Text>
+                              <Text style={styles.lockNotifBody}>Renouvellement prévu dans 2 jours (18,99€)</Text>
+                            </View>
                           </View>
-                        </View>
+                        </BlurView>
                       </Animated.View>
                       
                       
@@ -2038,7 +2101,7 @@ function makeStyles(Colors, isDark) {
       justifyContent: 'space-between',
       zIndex: 10,
       paddingTop: Platform.OS === 'ios' ? 50 : 25,
-      paddingBottom: 25,
+      paddingBottom: 0,
     },
     alertLandingForeground: {
       flex: 1,
@@ -2137,7 +2200,7 @@ function makeStyles(Colors, isDark) {
     },
     landingFooter: {
       paddingHorizontal: 24,
-      marginBottom: Platform.OS === 'ios' ? 24 : 34,
+      paddingBottom: Platform.OS === 'ios' ? 40 : 50,
     },
     alertLandingFooter: {
       flex: 1,
@@ -2362,34 +2425,42 @@ function makeStyles(Colors, isDark) {
       top: alertPhoneHeight * 0.42,
       left: alertPhoneWidth * 0.05,
       right: alertPhoneWidth * 0.05,
-      borderRadius: alertPhoneWidth * 0.055,
-      backgroundColor: 'rgba(28,28,32,0.92)',
-      paddingHorizontal: alertPhoneWidth * 0.045,
-      paddingVertical: alertPhoneWidth * 0.038,
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.16)',
+      borderRadius: alertPhoneWidth * 0.065,
+      overflow: 'hidden',
+      borderWidth: 0.5,
+      borderColor: 'rgba(255,255,255,0.25)',
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.5,
-      shadowRadius: 16,
-      elevation: 14,
+      shadowOffset: { width: 0, height: 12 },
+      shadowOpacity: 0.6,
+      shadowRadius: 20,
+      elevation: 16,
       zIndex: 20,
+    },
+    lockNotifStackBack: {
+      zIndex: 18,
+    },
+    lockNotifStackMiddle: {
+      zIndex: 19,
+    },
+    lockNotifBlur: {
+      paddingHorizontal: alertPhoneWidth * 0.048,
+      paddingVertical: alertPhoneWidth * 0.042,
+      borderRadius: alertPhoneWidth * 0.065,
     },
     lockNotifRow: {
       flexDirection: 'row',
       alignItems: 'flex-start',
     },
     lockNotifLogoBg: {
-      width: alertPhoneWidth * 0.11,
-      height: alertPhoneWidth * 0.11,
-      borderRadius: alertPhoneWidth * 0.024,
-      backgroundColor: '#111113',
+      width: alertPhoneWidth * 0.13,
+      height: alertPhoneWidth * 0.13,
+      borderRadius: alertPhoneWidth * 0.03,
+      backgroundColor: 'transparent',
       alignItems: 'center',
       justifyContent: 'center',
-      marginRight: alertPhoneWidth * 0.032,
+      marginRight: alertPhoneWidth * 0.035,
       flexShrink: 0,
-      borderWidth: 0.5,
-      borderColor: 'rgba(255,255,255,0.1)',
+      overflow: 'hidden',
     },
     lockNotifTextCol: {
       flex: 1,
@@ -2403,28 +2474,53 @@ function makeStyles(Colors, isDark) {
     lockNotifAppName: {
       ...Fonts.primary,
       ...Fonts.semiBold,
-      fontSize: alertPhoneWidth * 0.038,
-      color: 'rgba(255,255,255,0.88)',
-      letterSpacing: 0,
+      fontSize: alertPhoneWidth * 0.04,
+      color: '#FFFFFF',
+      letterSpacing: 0.1,
     },
     lockNotifTimestamp: {
       ...Fonts.primary,
-      fontSize: alertPhoneWidth * 0.033,
-      color: 'rgba(255,255,255,0.5)',
+      ...Fonts.medium,
+      fontSize: alertPhoneWidth * 0.034,
+      color: 'rgba(255,255,255,0.65)',
     },
     lockNotifTitle: {
       ...Fonts.primary,
       ...Fonts.semiBold,
-      fontSize: alertPhoneWidth * 0.038,
+      fontSize: alertPhoneWidth * 0.039,
       color: '#FFFFFF',
       letterSpacing: -0.1,
-      marginBottom: 1,
+      marginBottom: 2,
+      marginTop: 1,
     },
     lockNotifBody: {
       ...Fonts.primary,
-      fontSize: alertPhoneWidth * 0.035,
-      color: 'rgba(255,255,255,0.8)',
-      lineHeight: alertPhoneWidth * 0.048,
+      ...Fonts.regular,
+      fontSize: alertPhoneWidth * 0.036,
+      color: 'rgba(255,255,255,0.85)',
+      lineHeight: alertPhoneWidth * 0.051,
+      letterSpacing: 0.1,
+    },
+    lockNotifBadge: {
+      position: 'absolute',
+      top: alertPhoneWidth * 0.042,
+      right: alertPhoneWidth * 0.048,
+      backgroundColor: '#10B981',
+      borderRadius: 10,
+      minWidth: 20,
+      height: 20,
+      paddingHorizontal: 6,
+      alignItems: 'center',
+      justifyContent: 'center',
+      borderWidth: 1.5,
+      borderColor: 'rgba(255,255,255,0.3)',
+    },
+    lockNotifBadgeText: {
+      ...Fonts.primary,
+      ...Fonts.bold,
+      fontSize: 11,
+      color: '#FFFFFF',
+      letterSpacing: 0,
     },
     // Flèche pointant vers l'écran du téléphone
     phoneArrow: {
