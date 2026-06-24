@@ -11,7 +11,7 @@
   background-color: var(--color-bg-light);
   font-family: var(--font-inter), sans-serif;
   color: var(--color-text-dark);
-  overflow-x: hidden;
+  overflow-y: hidden;
   box-sizing: border-box;
 }
 
@@ -748,7 +748,7 @@
 /* Top-right: ÉCONOMIES CHAQUE MOIS — arrow pointing down-left toward phone */
 .annotationTopRight {
   top: 0px;
-  right: -15px;
+  right: 0px;
   transform: rotate(2deg);
   align-items: flex-start;
   gap: 4px;
@@ -768,7 +768,7 @@
 /* Mid-right: DÉPENSES INUTILES — scribble + arrow pointing left toward phone */
 .annotationMidRight {
   top: 36%;
-  right: -30px;
+  right: 0px;
   transform: rotate(-1deg);
   align-items: flex-start;
   gap: 6px;
