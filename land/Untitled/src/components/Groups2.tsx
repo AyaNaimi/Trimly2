@@ -30,6 +30,8 @@ ayanaimi.trimly@gmail.com          </a>
         <a href="#features-section" className={styles.footerLink}>Fonctionnalités</a>
         <a href="#features-section" className={styles.footerLink}>Comment ça marche</a>
         <a href="#cta-section" className={styles.footerLink}>Télécharger</a>
+        <a href="/terms" className={styles.footerLink}>Conditions d'utilisation</a>
+        <a href="/privacy" className={styles.footerLink}>Politique de confidentialité</a>
       </div>
 
       {/* Right: Social media icons */}

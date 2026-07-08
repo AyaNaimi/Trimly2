@@ -1,0 +1,162 @@
+.page {
+  background-color: #f8f8f4;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-inter), sans-serif;
+  color: #1b1b1b;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: 24px 40px;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.logo {
+  font-family: var(--font-caveat-brush), cursive;
+  font-size: 32px;
+  color: var(--color-brand-lime-dark);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.logo:hover {
+  color: var(--color-brand-lime);
+}
+
+.content {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 40px 40px 80px;
+  width: 100%;
+  box-sizing: border-box;
+  flex: 1;
+}
+
+.title {
+  font-family: var(--font-oswald), sans-serif;
+  font-size: 48px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #101010;
+  margin: 0 0 8px;
+  line-height: 1.1;
+}
+
+.lastUpdated {
+  font-size: 14px;
+  color: #888;
+  margin: 0 0 48px;
+}
+
+.section {
+  margin-bottom: 36px;
+}
+
+.sectionTitle {
+  font-family: var(--font-oswald), sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #101010;
+  margin: 0 0 12px;
+}
+
+.subsectionTitle {
+  font-family: var(--font-inter), sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1b1b1b;
+  margin: 16px 0 8px;
+}
+
+.paragraph {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #333;
+  margin: 0 0 12px;
+}
+
+.list {
+  margin: 0 0 12px;
+  padding-left: 24px;
+}
+
+.list li {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.link {
+  color: var(--color-brand-lime-dark);
+  text-decoration: underline;
+  transition: color 0.2s;
+}
+
+.link:hover {
+  color: var(--color-brand-lime);
+}
+
+.footer {
+  border-top: 1px solid #e0e0e0;
+  padding: 24px 40px;
+}
+
+.footerInner {
+  max-width: 900px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #888;
+}
+
+.footerLink {
+  color: #666;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footerLink:hover {
+  color: #1b1b1b;
+}
+
+.footerSeparator {
+  color: #ccc;
+}
+
+.footerCopy {
+  color: #aaa;
+}
+
+@media screen and (max-width: 768px) {
+  .header {
+    padding: 20px;
+  }
+  .content {
+    padding: 24px 20px 60px;
+  }
+  .title {
+    font-size: 32px;
+  }
+  .footer {
+    padding: 20px;
+  }
+  .footerInner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+  .footerSeparator {
+    display: none;
+  }
+}

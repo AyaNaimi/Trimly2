@@ -6,6 +6,8 @@ import {
   useLocation,
 } from "react-router-dom";
 import FigmaDesignChatGPTImageJun72026124544PMjpg from "./pages/FigmaDesignChatGPTImageJun72026124544PMjpg";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
 
 function App() {
   const action = useNavigationType();
@@ -49,6 +51,8 @@ function App() {
         path="/"
         element={<FigmaDesignChatGPTImageJun72026124544PMjpg />}
       />
+      <Route path="/terms" element={<TermsOfService />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
     </Routes>
   );
 }
