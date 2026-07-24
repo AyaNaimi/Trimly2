@@ -74,7 +74,7 @@ const FigmaDesignChatGPTImageJun72026124544PMjpg: FunctionComponent = () => {
   const accordionData = [
     {
       title: "CONNECTEZ VOTRE COMPTE GOOGLE",
-      desc: "Connectez-vous en un clic avec votre compte Google. trimly. importe automatiquement vos abonnements via vos emails de confirmation.",
+      desc: "Connectez-vous en toute sécurité avec votre compte Google. trimly. demande un accès en lecture seule à vos e-mails uniquement pour identifier vos reçus et factures, afin de détecter automatiquement vos abonnements.",
       icon: (
         <svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="3"/>
@@ -550,7 +550,7 @@ const FigmaDesignChatGPTImageJun72026124544PMjpg: FunctionComponent = () => {
                 dot: styles.timelineDotActive,
                 day: "Jour 1",
                 title: "Essai gratuit",
-                desc: "Connectez votre compte Google en 1 clic. trimly. scanne vos emails et détecte automatiquement vos abonnements.",
+                desc: "Connectez votre compte Google en 1 clic. trimly. demande l'accès à vos e-mails pour scanner vos reçus et détecter automatiquement vos abonnements.",
                 tag: "14 jours offerts",
                 delay: 100,
                 icon: (
