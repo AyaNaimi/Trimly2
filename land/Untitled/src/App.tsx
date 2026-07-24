@@ -26,8 +26,9 @@ function App() {
 
     switch (pathname) {
       case "/":
-        title = "";
-        metaDescription = "";
+        title = "trimly. - Reprenez le contr\u00f4le de vos finances";
+        metaDescription =
+          "trimly. est une application conçue pour vous aider à gérer votre budget en détectant automatiquement les abonnements, en analysant les dépenses et en vous aidant à économiser de l'argent.";
         break;
     }
 

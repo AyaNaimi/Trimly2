@@ -74,7 +74,7 @@ const FigmaDesignChatGPTImageJun72026124544PMjpg: FunctionComponent = () => {
   const accordionData = [
     {
       title: "CONNECTEZ VOTRE COMPTE GOOGLE",
-      desc: "Connectez-vous en un clic avec votre compte Google. Trimly importe automatiquement vos abonnements via vos emails de confirmation.",
+      desc: "Connectez-vous en un clic avec votre compte Google. trimly. importe automatiquement vos abonnements via vos emails de confirmation.",
       icon: (
         <svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="24" cy="24" r="20" stroke="currentColor" strokeWidth="3"/>
@@ -86,7 +86,7 @@ const FigmaDesignChatGPTImageJun72026124544PMjpg: FunctionComponent = () => {
     },
     {
       title: "DÉTECTEZ VOS ABONNEMENTS",
-      desc: "Trimly identifie automatiquement tous vos abonnements récurrents et vous alerte avant chaque prélèvement.",
+      desc: "trimly. identifie automatiquement tous vos abonnements récurrents et vous alerte avant chaque prélèvement.",
       icon: (
         <svg width="40" height="40" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
           <circle cx="24" cy="24" r="18" stroke="currentColor" strokeWidth="3"/>
@@ -221,7 +221,7 @@ const FigmaDesignChatGPTImageJun72026124544PMjpg: FunctionComponent = () => {
 
             <div className={styles.heroParagraphRow}>
               <p className={styles.heroParagraph}>
-                Trimly détecte automatiquement vos abonnements, analyse vos dépenses et vous aide à{" "}
+                trimly. est une application qui détecte automatiquement vos abonnements, analyse vos dépenses et vous aide à{" "}
                 <span className={styles.textUnderlineHighlight}>
                   économiser
                   <img src="/Image13@2x.png" alt="" className={styles.brushUnderlineSmall} />
@@ -362,7 +362,7 @@ const FigmaDesignChatGPTImageJun72026124544PMjpg: FunctionComponent = () => {
               <span className={styles.titleLine}>EN 3 ÉTAPES</span>
             </h2>
             <p className={styles.howItWorksSubtitle}>
-              Trimly simplifie la gestion de vos abonnements en 3 étapes simples.
+              trimly. simplifie la gestion de vos abonnements en 3 étapes simples.
             </p>
 
             <div className={styles.graphicsDesignFrame}>
@@ -417,7 +417,7 @@ const FigmaDesignChatGPTImageJun72026124544PMjpg: FunctionComponent = () => {
                 <svg viewBox="0 0 24 24" width="22" height="22" fill="none">
                   <path d="M4.5 3V18.5L9.2 13.8L15 21L18.5 18L13 11L19.5 11L4.5 3Z" fill="#1e1e1e" stroke="#ffffff" strokeWidth="1.5" strokeLinejoin="round" />
                 </svg>
-                <span className={styles.figmaCursorUser}>Trimly</span>
+                <span className={styles.figmaCursorUser}>trimly.</span>
               </div>
             </div>
           </div>
@@ -550,7 +550,7 @@ const FigmaDesignChatGPTImageJun72026124544PMjpg: FunctionComponent = () => {
                 dot: styles.timelineDotActive,
                 day: "Jour 1",
                 title: "Essai gratuit",
-                desc: "Connectez votre compte Google en 1 clic. Trimly scanne vos emails et détecte automatiquement vos abonnements.",
+                desc: "Connectez votre compte Google en 1 clic. trimly. scanne vos emails et détecte automatiquement vos abonnements.",
                 tag: "14 jours offerts",
                 delay: 100,
                 icon: (
