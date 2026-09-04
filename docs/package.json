@@ -40,6 +40,8 @@
   "eslintConfig": {
     "root": true
   },
+  "homepage": "http://trimly-app.me/Trimly2"
+,
   "name": "untitled",
   "private": true,
   "scripts": {
