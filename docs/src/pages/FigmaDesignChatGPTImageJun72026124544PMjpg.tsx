@@ -213,7 +213,7 @@ const FigmaDesignChatGPTImageJun72026124544PMjpg: FunctionComponent = () => {
             >
               REPRENEZ <br />
               LE <span className={styles.titleGreenHighlight}>
-                CONTRÔLE<img src="/Trimly2/Image29@2x.png" alt="" className={styles.brushUnderlineImg} />
+                CONTRÔLE<img src="/Image29@2x.png" alt="" className={styles.brushUnderlineImg} />
               </span>.<br />
               ÉCONOMISEZ. <br />
               VIVEZ <span className={styles.titleGreenText}>MIEUX</span>.
@@ -224,8 +224,8 @@ const FigmaDesignChatGPTImageJun72026124544PMjpg: FunctionComponent = () => {
                 trimly. est une application qui détecte automatiquement vos abonnements, analyse vos dépenses et vous aide à{" "}
                 <span className={styles.textUnderlineHighlight}>
                   économiser
-                  <img src="/Trimly2/Image13@2x.png" alt="" className={styles.brushUnderlineSmall} />
-                  <img src="/Trimly2/Image14.svg" alt="" className={styles.arrowToPhone} />
+                  <img src="/Image13@2x.png" alt="" className={styles.brushUnderlineSmall} />
+                  <img src="/Image14.svg" alt="" className={styles.arrowToPhone} />
                 </span>{" "}
                 chaque mois sans effort.
               </p>
@@ -234,7 +234,7 @@ const FigmaDesignChatGPTImageJun72026124544PMjpg: FunctionComponent = () => {
             <div className={styles.heroCtaRow}>
               <Button
                 className={`${styles.ctaButtonPrimary} magnetic-btn`}
-                endIcon={<img width="14" height="14" alt="" src="/Trimly2/image-21.svg" style={{ filter: "brightness(0.1)", display: "block" }} />}
+                endIcon={<img width="14" height="14" alt="" src="/image-21.svg" style={{ filter: "brightness(0.1)", display: "block" }} />}
                 disableElevation
                 variant="contained"
                 onClick={handleDownloadClick}
@@ -257,7 +257,7 @@ const FigmaDesignChatGPTImageJun72026124544PMjpg: FunctionComponent = () => {
 
               <Button
                 className={`${styles.ctaButtonSecondary} magnetic-btn`}
-                endIcon={<img width="13" height="13" alt="" src="/Trimly2/image-24.svg" style={{ display: "block" }} />}
+                endIcon={<img width="13" height="13" alt="" src="/image-24.svg" style={{ display: "block" }} />}
                 disableElevation
                 variant="outlined"
                 onClick={() => setDemoOpen(true)}
@@ -298,20 +298,20 @@ const FigmaDesignChatGPTImageJun72026124544PMjpg: FunctionComponent = () => {
               <div className={`${styles.brushStrokeBehind} ${styles.behind5}`}></div>
 
               <img
-                src="/Trimly2/WhatsApp%20Image%202026-06-24%20at%2013.45.47-left.png"
+                src="/WhatsApp%20Image%202026-06-24%20at%2013.45.47-left.png"
                 alt="Trimly App"
                 className={styles.phoneImage}
               />
 
               <div className={`${styles.handwrittenAnnotation} ${styles.annotationTopRight}`}>
                 <div className={styles.annotationText}>ÉCONOMIES <br /> CHAQUE MOIS</div>
-                <img src="/Trimly2/Image19@2x.png" alt="arrow" className={styles.arrowIconTopRight} />
+                <img src="/Image19@2x.png" alt="arrow" className={styles.arrowIconTopRight} />
               </div>
 
               <div className={`${styles.handwrittenAnnotation} ${styles.annotationMidRight}`}>
-                <img src="/Trimly2/Image15.svg" alt="scribble" className={styles.scribbleIcon} />
+                <img src="/Image15.svg" alt="scribble" className={styles.scribbleIcon} />
                 <div className={styles.annotationText}>DÉPENSES <br /> INUTILES</div>
-                <img src="/Trimly2/Image19@2x.png" alt="arrow" className={styles.arrowIconMidRight} />
+                <img src="/Image19@2x.png" alt="arrow" className={styles.arrowIconMidRight} />
               </div>
 
               <div className={`${styles.handwrittenAnnotation} ${styles.annotationBottomRight}`}>
@@ -319,7 +319,7 @@ const FigmaDesignChatGPTImageJun72026124544PMjpg: FunctionComponent = () => {
                 <span className={styles.checkmarkIcon}>✔</span>
               </div>
 
-              <img src="/Trimly2/Image30@2x.png" alt="" className={styles.doodleDeco} />
+              <img src="/Image30@2x.png" alt="" className={styles.doodleDeco} />
             </div>
           </div>
         </div>
@@ -335,7 +335,7 @@ const FigmaDesignChatGPTImageJun72026124544PMjpg: FunctionComponent = () => {
           <h2 className={styles.featuresTitle}>
             TOUT CE QU'IL VOUS FAUT, <br />
             DANS <span className={styles.featuresTitleHighlight}>
-              UNE SEULE APP.<img src="/Trimly2/Image29@2x.png" alt="" className={styles.brushUnderlineFeatures} />
+              UNE SEULE APP.<img src="/Image29@2x.png" alt="" className={styles.brushUnderlineFeatures} />
             </span>
           </h2>
           <p className={styles.featuresTitleSub}>
@@ -534,7 +534,7 @@ const FigmaDesignChatGPTImageJun72026124544PMjpg: FunctionComponent = () => {
             <h2 className={styles.pricingTimelineTitle}>
               <span className={styles.pricingTimelineTitleLine}>COMMENT</span>
               <span className={styles.pricingTimelineTitleLineBold}>
-                ÇA MARCHE<img src="/Trimly2/Image29@2x.png" alt="" className={styles.brushUnderlineFeatures} />
+                ÇA MARCHE<img src="/Image29@2x.png" alt="" className={styles.brushUnderlineFeatures} />
               </span>
             </h2>
             <p className={styles.pricingTimelineSubtitle}>

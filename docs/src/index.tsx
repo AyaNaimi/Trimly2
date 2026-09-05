@@ -12,6 +12,12 @@ import {
 
 import "./global.css";
 
+const githubPagesRedirect = sessionStorage.getItem("gh-pages-redirect");
+if (githubPagesRedirect) {
+  sessionStorage.removeItem("gh-pages-redirect");
+  window.history.replaceState(null, "", githubPagesRedirect);
+}
+
 const muiTheme = createTheme();
 
 const container = document.getElementById("root");
