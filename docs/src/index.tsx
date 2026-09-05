@@ -24,7 +24,7 @@ const container = document.getElementById("root");
 
 const root = createRoot(container as Element);
 root.render(
-  <BrowserRouter basename={import.meta.env.BASE_URL}>
+  <BrowserRouter basename="/Trimly2">
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={muiTheme}>
         <CssBaseline />
