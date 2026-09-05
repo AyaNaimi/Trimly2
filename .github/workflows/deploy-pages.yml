@@ -43,7 +43,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './land/Untitled/dist'
+          path: './land/Untitled/build'
 
   deploy:
     environment:
