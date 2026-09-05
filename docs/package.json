@@ -40,11 +40,12 @@
   "eslintConfig": {
     "root": true
   },
-  "homepage": "http://trimly-app.me/Trimly2"
+  "homepage": "http://trimly-app.me/"
 ,
   "name": "untitled",
   "private": true,
   "scripts": {
+  "dev":"vite",
     "build": "tsc && vite build",
     "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
