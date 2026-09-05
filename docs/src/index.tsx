@@ -18,7 +18,7 @@ const container = document.getElementById("root");
 
 const root = createRoot(container as Element);
 root.render(
-  <BrowserRouter>
+  <BrowserRouter basename={import.meta.env.BASE_URL}>
     <StyledEngineProvider injectFirst>
       <ThemeProvider theme={muiTheme}>
         <CssBaseline />

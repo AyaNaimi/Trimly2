@@ -5,3 +5,9 @@ declare module "*.css" {
   const classNames: IClassNames;
   export = classNames;
 }
+
+interface ImportMeta {
+  readonly env: {
+    readonly BASE_URL: string;
+  };
+}
