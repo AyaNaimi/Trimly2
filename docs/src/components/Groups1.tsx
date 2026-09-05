@@ -32,7 +32,7 @@ const Groups1: FunctionComponent<Groups1Type> = ({ className = "", visible = fal
             <span className={styles.ctaHighlight}>repris le contrôle</span> de leurs finances avec Trimly.
           </p>
           <div className={styles.arrowContainer}>
-            <img src="/Trimly2/Image24.svg" alt="→" className={styles.ctaArrowIcon} />
+            <img src="/Image24.svg" alt="→" className={styles.ctaArrowIcon} />
           </div>
         </div>
 
@@ -45,7 +45,7 @@ const Groups1: FunctionComponent<Groups1Type> = ({ className = "", visible = fal
             className={`${styles.storeButton} store-btn-hover`}
             aria-label="Télécharger sur l'App Store"
           >
-            <img src="/Trimly2/Image23.svg" alt="Apple" className={styles.storeLogo} />
+            <img src="/Image23.svg" alt="Apple" className={styles.storeLogo} />
             <div className={styles.storeTextCol}>
               <span className={styles.storeSub}>Télécharger dans</span>
               <span className={styles.storeMain}>l'App Store</span>
@@ -59,7 +59,7 @@ const Groups1: FunctionComponent<Groups1Type> = ({ className = "", visible = fal
             className={`${styles.storeButton} store-btn-hover`}
             aria-label="Disponible sur Google Play"
           >
-            <img src="/Trimly2/Image16.svg" alt="Google Play" className={styles.storeLogo} />
+            <img src="/Image16.svg" alt="Google Play" className={styles.storeLogo} />
             <div className={styles.storeTextCol}>
               <span className={styles.storeSub}>DISPONIBLE SUR</span>
               <span className={styles.storeMain}>Google Play</span>

@@ -9,25 +9,25 @@ export type GroupsType = {
 
 const features = [
   {
-    src: "/Trimly2/Image22@2x.png",
+    src: "/Image22@2x.png",
     alt: "Détecte",
     label: "DÉTECTE",
     desc: "Trimly identifie tous vos abonnements, même ceux que vous avez oubliés.",
   },
   {
-    src: "/Trimly2/Image18@2x.png",
+    src: "/Image18@2x.png",
     alt: "Analyse",
     label: "ANALYSE",
     desc: "Une vue claire de vos dépenses pour comprendre où va votre argent.",
   },
   {
-    src: "/Trimly2/Image32@2x.png",
+    src: "/Image32@2x.png",
     alt: "Alerte",
     label: "ALERTE",
     desc: "Recevez des notifications avant chaque prélèvement pour garder le contrôle.",
   },
   {
-    src: "/Trimly2/Frame1@3x.png",
+    src: "/Frame1@3x.png",
     alt: "Économise",
     label: "ÉCONOMISE",
     desc: "Réduisez vos dépenses inutiles et atteignez vos objectifs plus vite.",
