@@ -6,7 +6,7 @@ const PrivacyPolicy: FunctionComponent = () => {
   return (
     <Box className={styles.page}>
       <header className={styles.header}>
-        <a href="/" className={styles.logo}>trimly.</a>
+          <a href="/Trimly2/" className={styles.logo}>trimly.</a>
       </header>
 
       <main className={styles.content}>
@@ -185,9 +185,9 @@ const PrivacyPolicy: FunctionComponent = () => {
 
       <footer className={styles.footer}>
         <div className={styles.footerInner}>
-          <a href="/" className={styles.footerLink}>Retour à l'accueil</a>
+          <a href="/Trimly2/" className={styles.footerLink}>Retour à l'accueil</a>
           <span className={styles.footerSeparator}>•</span>
-          <a href="/terms" className={styles.footerLink}>Conditions d'utilisation</a>
+          <a href="/Trimly2/terms" className={styles.footerLink}>Conditions d'utilisation</a>
           <span className={styles.footerSeparator}>•</span>
           <span className={styles.footerCopy}>&copy; 2026 Trimly. Tous droits réservés.</span>
         </div>

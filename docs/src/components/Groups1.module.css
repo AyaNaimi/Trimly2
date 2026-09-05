@@ -33,7 +33,7 @@
 .brushStrokeUnderline {
   height: 22px;
   width: 170px;
-  background-image: url('/brush_strokes.jpg');
+  background-image: url('/Trimly2/brush_strokes.jpg');
   background-color: var(--color-greenyellow-100);
   background-blend-mode: multiply;
   background-size: 100% 600%;
